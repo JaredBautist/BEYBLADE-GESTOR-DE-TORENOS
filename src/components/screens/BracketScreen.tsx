@@ -45,9 +45,9 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
 
   const totalRounds = roundNumbers.length > 0 ? Math.max(...roundNumbers) : 1;
 
-  // Identify final match & champion
+  // Identify final match & champion (only when final match is concluded/finished)
   const finalMatch = matches.find((m) => m.roundNumber === totalRounds) || matches.find((m) => m.roundName?.toLowerCase().includes('final'));
-  const champion = finalMatch?.winnerId
+  const champion = (finalMatch?.status === 'finished' && finalMatch?.winnerId)
     ? bladers.find((b) => b.id === finalMatch.winnerId)
     : undefined;
 

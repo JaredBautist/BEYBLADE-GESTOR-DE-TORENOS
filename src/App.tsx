@@ -30,6 +30,7 @@ import { SupportModal } from './components/SupportModal';
 import { ResetTournamentModal } from './components/ResetTournamentModal';
 import {
   syncBladerToSupabase,
+  syncAllBladersToSupabase,
   fetchBladersFromSupabase,
   deleteBladerFromSupabase,
   syncPartToSupabase,
@@ -45,6 +46,8 @@ import {
   fetchConfigFromSupabase,
   syncMatchToSupabase,
   fetchMatchesFromSupabase,
+  deleteMatchFromSupabase,
+  deleteAllMatchesFromSupabase,
   subscribeToDatabaseChanges
 } from './lib/supabase';
 import { generateTournamentBracket, advanceWinnerInBracket } from './utils/bracketGenerator';
@@ -933,7 +936,7 @@ export default function App() {
   };
 
   // COMPLETE & ROBUST RESET TOURNAMENT HANDLER
-  const handleConfirmReset = (mode: 'matches_only' | 'archive_and_reset' | 'factory_reset') => {
+  const handleConfirmReset = async (mode: 'matches_only' | 'archive_and_reset' | 'factory_reset') => {
     setShowResetModal(false);
 
     if (mode === 'archive_and_reset') {
@@ -1008,13 +1011,23 @@ export default function App() {
         }
       }));
       setBladers(resetBladers);
-      syncAllBladersToSupabase(resetBladers);
+      await syncAllBladersToSupabase(resetBladers);
 
-      // 3. Generate a clean, fresh bracket for the new tournament
+      // 3. Purge all previous matches from Supabase database & local storage
+      await deleteAllMatchesFromSupabase();
+      try {
+        localStorage.removeItem('bbx_matches');
+      } catch (e) {
+        console.warn('Could not clear local matches storage:', e);
+      }
+
+      // 4. Generate a clean, fresh bracket for the new tournament
       if (resetBladers.length >= 2) {
         const freshMatches = generateTournamentBracket(resetBladers, config);
         setMatches(freshMatches);
-        freshMatches.forEach((m) => syncMatchToSupabase(m));
+        for (const m of freshMatches) {
+          await syncMatchToSupabase(m);
+        }
         const firstLive = freshMatches.find((m) => m.status === 'live') || freshMatches[0];
         setCurrentMatch(firstLive || null);
       } else {
@@ -1042,12 +1055,21 @@ export default function App() {
         }
       }));
       setBladers(resetBladers);
-      syncAllBladersToSupabase(resetBladers);
+      await syncAllBladersToSupabase(resetBladers);
+
+      await deleteAllMatchesFromSupabase();
+      try {
+        localStorage.removeItem('bbx_matches');
+      } catch (e) {
+        console.warn('Could not clear local matches storage:', e);
+      }
 
       if (resetBladers.length >= 2) {
         const freshMatches = generateTournamentBracket(resetBladers, config);
         setMatches(freshMatches);
-        freshMatches.forEach((m) => syncMatchToSupabase(m));
+        for (const m of freshMatches) {
+          await syncMatchToSupabase(m);
+        }
         const firstLive = freshMatches.find((m) => m.status === 'live') || freshMatches[0];
         setCurrentMatch(firstLive || null);
       } else {
@@ -1056,7 +1078,7 @@ export default function App() {
       }
 
       soundManager.playScore();
-      setActiveScreen('dashboard');
+      setActiveScreen('bracket');
       return;
     }
 
@@ -1065,6 +1087,7 @@ export default function App() {
       setMatches([]);
       setRegisteredCombos([]);
       setCurrentMatch(null);
+      await deleteAllMatchesFromSupabase();
       try {
         localStorage.removeItem('bbx_bladers');
         localStorage.removeItem('bbx_matches');

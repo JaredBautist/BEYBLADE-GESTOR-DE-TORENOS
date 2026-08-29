@@ -720,6 +720,20 @@ export async function deleteMatchFromSupabase(id: string) {
   }
 }
 
+export async function deleteAllMatchesFromSupabase(): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { error } = await supabase.from('matches').delete().neq('id', '___force_delete_all_matches___');
+    if (error) {
+      console.error('Supabase deleteAllMatches error:', error);
+      return { success: false, error: error.message };
+    }
+    return { success: true };
+  } catch (e: any) {
+    console.warn('Supabase deleteAllMatches warning:', e);
+    return { success: false, error: e?.message };
+  }
+}
+
 // -------------------------------------------------------------
 // REALTIME MULTI-DEVICE CONCURRENCY SUBSCRIPTIONS
 // -------------------------------------------------------------
