@@ -337,7 +337,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const onDeckB = remainingBladers[1];
 
   const isMatchFinished = currentMatch.status === 'finished';
-  const isRegularPhase = config.type === 'league' && config.tournamentPhase !== 'playoffs';
+  const isRegularPhase = (config.type === 'league' || config.type === 'series') && config.tournamentPhase !== 'playoffs';
   const areAllRegularMatchesFinished =
     isRegularPhase &&
     matches.length > 0 &&
@@ -348,7 +348,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     currentMatch.roundName?.toLowerCase().includes('gran final') ||
     currentMatch.id === 'playoff-grand-final' ||
     currentMatch.id === 'match-final-direct' ||
-    (!currentMatch.nextMatchId && (currentMatch.stage === 'playoff' || config.type === 'elimination' || config.type === 'series')) ||
+    (!currentMatch.nextMatchId && (currentMatch.stage === 'playoff' || config.type === 'elimination')) ||
     (currentMatch.roundNumber === totalRounds && currentMatch.roundName?.toLowerCase().includes('final'))
   );
   const isTournamentFinal = isMatchFinished && isGrandFinalMatch;

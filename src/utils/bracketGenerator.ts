@@ -159,7 +159,7 @@ export function generateRegularPhaseMatches(
           bladerB: bB,
           scoreA: 0,
           scoreB: 0,
-          targetScore: config.victoryConditions?.pointsToWin || 5,
+          targetScore: config.type === 'series' ? 1 : (config.victoryConditions?.pointsToWin || 5),
           status: isFirst ? 'live' : 'upcoming',
           winnerId: null,
           cornerA: 'Red',
@@ -451,10 +451,13 @@ export function generateTournamentBracket(
 ): Match[] {
   if (bladers.length < 2) return [];
 
-  // Single Elimination and Series format ALWAYS create direct knockout bracket ("una batalla y chao")
-  if (config.type === 'elimination' || config.type === 'series') {
+  // Single Elimination format ALWAYS creates direct knockout bracket
+  if (config.type === 'elimination') {
     return generateSingleEliminationBracket(bladers, config);
   }
+
+  // League & Series format (2-phase: Regular Phase by Points -> Playoffs Cutoff)
+  // Series is identical to League but each match is 1 batalla decisiva (targetScore=1)
 
   // League format (2-phase: Regular Phase by Points -> Playoffs Cutoff)
   if (config.tournamentPhase === 'playoffs') {

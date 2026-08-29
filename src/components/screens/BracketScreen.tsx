@@ -187,7 +187,7 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
           <div className="flex items-center gap-2 mb-1">
             <span className="w-2.5 h-2.5 rounded-full bg-[#04A8FC] animate-pulse"></span>
             <span className="font-label-caps text-xs text-[#04A8FC] uppercase tracking-widest font-bold">
-              {config.type === 'league' ? 'LIGA OFICIAL • ACUMULACIÓN Y CORTE' : config.type === 'series' ? 'FORMATO SERIE (1 BATALLA Y FUERA)' : 'ÁRBOL DE ELIMINACIÓN DIRECTA'} • {bladers.length} BLADERS
+              {config.type === 'league' ? 'LIGA OFICIAL • ACUMULACIÓN Y CORTE' : config.type === 'series' ? 'FORMATO SERIE • 1 BATALLA DECISIVA • ACUMULACIÓN Y CORTE' : 'ÁRBOL DE ELIMINACIÓN DIRECTA'} • {bladers.length} BLADERS
             </span>
           </div>
           <h1 className="font-headline font-black text-3xl md:text-5xl text-[#1a1c1e] dark:text-white uppercase tracking-tight italic">
@@ -195,7 +195,7 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
           </h1>
           <p className="font-body-text text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
             {config.type === 'series'
-              ? 'Formato Serie Oficial (1 Batalla y Chao). El ganador avanza de ronda y el perdedor queda automáticamente fuera.'
+              ? 'Formato Serie: Todos contra todos con 1 batalla decisiva por enfrentamiento. Acumulación de puntos y corte a Playoffs.'
               : config.type === 'league'
               ? 'Fase de grupos por acumulación de puntos y corte a eliminatorias de Playoffs.'
               : 'Árbol oficial de eliminación directa Comunidad Beyblade Cúcuta. Los ganadores avanzan automáticamente de ronda.'}
@@ -206,7 +206,7 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           {/* View mode switcher */}
           <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-headline font-bold uppercase">
-            {config.type === 'league' && (
+            {(config.type === 'league' || config.type === 'series') && (
               <button
                 onClick={() => {
                   soundManager.playClick();
@@ -263,7 +263,7 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
               className="bg-[#04A8FC] hover:bg-[#008fe0] text-white px-3.5 py-2 rounded-xl text-xs font-headline font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-[#04A8FC]/20 transition-all active:scale-95"
             >
               <span className="material-symbols-outlined text-sm">shuffle</span>
-              <span>{config.type === 'league' ? 'Generar Fase Regular' : 'Sortear Bracket'}</span>
+              <span>{(config.type === 'league' || config.type === 'series') ? 'Generar Fase Regular' : 'Sortear Bracket'}</span>
             </button>
           )}
 
