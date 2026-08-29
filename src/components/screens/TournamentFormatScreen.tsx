@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { TournamentConfig, TournamentType, BattleScale } from '../../types';
 import { soundManager } from '../../utils/audio';
-import { syncTournamentFormatToSupabase } from '../../lib/supabase';
+import { syncTournamentFormatToSupabase, syncConfigToSupabase } from '../../lib/supabase';
 
 interface TournamentFormatScreenProps {
   config: TournamentConfig;
@@ -34,6 +34,15 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
       maxParticipants: updated.maxParticipants,
       arenaStatus: updated.arenaStatus,
       isStarted: updated.isStarted
+    });
+    syncConfigToSupabase({
+      name: updated.name,
+      season: updated.season,
+      leagueName: updated.leagueName,
+      communityCity: updated.communityCity,
+      communityTagline: updated.communityTagline,
+      organizerName: updated.organizerName,
+      logoUrl: updated.logoUrl
     });
     setSaveFeedback(msg);
     setTimeout(() => setSaveFeedback(''), 3000);
@@ -110,6 +119,50 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
               <span className="text-[10px] font-label-caps uppercase px-2.5 py-1 rounded-full bg-[#04A8FC]/10 text-[#04A8FC] font-black border border-[#04A8FC]/20">
                 WBO / Oficial
               </span>
+            </div>
+
+            {/* Identidad Oficial del Torneo */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#04A8FC]/10 via-[#04A8FC]/5 to-transparent border border-[#04A8FC]/30 space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-[#04A8FC] text-lg">badge</span>
+                <span className="font-headline font-black text-xs uppercase text-[#04A8FC] tracking-wider">
+                  Identidad Oficial del Torneo
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-label-caps text-[11px] text-slate-600 dark:text-slate-400 mb-1.5 uppercase font-bold">
+                    Título / Nombre del Torneo *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => {
+                      const updated = { ...formData, name: e.target.value };
+                      setFormData(updated);
+                    }}
+                    onBlur={() => triggerSave(formData, 'Nombre del torneo guardado')}
+                    placeholder="Ej. 1er Torneo Oficial Beyblade X Cúcuta"
+                    className="w-full bg-white dark:bg-[#1a1a24] border border-slate-300 dark:border-white/10 rounded-xl px-3.5 py-2 text-xs font-bold uppercase text-slate-900 dark:text-white focus:border-[#04A8FC] focus:outline-none shadow-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block font-label-caps text-[11px] text-slate-600 dark:text-slate-400 mb-1.5 uppercase font-bold">
+                    Temporada / Edición *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.season}
+                    onChange={(e) => {
+                      const updated = { ...formData, season: e.target.value };
+                      setFormData(updated);
+                    }}
+                    onBlur={() => triggerSave(formData, 'Temporada guardada')}
+                    placeholder="Ej. Temporada 1 - 2026"
+                    className="w-full bg-white dark:bg-[#1a1a24] border border-slate-300 dark:border-white/10 rounded-xl px-3.5 py-2 text-xs font-bold uppercase text-slate-900 dark:text-white focus:border-[#04A8FC] focus:outline-none shadow-sm"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Formato del Torneo: Liga vs Bracket vs Serie */}

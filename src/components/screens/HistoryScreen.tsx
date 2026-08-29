@@ -438,6 +438,43 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
                     </div>
                   </div>
 
+                  {/* Detailed match encounters list directly inside card */}
+                  {t.matchesSummary && t.matchesSummary.length > 0 && (
+                    <div className="pt-2 border-t border-slate-100 dark:border-white/5 space-y-2">
+                      <span className="text-[10px] font-label-caps uppercase text-slate-500 font-bold flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-xs text-[#04A8FC]">sports_kabaddi</span>
+                        <span>Detalle de Enfrentamientos ({t.matchesSummary.length})</span>
+                      </span>
+                      <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
+                        {t.matchesSummary.map((m, mIdx) => (
+                          <div
+                            key={mIdx}
+                            className="p-2 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 flex items-center justify-between text-xs gap-2"
+                          >
+                            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                              <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-black/10 dark:bg-white/10 text-slate-500 flex-shrink-0">
+                                {m.roundName || `#${mIdx + 1}`}
+                              </span>
+                              <div className="truncate text-[11px] font-headline font-bold uppercase">
+                                <span className={m.winner === m.bladerA ? 'text-amber-500 font-black' : 'text-slate-700 dark:text-slate-300'}>
+                                  {m.bladerA} ({m.scoreA})
+                                </span>
+                                <span className="text-slate-400 mx-1 font-mono text-[9px]">vs</span>
+                                <span className={m.winner === m.bladerB ? 'text-amber-500 font-black' : 'text-slate-700 dark:text-slate-300'}>
+                                  {m.bladerB} ({m.scoreB})
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1 text-[9px] font-headline font-black uppercase text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded-md flex-shrink-0">
+                              <span className="material-symbols-outlined text-[10px]">crown</span>
+                              <span className="max-w-[65px] truncate">{m.winner}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Recap Action Button */}
                   <button
                     onClick={() => {
@@ -560,25 +597,25 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
             <div className="space-y-2.5 sm:space-y-3">
               <h4 className="font-headline font-black text-xs sm:text-sm uppercase text-slate-900 dark:text-white flex items-center gap-2">
                 <span className="material-symbols-outlined text-base text-[#04A8FC]">sports_kabaddi</span>
-                <span>Resultados de Combates Disputados</span>
+                <span>Detalle Completo de Enfrentamientos Disputados</span>
               </h4>
 
               {selectedTournamentRecap.matchesSummary && selectedTournamentRecap.matchesSummary.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 max-h-60 sm:max-h-72 overflow-y-auto pr-1">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3 max-h-72 sm:max-h-80 overflow-y-auto pr-1">
                   {selectedTournamentRecap.matchesSummary.map((m, idx) => (
                     <div
                       key={idx}
-                      className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 flex items-center justify-between gap-2 text-xs min-w-0"
+                      className="p-3 sm:p-3.5 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 flex items-center justify-between gap-3 text-xs min-w-0 shadow-sm"
                     >
-                      <div className="flex items-center gap-2 font-headline font-bold uppercase min-w-0 flex-1">
-                        <span className="w-5 h-5 rounded-full bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-300 flex items-center justify-center text-[9px] sm:text-[10px] font-black flex-shrink-0">
-                          #{idx + 1}
+                      <div className="flex items-center gap-2.5 font-headline font-bold uppercase min-w-0 flex-1">
+                        <span className="px-2 py-1 rounded-lg bg-black/10 dark:bg-white/10 text-slate-700 dark:text-slate-300 text-[10px] font-mono font-black flex-shrink-0">
+                          {m.roundName || `#${idx + 1}`}
                         </span>
                         <div className="truncate min-w-0 flex-1 text-[11px] sm:text-xs">
                           <span className={m.winner === m.bladerA ? 'text-amber-500 font-black' : 'text-slate-700 dark:text-slate-300'}>
                             {m.bladerA} ({m.scoreA})
                           </span>
-                          <span className="text-slate-400 mx-1 font-mono text-[9px]">VS</span>
+                          <span className="text-slate-400 mx-1.5 font-mono text-[9px]">VS</span>
                           <span className={m.winner === m.bladerB ? 'text-amber-500 font-black' : 'text-slate-700 dark:text-slate-300'}>
                             {m.bladerB} ({m.scoreB})
                           </span>
@@ -587,7 +624,7 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
 
                       <div className="flex items-center gap-1 text-[9px] sm:text-[10px] font-headline font-black uppercase text-amber-500 bg-amber-500/10 px-2 py-1 rounded-lg flex-shrink-0">
                         <span className="material-symbols-outlined text-xs">crown</span>
-                        <span className="max-w-[70px] truncate">{m.winner}</span>
+                        <span className="max-w-[75px] truncate">{m.winner}</span>
                       </div>
                     </div>
                   ))}

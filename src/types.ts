@@ -70,6 +70,7 @@ export interface TournamentRecord {
   totalPoints: number;
   winnerAvatar?: string;
   matchesSummary?: {
+    roundName?: string;
     bladerA: string;
     bladerB: string;
     scoreA: number;

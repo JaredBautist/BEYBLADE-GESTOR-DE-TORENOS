@@ -980,7 +980,8 @@ export default function App() {
         totalMatches: finishedMatchesList.length || matches.length,
         totalBladers: bladers.length,
         totalPoints: totalPoints || 12,
-        matchesSummary: matches.map((m) => ({
+        matchesSummary: matches.map((m, mIndex) => ({
+          roundName: m.roundName || `Duelo #${m.matchNumber || mIndex + 1}`,
           bladerA: m.bladerA?.name || 'Blader A',
           bladerB: m.bladerB?.name || 'Blader B',
           scoreA: m.scoreA,
