@@ -144,41 +144,62 @@ export const CommunityConfigScreen: React.FC<CommunityConfigScreenProps> = ({
 
     const reader = new FileReader();
     reader.onload = (event) => {
+      const rawDataUrl = event.target?.result as string;
+      
       const img = new Image();
       img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 400;
-        const MAX_HEIGHT = 400;
-        let width = img.width;
-        let height = img.height;
+        try {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 400;
+          const MAX_HEIGHT = 400;
+          let width = img.width;
+          let height = img.height;
 
-        if (width > height) {
-          if (width > MAX_WIDTH) {
-            height *= MAX_WIDTH / width;
-            width = MAX_WIDTH;
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
           }
-        } else {
-          if (height > MAX_HEIGHT) {
-            width *= MAX_HEIGHT / height;
-            height = MAX_HEIGHT;
-          }
-        }
-        canvas.width = width;
-        canvas.height = height;
+          canvas.width = width;
+          canvas.height = height;
 
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, width, height);
-          // Compress to webp for better size, fallback to jpeg
-          const dataUrl = canvas.toDataURL('image/webp', 0.8);
-          const updated = { ...formData, logoUrl: dataUrl };
-          triggerSave(updated, 'Logo oficial actualizado y sincronizado en Supabase');
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const compressedUrl = canvas.toDataURL('image/webp', 0.8);
+            const updated = { ...formData, logoUrl: compressedUrl };
+            triggerSave(updated, 'Logo oficial actualizado y sincronizado en Supabase');
+            soundManager.playClick();
+          } else {
+            throw new Error('No 2d context');
+          }
+        } catch (err) {
+          console.warn('Compresión falló, usando original', err);
+          const updated = { ...formData, logoUrl: rawDataUrl };
+          triggerSave(updated, 'Logo oficial actualizado (sin compresión)');
           soundManager.playClick();
         }
       };
-      img.src = event.target?.result as string;
+      
+      img.onerror = () => {
+        console.warn('Error al cargar imagen para compresión, usando original');
+        const updated = { ...formData, logoUrl: rawDataUrl };
+        triggerSave(updated, 'Logo oficial actualizado (sin compresión)');
+        soundManager.playClick();
+      };
+
+      img.src = rawDataUrl;
     };
     reader.readAsDataURL(file);
+    
+    // Clear the input value so the same file can be selected again
+    e.target.value = '';
   };
 
   const handleResetLogo = () => {
