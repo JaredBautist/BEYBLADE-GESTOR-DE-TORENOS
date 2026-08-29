@@ -339,7 +339,6 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
           {/* Phase Banner & Cutoff Rules */}
           {(() => {
             const ranked = getRankedBladers(bladers);
-            const minPts = config.minPointsToQualify || 20;
             const cutoffTarget = config.playoffCutoffCount || (ranked.length >= 8 ? 8 : ranked.length >= 4 ? 4 : 2);
 
             const regularMatches = matches.filter((m) => m.stage === 'regular');
@@ -354,11 +353,11 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
                     <div className="flex items-center gap-2">
                       <span className="material-symbols-outlined text-[#04A8FC] text-xl">tune</span>
                       <h3 className="font-headline font-black text-sm sm:text-base uppercase text-slate-900 dark:text-white">
-                        Criterio de Puntos & Corte a Fase Final (Playoffs)
+                        Tabla de Posiciones & Corte a Playoffs
                       </h3>
                     </div>
                     <p className="text-xs text-slate-600 dark:text-slate-300 font-label-caps uppercase">
-                      Para clasificar a {cutoffTarget === 8 ? 'Cuartos de Final (Top 8)' : cutoffTarget === 4 ? 'Semifinales (Top 4)' : 'Gran Final (Top 2)'} se requiere acumular al menos <strong className="text-[#04A8FC]">≥ {minPts} PUNTOS</strong>. Los Bladers con menos de {minPts} PTS quedan automáticamente eliminados/descartados.
+                      Clasifican los <strong className="text-[#04A8FC]">TOP {cutoffTarget} Bladers</strong> con más puntos acumulados a {cutoffTarget === 8 ? 'Cuartos de Final' : cutoffTarget === 4 ? 'Semifinales' : 'Gran Final'}. Los demás participantes quedan fuera del corte.
                     </p>
                   </div>
 
@@ -393,18 +392,14 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
                           <th className="py-3 px-2 sm:px-3 text-center">V - D</th>
                           <th className="py-3 px-3 sm:px-4 text-center font-headline text-slate-900 dark:text-white">Puntos</th>
                           <th className="py-3 px-2 sm:px-3 text-center hidden md:table-cell">Finishes</th>
-                          <th className="py-3 px-3 sm:px-4 text-center">Estado de Clasificación</th>
+                          <th className="py-3 px-3 sm:px-4 text-center">Estado Oficial</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-white/5 font-bold">
                         {ranked.map((b, idx) => {
                           const points = b.stats?.pointsScored || 0;
-                          const hasMinPoints = points >= minPts;
-                          const isQualifying = hasMinPoints && idx < cutoffTarget;
-                          const isDisqualifiedByPoints = !hasMinPoints;
-
+                          const isQualifying = idx < cutoffTarget;
                           const matchesPlayed = b.stats?.matchesPlayed || 0;
-                          const matchesLimit = config.regularPhaseMatchesPerBlader || 2;
 
                           return (
                             <tr
@@ -437,8 +432,8 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
 
                               {/* Matches Played */}
                               <td className="py-3 px-2 sm:px-3 text-center font-mono text-xs">
-                                <span className={matchesPlayed >= matchesLimit ? 'text-emerald-500 font-bold' : 'text-slate-400'}>
-                                  {matchesPlayed}/{matchesLimit}
+                                <span className="text-slate-700 dark:text-slate-300 font-bold">
+                                  {matchesPlayed}
                                 </span>
                               </td>
 
@@ -468,18 +463,13 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
                                   <span className="px-2.5 py-1 rounded-full text-[9px] sm:text-[10px] font-black bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 inline-flex items-center gap-1 shadow-sm">
                                     <span className="material-symbols-outlined text-xs">check_circle</span>
                                     <span>
-                                      {cutoffTarget === 8 ? 'Pasa a Cuartos' : cutoffTarget === 4 ? 'Pasa a Semis' : 'Pasa a Final'}
+                                      {cutoffTarget === 8 ? 'PASA A CUARTOS' : cutoffTarget === 4 ? 'PASA A SEMIS' : 'PASA A FINAL'}
                                     </span>
                                   </span>
-                                ) : isDisqualifiedByPoints ? (
+                                ) : (
                                   <span className="px-2.5 py-1 rounded-full text-[9px] sm:text-[10px] font-bold bg-red-500/10 text-red-500 border border-red-500/20 inline-flex items-center gap-1">
                                     <span className="material-symbols-outlined text-xs">cancel</span>
-                                    <span>Eliminado (&lt; {minPts} PTS)</span>
-                                  </span>
-                                ) : (
-                                  <span className="px-2.5 py-1 rounded-full text-[9px] sm:text-[10px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 inline-flex items-center gap-1">
-                                    <span className="material-symbols-outlined text-xs">warning</span>
-                                    <span>Fuera de Top {cutoffTarget}</span>
+                                    <span>ELIMINADO</span>
                                   </span>
                                 )}
                               </td>

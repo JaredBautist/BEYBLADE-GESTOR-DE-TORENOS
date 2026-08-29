@@ -313,47 +313,11 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
                   </span>
                 </div>
 
-                {/* 1. Meta / Cantidad de Puntos que deben acumular para clasificar */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="font-label-caps text-xs text-slate-300 uppercase font-bold flex items-center gap-1.5">
-                      <span className="material-symbols-outlined text-sm text-[#04A8FC]">military_tech</span>
-                      <span>Cantidad de Puntos Requeridos para Clasificar (Meta Mínima):</span>
-                    </label>
-                    <span className="text-xs font-mono font-black text-[#04A8FC] bg-[#04A8FC]/10 px-2.5 py-0.5 rounded-md border border-[#04A8FC]/20">
-                      ≥ {formData.minPointsToQualify || 20} PTS
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                    {[10, 15, 20, 25, 30].map((pts) => {
-                      const isSelected = (formData.minPointsToQualify || 20) === pts;
-                      return (
-                        <button
-                          key={pts}
-                          type="button"
-                          onClick={() => handleMinPointsToQualifyChange(pts)}
-                          className={`py-2 rounded-xl text-xs font-headline font-bold uppercase transition-all flex flex-col items-center justify-center ${
-                            isSelected
-                              ? 'bg-[#04A8FC] text-white shadow-md shadow-[#04A8FC]/30 font-black'
-                              : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white border border-white/5'
-                          }`}
-                        >
-                          <span className="text-sm font-black">{pts} PTS</span>
-                          <span className="text-[9px] font-label-caps uppercase">Meta</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <p className="text-[10px] text-slate-400 italic">
-                    Los Bladers deben reunir al menos esta cantidad de puntos durante la fase clasificatoria. Quien tenga menos de {formData.minPointsToQualify || 20} PTS queda automáticamente fuera del corte.
-                  </p>
-                </div>
-
-                {/* 2. Criterio de Corte a Playoffs (Cuartos, Semis o Final) */}
-                <div className="space-y-2 pt-2 border-t border-slate-800">
+                {/* Criterio de Corte a Playoffs (Cuartos, Semis o Final) */}
+                <div className="space-y-3">
                   <label className="font-label-caps text-xs text-slate-300 uppercase font-bold flex items-center gap-1.5">
                     <span className="material-symbols-outlined text-sm text-amber-400">filter_alt</span>
-                    <span>Estructura del Corte Clasificatorio a Fase Final:</span>
+                    <span>Corte Clasificatorio a Fase Final (Playoffs):</span>
                   </label>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
@@ -375,7 +339,7 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
                         <span className="text-[9px] font-label-caps font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">Cuartos de Final</span>
                       </div>
                       <p className="text-[10px] text-slate-300 leading-tight">
-                        Los 8 mejores con ≥ {formData.minPointsToQualify || 20} PTS pasan a Cuartos (1º vs 8º, 2º vs 7º...). Los menores a {formData.minPointsToQualify || 20} PTS quedan fuera.
+                        Los 8 Bladers con más puntos pasan a Cuartos de Final (1º vs 8º, 2º vs 7º, 3º vs 6º, 4º vs 5º).
                       </p>
                     </button>
 
@@ -397,7 +361,7 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
                         <span className="text-[9px] font-label-caps font-bold px-1.5 py-0.5 rounded bg-[#04A8FC]/20 text-[#04A8FC]">Semifinales</span>
                       </div>
                       <p className="text-[10px] text-slate-300 leading-tight">
-                        Los 4 mejores con ≥ {formData.minPointsToQualify || 20} PTS pasan a Semifinales (1º vs 4º, 2º vs 3º). Los menores a {formData.minPointsToQualify || 20} PTS quedan fuera.
+                        Los 4 Bladers con más puntos pasan a Semifinales (1º vs 4º, 2º vs 3º). Los ganadores van a la Gran Final.
                       </p>
                     </button>
 
@@ -419,7 +383,7 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
                         <span className="text-[9px] font-label-caps font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">Gran Final Directa</span>
                       </div>
                       <p className="text-[10px] text-slate-300 leading-tight">
-                        Los 2 mejores con ≥ {formData.minPointsToQualify || 20} PTS avanzan directo a la Gran Final. Los demás quedan descartados.
+                        Los 2 Bladers con más puntos avanzan directamente a la Gran Final (1º vs 2º).
                       </p>
                     </button>
                   </div>

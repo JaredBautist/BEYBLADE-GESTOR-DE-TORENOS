@@ -344,15 +344,20 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     matches.every((m) => m.stage !== 'regular' || m.status === 'finished');
 
   const totalRounds = matches && matches.length > 0 ? Math.max(...matches.map((m) => m.roundNumber || 1)) : 1;
-  const isTournamentFinal = isMatchFinished && (
-    !currentMatch.nextMatchId ||
-    currentMatch.roundNumber === totalRounds ||
-    currentMatch.roundName?.toLowerCase().includes('final')
+  const isGrandFinalMatch = Boolean(
+    currentMatch.roundName?.toLowerCase().includes('gran final') ||
+    currentMatch.id === 'playoff-grand-final' ||
+    currentMatch.id === 'match-final-direct' ||
+    (!currentMatch.nextMatchId && (currentMatch.stage === 'playoff' || config.type === 'elimination' || config.type === 'series')) ||
+    (currentMatch.roundNumber === totalRounds && currentMatch.roundName?.toLowerCase().includes('final'))
   );
+  const isTournamentFinal = isMatchFinished && isGrandFinalMatch;
 
-  const nextPlayableBracketMatch = matches.find(
-    (m) => m.id !== currentMatch.id && m.status !== 'finished' && m.bladerA && m.bladerB
-  );
+  const nextPlayableBracketMatch = isTournamentFinal
+    ? undefined
+    : matches.find(
+        (m) => m.id !== currentMatch.id && m.status !== 'finished' && m.bladerA && m.bladerB
+      );
 
   const handlePointClick = (
     corner: 'A' | 'B',
@@ -950,8 +955,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         </div>
       )}
 
-      {/* ON DECK (Siguiente Enfrentamiento) Section - Only if there are other bladers available */}
-      {remainingBladers.length >= 2 && onDeckA && onDeckB && (
+      {/* ON DECK (Siguiente Enfrentamiento) Section - ONLY IF TOURNAMENT IS NOT CONCLUDED */}
+      {!isTournamentFinal && remainingBladers.length >= 2 && onDeckA && onDeckB && (
         <div className="glass-panel p-5 rounded-2xl border border-[#bec7d3]/30 dark:border-white/10 relative overflow-hidden bg-gradient-to-r from-transparent via-[#04A8FC]/5 to-transparent">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
             <div>

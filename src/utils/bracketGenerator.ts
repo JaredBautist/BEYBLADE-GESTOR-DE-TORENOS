@@ -122,7 +122,7 @@ export function generateSingleEliminationBracket(
 }
 
 // -------------------------------------------------------------
-// 2. REGULAR PHASE (POINTS ACCUMULATION & LIMITED ROUNDS)
+// 2. REGULAR PHASE (ROUND ROBIN - TODOS CONTRA TODOS)
 // -------------------------------------------------------------
 export function generateRegularPhaseMatches(
   bladers: Blader[],
@@ -130,43 +130,36 @@ export function generateRegularPhaseMatches(
 ): Match[] {
   if (bladers.length < 2) return [];
 
-  const matchesPerBlader = Math.max(1, config.regularPhaseMatchesPerBlader || 2);
-  const participants = [...bladers].sort(() => 0.5 - Math.random());
+  const participants = [...bladers];
+  const n = participants.length;
   const matches: Match[] = [];
   let matchNumber = 1;
 
-  // Generate pair schedules across rounds
-  const totalRounds = matchesPerBlader;
-  const n = participants.length;
+  // Standard Round-Robin Algorithm (Todos contra todos)
+  const isOdd = n % 2 !== 0;
+  const list: (Blader | null)[] = [...participants];
+  if (isOdd) list.push(null); // Bye for odd number of players
 
-  for (let r = 1; r <= totalRounds; r++) {
-    // Rotate participants for diverse pairings each round
-    const roundBladers = [...participants];
-    if (r > 1) {
-      const shift = (r - 1) % (n - 1 || 1);
-      const head = roundBladers[0];
-      const rest = roundBladers.slice(1);
-      const rotated = [...rest.slice(shift), ...rest.slice(0, shift)];
-      roundBladers.splice(0, roundBladers.length, head, ...rotated);
-    }
+  const totalRounds = list.length - 1;
+  const half = list.length / 2;
 
-    const pairCount = Math.floor(roundBladers.length / 2);
-    for (let p = 0; p < pairCount; p++) {
-      const bA = roundBladers[p];
-      const bB = roundBladers[roundBladers.length - 1 - p];
+  for (let round = 1; round <= totalRounds; round++) {
+    for (let i = 0; i < half; i++) {
+      const bA = list[i];
+      const bB = list[list.length - 1 - i];
 
-      if (bA && bB && bA.id !== bB.id) {
+      if (bA && bB) {
         const isFirst = matches.length === 0;
         matches.push({
-          id: `match-reg-r${r}-m${p + 1}`,
-          roundNumber: r,
-          roundName: `Fase Regular • Ronda ${r}`,
+          id: `match-reg-r${round}-m${matches.length + 1}`,
+          roundNumber: round,
+          roundName: `Fase Regular • Jornada ${round}`,
           matchNumber: matchNumber++,
           bladerA: bA,
           bladerB: bB,
           scoreA: 0,
           scoreB: 0,
-          targetScore: config.type === 'series' ? 1 : config.victoryConditions?.pointsToWin || 5,
+          targetScore: config.victoryConditions?.pointsToWin || 5,
           status: isFirst ? 'live' : 'upcoming',
           winnerId: null,
           cornerA: 'Red',
@@ -176,6 +169,12 @@ export function generateRegularPhaseMatches(
         });
       }
     }
+
+    // Rotate list preserving the first position
+    const first = list[0];
+    const rest = list.slice(1);
+    const last = rest.pop()!;
+    list.splice(0, list.length, first, last, ...rest);
   }
 
   return matches;
@@ -206,19 +205,14 @@ export function generatePlayoffBracketFromRankings(
   const ranked = getRankedBladers(bladers);
   if (ranked.length < 2) return [];
 
-  const minPts = config.minPointsToQualify || 20;
-  const targetCount = config.playoffCutoffCount || (ranked.length >= 8 ? 8 : ranked.length >= 4 ? 4 : 2);
-
-  // Bladers must accumulate at least minPts to qualify to Playoffs; others are eliminated (< minPts)
-  const eligibleByPoints = ranked.filter((b) => (b.stats?.pointsScored || 0) >= minPts);
-
-  // Take the Top N among those who reached the points threshold
-  let qualified = eligibleByPoints.slice(0, targetCount);
-
-  // Fallback to top ranked if fewer than 2 reached the threshold
-  if (qualified.length < 2) {
-    qualified = ranked.slice(0, Math.min(targetCount, ranked.length));
+  // Determine target qualified count based on playoffCutoffCount (or total bladers)
+  let targetCount = config.playoffCutoffCount || (ranked.length >= 8 ? 8 : ranked.length >= 4 ? 4 : 2);
+  if (targetCount > ranked.length) {
+    targetCount = ranked.length >= 4 ? 4 : 2;
   }
+
+  // Top N highest ranked bladers advance to playoffs
+  const qualified = ranked.slice(0, targetCount);
 
   // If 2 qualified -> Direct Grand Final
   if (qualified.length === 2) {
@@ -232,7 +226,7 @@ export function generatePlayoffBracketFromRankings(
         bladerB: qualified[1], // 2nd Seed
         scoreA: 0,
         scoreB: 0,
-        targetScore: config.type === 'series' ? 1 : config.victoryConditions?.pointsToWin || 5,
+        targetScore: config.victoryConditions?.pointsToWin || 5,
         status: 'live',
         winnerId: null,
         cornerA: 'Red',
@@ -243,7 +237,7 @@ export function generatePlayoffBracketFromRankings(
     ];
   }
 
-  // If 4 qualified -> Semifinals & Grand Final
+  // If 4 qualified -> Semifinals (1st vs 4th, 2nd vs 3rd) & Grand Final
   if (qualified.length <= 4) {
     const semi1: Match = {
       id: 'playoff-semi-1',
@@ -254,7 +248,7 @@ export function generatePlayoffBracketFromRankings(
       bladerB: qualified[3] || qualified[2], // 4th Seed
       scoreA: 0,
       scoreB: 0,
-      targetScore: config.type === 'series' ? 1 : config.victoryConditions?.pointsToWin || 5,
+      targetScore: config.victoryConditions?.pointsToWin || 5,
       status: 'live',
       winnerId: null,
       cornerA: 'Red',
@@ -271,10 +265,10 @@ export function generatePlayoffBracketFromRankings(
       roundName: 'Semifinales - Duelo 2',
       matchNumber: 2,
       bladerA: qualified[1], // 2nd Seed
-      bladerB: qualified[2] || qualified[3], // 3rd Seed
+      bladerB: qualified[2], // 3rd Seed
       scoreA: 0,
       scoreB: 0,
-      targetScore: config.type === 'series' ? 1 : config.victoryConditions?.pointsToWin || 5,
+      targetScore: config.victoryConditions?.pointsToWin || 5,
       status: 'upcoming',
       winnerId: null,
       cornerA: 'Red',
@@ -294,7 +288,7 @@ export function generatePlayoffBracketFromRankings(
       bladerB: null,
       scoreA: 0,
       scoreB: 0,
-      targetScore: config.type === 'series' ? 1 : config.victoryConditions?.pointsToWin || 5,
+      targetScore: config.victoryConditions?.pointsToWin || 5,
       status: 'upcoming',
       winnerId: null,
       cornerA: 'Red',
