@@ -75,7 +75,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   return (
-    <aside className="h-full w-full bg-white dark:bg-[#111116] border-r border-slate-200 dark:border-white/10 backdrop-blur-md shadow-[4px_0_20px_rgba(0,0,0,0.03)] dark:shadow-[4px_0_24px_rgba(0,0,0,0.4)] flex flex-col pt-6 pb-6 transition-all duration-200 relative overflow-y-auto">
+    <aside className="fixed left-0 top-0 h-full w-64 bg-white dark:bg-[#111116] border-r border-slate-200 dark:border-white/10 backdrop-blur-md shadow-[4px_0_20px_rgba(0,0,0,0.03)] dark:shadow-[4px_0_24px_rgba(0,0,0,0.4)] z-50 flex flex-col pt-6 pb-6 transition-all duration-200 overflow-y-auto">
       {/* Mobile Close Button */}
       {onCloseMobile && (
         <button

@@ -1234,26 +1234,24 @@ export default function App() {
             className="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity"
           />
 
-          {/* Drawer Panel */}
-          <div className="fixed inset-y-0 left-0 w-72 max-w-[85vw] bg-white dark:bg-[#111116] shadow-2xl z-50 animate-slide-in">
-            <Sidebar
-              activeScreen={activeScreen}
-              setActiveScreen={setActiveScreen}
-              onOpenNewBattle={() => setNewBattleModalOpen(true)}
-              onOpenSupportModal={() => setSupportModalOpen(true)}
-              onResetTournament={() => setShowResetModal(true)}
-              onCloseMobile={() => setIsMobileMenuOpen(false)}
-              leagueName={config.leagueName}
-              season={config.season}
-              communityCity={config.communityCity}
-              logoUrl={config.logoUrl}
-              onUploadLogo={(url) => {
-                const updated = { ...config, logoUrl: url };
-                setConfig(updated);
-                syncConfigToSupabase(updated);
-              }}
-            />
-          </div>
+          {/* Drawer Sidebar */}
+          <Sidebar
+            activeScreen={activeScreen}
+            setActiveScreen={setActiveScreen}
+            onOpenNewBattle={() => setNewBattleModalOpen(true)}
+            onOpenSupportModal={() => setSupportModalOpen(true)}
+            onResetTournament={() => setShowResetModal(true)}
+            onCloseMobile={() => setIsMobileMenuOpen(false)}
+            leagueName={config.leagueName}
+            season={config.season}
+            communityCity={config.communityCity}
+            logoUrl={config.logoUrl}
+            onUploadLogo={(url) => {
+              const updated = { ...config, logoUrl: url };
+              setConfig(updated);
+              syncConfigToSupabase(updated);
+            }}
+          />
         </div>
       )}
 
