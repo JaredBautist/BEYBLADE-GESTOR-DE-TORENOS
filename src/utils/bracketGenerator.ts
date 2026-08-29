@@ -303,7 +303,25 @@ export function generatePlayoffBracketFromRankings(
       events: []
     };
 
-    return [semi1, semi2, grandFinal];
+    const matches = [semi1, semi2, grandFinal];
+    
+    // Auto-advance BYEs
+    matches.forEach(match => {
+      if (match.bladerA && !match.bladerB) {
+        match.status = 'finished';
+        match.winnerId = match.bladerA.id;
+        match.winnerName = match.bladerA.name;
+        if (match.nextMatchId && match.nextMatchSlot) {
+          const nextM = matches.find(m => m.id === match.nextMatchId);
+          if (nextM) {
+            if (match.nextMatchSlot === 'A') nextM.bladerA = match.bladerA;
+            else nextM.bladerB = match.bladerA;
+          }
+        }
+      }
+    });
+
+    return matches;
   }
 
   // If 8 qualified -> Quarterfinals, Semifinals & Grand Final
@@ -445,7 +463,25 @@ export function generatePlayoffBracketFromRankings(
     events: []
   };
 
-  return [qf1, qf2, qf3, qf4, semi1, semi2, grandFinal];
+  const matches = [qf1, qf2, qf3, qf4, semi1, semi2, grandFinal];
+
+  // Auto-advance BYEs
+  matches.forEach(match => {
+    if (match.bladerA && !match.bladerB) {
+      match.status = 'finished';
+      match.winnerId = match.bladerA.id;
+      match.winnerName = match.bladerA.name;
+      if (match.nextMatchId && match.nextMatchSlot) {
+        const nextM = matches.find(m => m.id === match.nextMatchId);
+        if (nextM) {
+          if (match.nextMatchSlot === 'A') nextM.bladerA = match.bladerA;
+          else nextM.bladerB = match.bladerA;
+        }
+      }
+    }
+  });
+
+  return matches;
 }
 
 // -------------------------------------------------------------
