@@ -539,10 +539,10 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
           ) : (
             /* Interactive Multi-Column Tree Bracket Canvas */
             <div
-              className="overflow-x-auto pb-8 pt-4 transition-transform duration-200 origin-top-left flex justify-center min-w-full"
+              className="overflow-x-auto pb-8 pt-4 px-4 sm:px-8 transition-transform duration-200 origin-top-left flex md:justify-center justify-start min-w-full"
               style={{ transform: `scale(${zoomLevel})` }}
             >
-              <div className="flex items-stretch justify-center gap-6 sm:gap-8 min-w-max">
+              <div className="flex items-stretch gap-4 sm:gap-8 min-w-max">
                 {(() => {
                   const isEliminationTree = config.type === 'elimination' || matches.some(m => m.stage === 'playoff');
                   
@@ -550,21 +550,21 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
                   const RoundColumn = ({ rNum, matchesSlice, isFinal }: { rNum: number, matchesSlice: typeof matches, isFinal?: boolean }) => {
                     const rTitle = matchesSlice[0]?.roundName?.split(' - ')[0] || `Ronda ${rNum}`;
                     return (
-                      <div key={rNum} className="w-72 sm:w-80 flex flex-col flex-shrink-0 space-y-4">
-                        <div className={`p-3 rounded-2xl text-center border font-headline font-black uppercase text-xs sm:text-sm shadow-sm ${
+                      <div key={rNum} className="w-64 sm:w-80 flex flex-col flex-shrink-0 space-y-4">
+                        <div className={`p-2.5 sm:p-3 rounded-2xl text-center border font-headline font-black uppercase text-xs sm:text-sm shadow-sm ${
                           isFinal ? 'bg-amber-500 text-black border-amber-400 font-black' : 'bg-white dark:bg-[#1a1a24] text-slate-900 dark:text-white border-slate-200 dark:border-white/10'
                         }`}>
                           <div className="flex items-center justify-center gap-1.5">
                             {isFinal && <span className="material-symbols-outlined text-sm">emoji_events</span>}
                             <span>{rTitle}</span>
                           </div>
-                          <div className={`text-[10px] font-label-caps uppercase mt-0.5 ${
+                          <div className={`text-[9px] sm:text-[10px] font-label-caps uppercase mt-0.5 ${
                             isFinal ? 'text-black/70' : 'text-slate-400'
                           }`}>
                             {matchesSlice.length} {matchesSlice.length === 1 ? 'Duelo Decisivo' : 'Duelos'}
                           </div>
                         </div>
-                        <div className="flex flex-col justify-around flex-1 gap-4">
+                        <div className="flex flex-col justify-around flex-1 gap-3 sm:gap-4">
                           {matchesSlice.map((m) => (
                             <div key={m.id} className="relative">
                               {renderMatchCard(m, matchesSlice.length > 4)}
@@ -576,20 +576,20 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
                   };
 
                   const ChampionBlock = () => (
-                    <div className="w-72 sm:w-80 flex flex-col space-y-4 mt-4">
-                      <div className="p-3 rounded-2xl text-center border border-amber-500/40 bg-amber-500/10 font-headline font-black uppercase text-xs sm:text-sm text-amber-500 shadow-sm flex items-center justify-center gap-1.5">
+                    <div className="w-64 sm:w-80 flex flex-col space-y-4 mt-2 sm:mt-4">
+                      <div className="p-2.5 sm:p-3 rounded-2xl text-center border border-amber-500/40 bg-amber-500/10 font-headline font-black uppercase text-xs sm:text-sm text-amber-500 shadow-sm flex items-center justify-center gap-1.5">
                         <span className="material-symbols-outlined text-base">military_tech</span>
                         <span>CAMPEÓN</span>
                       </div>
-                      <div className="glass-panel p-6 rounded-3xl border-2 border-amber-400/60 bg-gradient-to-b from-amber-500/15 to-transparent text-center space-y-3 shadow-lg">
-                        <div className="w-16 h-16 rounded-2xl bg-amber-500 text-black flex items-center justify-center mx-auto shadow-md">
-                          <span className="material-symbols-outlined text-3xl">emoji_events</span>
+                      <div className="glass-panel p-5 sm:p-6 rounded-3xl border-2 border-amber-400/60 bg-gradient-to-b from-amber-500/15 to-transparent text-center space-y-2 sm:space-y-3 shadow-lg">
+                        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-amber-500 text-black flex items-center justify-center mx-auto shadow-md">
+                          <span className="material-symbols-outlined text-2xl sm:text-3xl">emoji_events</span>
                         </div>
                         <div>
-                          <h4 className="font-headline font-black text-base uppercase text-slate-900 dark:text-white">
+                          <h4 className="font-headline font-black text-sm sm:text-base uppercase text-slate-900 dark:text-white line-clamp-1">
                             {champion ? champion.name : 'Por Definir'}
                           </h4>
-                          <p className="text-[11px] font-label-caps text-slate-500 uppercase mt-0.5">
+                          <p className="text-[10px] sm:text-[11px] font-label-caps text-slate-500 uppercase mt-0.5 line-clamp-1">
                             {champion ? `${champion.team || 'Independiente'}` : 'Ganador Gran Final'}
                           </p>
                         </div>
