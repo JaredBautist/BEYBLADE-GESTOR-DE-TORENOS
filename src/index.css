@@ -1,0 +1,141 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-anybody: 'Anybody', sans-serif;
+    --font-space: 'Space Grotesk', monospace;
+    --font-hanken: 'Hanken Grotesk', sans-serif;
+  }
+
+  body {
+    font-family: var(--font-hanken);
+    color: #0f172a;
+    background-color: #f1f5f9;
+    background-image: 
+      radial-gradient(circle at 15% 30%, rgba(4, 168, 252, 0.05) 0%, transparent 40%),
+      radial-gradient(circle at 85% 70%, rgba(172, 25, 31, 0.04) 0%, transparent 40%);
+    background-attachment: fixed;
+  }
+
+  .dark body {
+    color: #f1f5f9;
+    background-color: #0c0c12;
+    background-image: 
+      radial-gradient(circle at 50% 40%, rgba(4, 168, 252, 0.08) 0%, transparent 60%),
+      radial-gradient(circle at 10% 90%, rgba(172, 25, 31, 0.08) 0%, transparent 50%);
+  }
+}
+
+.font-headline {
+  font-family: 'Anybody', sans-serif;
+}
+
+.font-code-data, .font-label-caps, .font-hud {
+  font-family: 'Space Grotesk', monospace;
+}
+
+.font-body-text {
+  font-family: 'Hanken Grotesk', sans-serif;
+}
+
+/* Tactical Clip Paths */
+.clip-tactical {
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
+}
+
+.clip-corner-diagonal {
+  clip-path: polygon(12px 0%, 100% 0%, calc(100% - 12px) 100%, 0% 100%);
+}
+
+.clip-badge {
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+}
+
+.clip-bracket-node {
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+}
+
+/* Starfield texture */
+.stars-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  background-image: 
+    radial-gradient(1px 1px at 25px 35px, #006398, rgba(0,0,0,0)),
+    radial-gradient(1.5px 1.5px at 70px 90px, #04A8FC, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 120px 180px, #006398, rgba(0,0,0,0)),
+    radial-gradient(1.5px 1.5px at 190px 60px, #AC191F, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 240px 140px, #04A8FC, rgba(0,0,0,0)),
+    radial-gradient(1.5px 1.5px at 290px 220px, #FCEE21, rgba(0,0,0,0));
+  background-repeat: repeat;
+  background-size: 320px 320px;
+  opacity: 0.15;
+}
+
+.dark .stars-bg {
+  opacity: 0.45;
+}
+
+/* Glass Panels & Modern Cards */
+.glass-panel {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.05), 0 1px 4px -1px rgba(15, 23, 42, 0.03);
+}
+
+.dark .glass-panel {
+  background: rgba(18, 18, 26, 0.85);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
+/* Action button with skew effect */
+.btn-action {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: skewX(-8deg);
+}
+
+.btn-action-content {
+  transform: skewX(8deg);
+}
+
+.btn-action:active {
+  transform: skewX(-8deg) scale(0.97);
+}
+
+/* Shimmer Animation */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.03);
+}
+.dark ::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #04A8FC;
+}
