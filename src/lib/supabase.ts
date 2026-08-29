@@ -486,7 +486,7 @@ export async function syncCommunityConfigToSupabase(config: {
   try {
     const { error } = await supabase.from('community_config').upsert({
       id: 'main_community',
-      league_name: config.leagueName,
+      league_name: config.leagueName || 'Comunidad Beyblade Cúcuta',
       community_tagline: config.communityTagline || 'CÚCUTA • OFICIAL',
       community_city: config.communityCity || 'Cúcuta',
       organizer_name: config.organizerName || 'Juez Oficial',
@@ -682,7 +682,7 @@ export async function fetchConfigFromSupabase(): Promise<Partial<TournamentConfi
       };
     }
 
-    return {
+    const resultObj = {
       leagueName: communityData?.leagueName,
       communityTagline: communityData?.communityTagline,
       communityCity: communityData?.communityCity,
@@ -697,6 +697,11 @@ export async function fetchConfigFromSupabase(): Promise<Partial<TournamentConfi
       arenaStatus: formatData?.arenaStatus,
       isStarted: formatData?.isStarted
     };
+
+    // Remove undefined fields so they don't overwrite defaults when spreading
+    return Object.fromEntries(
+      Object.entries(resultObj).filter(([_, v]) => v !== undefined)
+    );
   } catch (e) {
     console.warn('Supabase fetch config error:', e);
     return null;
