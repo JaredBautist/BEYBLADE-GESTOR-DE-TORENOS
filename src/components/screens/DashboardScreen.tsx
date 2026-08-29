@@ -388,7 +388,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             {config.type === 'series' && (
               <span className="text-[10px] font-label-caps uppercase px-2 py-0.5 rounded-full bg-[#FF5500]/20 text-[#FF5500] font-black border border-[#FF5500]/30 flex items-center gap-1">
                 <span className="material-symbols-outlined text-xs">tv</span>
-                <span>FORMATO SERIE (1 BATALLA Y CHAO)</span>
+                <span>FORMATO SERIE (1 BATALLA DECISIVA)</span>
               </span>
             )}
           </div>

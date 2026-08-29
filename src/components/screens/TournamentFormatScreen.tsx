@@ -286,7 +286,7 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
                       </span>
                     </div>
                     <div className="font-label-caps text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                      Igual que Liga (acumulación de puntos todos contra todos), pero con 1 solo Beyblade. Cada enfrentamiento es a 1 ronda decisiva: cualquier finish gana los puntos ("1 batalla y chao").
+                      Igual que Liga (acumulación de puntos todos contra todos), pero con 1 solo Beyblade. Cada enfrentamiento es a 1 ronda decisiva: cualquier finish gana los puntos.
                     </div>
                   </div>
                 </label>
@@ -399,7 +399,7 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
                         Delimitación por Puntos & Corte a Fase Final (Playoffs)
                       </h4>
                       <p className="text-[11px] font-label-caps text-slate-400 uppercase">
-                        Fase 1: Acumulación de Puntos (1 Batalla y Chao) • Fase 2: Cuartos / Semis / Gran Final
+                        Fase 1: Acumulación de Puntos (1 Batalla Decisiva) • Fase 2: Cuartos / Semis / Gran Final
                       </p>
                     </div>
                   </div>
