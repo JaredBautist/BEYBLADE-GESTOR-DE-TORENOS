@@ -7,6 +7,7 @@ interface DashboardScreenProps {
   currentMatch: Match | null;
   config: TournamentConfig;
   allBladers: Blader[];
+  matches?: Match[];
   onUpdateScore: (corner: 'A' | 'B', pointType: 'xtreme' | 'burst' | 'over' | 'spin' | 'stadium', points: number) => void;
   onResetMatch: () => void;
   onSelectOnDeckMatch: (bladerAId: string, bladerBId: string) => void;
@@ -14,6 +15,8 @@ interface DashboardScreenProps {
   onSwapCorners: () => void;
   onOpenNewBattle: () => void;
   onNavigateToBladers: () => void;
+  onNavigateToBracket?: () => void;
+  onSelectMatchForConsole?: (match: Match) => void;
   onQuickStartMatch: (nameA: string, nameB: string, targetScore: number) => void;
 }
 
@@ -21,6 +24,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   currentMatch,
   config,
   allBladers,
+  matches = [],
   onUpdateScore,
   onResetMatch,
   onSelectOnDeckMatch,
@@ -28,6 +32,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   onSwapCorners,
   onOpenNewBattle,
   onNavigateToBladers,
+  onNavigateToBracket,
+  onSelectMatchForConsole,
   onQuickStartMatch
 }) => {
   const [selectedComboSlotA, setSelectedComboSlotA] = useState<number>(1);
@@ -328,11 +334,24 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const onDeckA = remainingBladers[0];
   const onDeckB = remainingBladers[1];
 
+  const isMatchFinished = currentMatch.status === 'finished';
+  const totalRounds = matches && matches.length > 0 ? Math.max(...matches.map((m) => m.roundNumber || 1)) : 1;
+  const isTournamentFinal = isMatchFinished && (
+    !currentMatch.nextMatchId ||
+    currentMatch.roundNumber === totalRounds ||
+    currentMatch.roundName?.toLowerCase().includes('final')
+  );
+
+  const nextPlayableBracketMatch = matches.find(
+    (m) => m.id !== currentMatch.id && m.status !== 'finished' && m.bladerA && m.bladerB
+  );
+
   const handlePointClick = (
     corner: 'A' | 'B',
     type: 'xtreme' | 'burst' | 'over' | 'spin' | 'stadium',
     pts: number
   ) => {
+    if (isMatchFinished) return;
     soundManager.playPoint(type);
     onUpdateScore(corner, type, pts);
   };
@@ -343,9 +362,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 border-b border-[#bec7d3]/30 dark:border-white/10 pb-4">
         <div>
           <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#39FF14] animate-pulse"></span>
+            <span className={`w-2.5 h-2.5 rounded-full ${isMatchFinished ? 'bg-amber-400' : 'bg-[#39FF14] animate-pulse'}`}></span>
             <span className="font-label-caps text-xs text-[#04A8FC] uppercase tracking-widest font-bold">
-              ENGAGEMENT ACTIVO • {currentMatch.roundName || 'Ronda de Batalla'}
+              {isMatchFinished ? 'COMBATE CULMINADO' : 'ENGAGEMENT ACTIVO'} • {currentMatch.roundName || 'Ronda de Batalla'}
             </span>
             {config.type === 'series' && (
               <span className="text-[10px] font-label-caps uppercase px-2 py-0.5 rounded-full bg-[#FF5500]/20 text-[#FF5500] font-black border border-[#FF5500]/30 flex items-center gap-1">
@@ -366,8 +385,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               soundManager.playClick();
               onSwapCorners();
             }}
+            disabled={isMatchFinished}
             title="Intercambiar Esquinas Roja/Azul"
-            className="glass-panel px-3 py-1.5 rounded-lg text-xs font-label-caps uppercase flex items-center gap-1.5 hover:border-[#04A8FC] text-gray-700 dark:text-gray-300 transition-all"
+            className="glass-panel px-3 py-1.5 rounded-lg text-xs font-label-caps uppercase flex items-center gap-1.5 hover:border-[#04A8FC] text-gray-700 dark:text-gray-300 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <span className="material-symbols-outlined text-sm">swap_horiz</span>
             <span className="hidden sm:inline">Invertir Esquinas</span>
@@ -390,6 +410,73 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           </button>
         </div>
       </div>
+
+      {/* MATCH COMPLETION BANNER (IF STATUS IS FINISHED) */}
+      {isMatchFinished && (
+        <div className={`p-4 sm:p-6 rounded-3xl border-2 shadow-xl animate-in fade-in text-center space-y-3 ${
+          isTournamentFinal
+            ? 'bg-gradient-to-r from-amber-500/20 via-yellow-500/10 to-amber-500/20 border-amber-400 dark:border-amber-400/50'
+            : 'bg-emerald-500/15 border-emerald-500/40 dark:bg-emerald-950/30'
+        }`}>
+          <div className="flex items-center justify-center gap-2 flex-wrap">
+            <span className="material-symbols-outlined text-3xl text-amber-500">
+              {isTournamentFinal ? 'military_tech' : 'emoji_events'}
+            </span>
+            <h3 className="font-headline font-black text-lg sm:text-2xl uppercase text-slate-900 dark:text-white">
+              {isTournamentFinal
+                ? `¡GRAN FINAL CONCLUIDA! • CAMPEÓN: ${currentMatch.winnerName || 'Blader Ganador'} 👑`
+                : `COMBATE FINALIZADO • GANADOR: ${currentMatch.winnerName || 'Blader Ganador'} ✅`}
+            </h3>
+          </div>
+          <p className="text-xs sm:text-sm font-label-caps uppercase text-slate-600 dark:text-slate-300 max-w-xl mx-auto">
+            {isTournamentFinal
+              ? 'El torneo ha concluido oficialmente. El cuadro de honor, podio y ceremonia de premiación están listos en el Bracket.'
+              : 'El resultado oficial ha sido registrado en la base de datos y el ganador avanzó a la siguiente ronda.'}
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-2.5 pt-2">
+            {onNavigateToBracket && (
+              <button
+                onClick={() => {
+                  soundManager.playClick();
+                  onNavigateToBracket();
+                }}
+                className={`px-6 py-3 rounded-xl font-headline font-black text-xs uppercase shadow-lg transition-all flex items-center gap-2 hover:scale-105 ${
+                  isTournamentFinal
+                    ? 'bg-amber-500 hover:bg-amber-400 text-black shadow-amber-500/30'
+                    : 'bg-[#04A8FC] hover:bg-[#008fe0] text-white shadow-[#04A8FC]/20'
+                }`}
+              >
+                <span className="material-symbols-outlined text-base">account_tree</span>
+                <span>{isTournamentFinal ? 'Ver Podio Oficial y Bracket' : 'Ver Árbol Bracket'}</span>
+              </button>
+            )}
+
+            {!isTournamentFinal && nextPlayableBracketMatch && onSelectMatchForConsole && (
+              <button
+                onClick={() => {
+                  soundManager.playClick();
+                  onSelectMatchForConsole(nextPlayableBracketMatch);
+                }}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-xl font-headline font-black text-xs uppercase shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-2 hover:scale-105"
+              >
+                <span>Cargar Siguiente Duelo ({nextPlayableBracketMatch.roundName})</span>
+                <span className="material-symbols-outlined text-base">arrow_forward</span>
+              </button>
+            )}
+
+            <button
+              onClick={() => {
+                soundManager.playClick();
+                onResetMatch();
+              }}
+              className="bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-slate-700 dark:text-slate-200 px-5 py-3 rounded-xl font-headline font-bold text-xs uppercase transition-all flex items-center gap-1.5"
+            >
+              <span className="material-symbols-outlined text-sm">restart_alt</span>
+              <span>Reiniciar Este Duelo (0-0)</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Mobile Corner Quick-Switch Tabs (visible only on mobile) */}
       <div className="lg:hidden flex items-center gap-1.5 bg-slate-100 dark:bg-white/5 p-1 rounded-2xl border border-slate-200 dark:border-white/10">
@@ -508,8 +595,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               {/* Xtreme Finish (3 PTS) */}
               <button
                 id="btn-red-xtreme-finish"
+                disabled={isMatchFinished}
                 onClick={() => handlePointClick('A', 'xtreme', config.victoryConditions.xtremeDashPts)}
-                className="w-full bg-[#DC2626] hover:bg-[#B91C1C] text-white py-3 px-4 rounded-xl flex items-center justify-between font-label-caps uppercase tracking-wider font-black shadow-md shadow-red-500/20 hover:scale-[1.01] active:scale-[0.98] transition-all border-b-4 border-red-900"
+                className={`w-full bg-[#DC2626] hover:bg-[#B91C1C] text-white py-3 px-4 rounded-xl flex items-center justify-between font-label-caps uppercase tracking-wider font-black shadow-md shadow-red-500/20 hover:scale-[1.01] active:scale-[0.98] transition-all border-b-4 border-red-900 ${
+                  isMatchFinished ? 'opacity-40 cursor-not-allowed filter grayscale' : ''
+                }`}
               >
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-lg">bolt</span>
@@ -524,8 +614,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               <div className="grid grid-cols-2 gap-2.5">
                 <button
                   id="btn-red-burst-finish"
+                  disabled={isMatchFinished}
                   onClick={() => handlePointClick('A', 'burst', config.victoryConditions.burstFinishPts)}
-                  className="bg-[#D97706] hover:bg-[#B45309] text-white py-2.5 px-3 rounded-xl flex flex-col items-center justify-center font-label-caps uppercase font-bold text-xs shadow-sm hover:scale-[1.01] active:scale-[0.98] transition-all border-b-4 border-amber-900"
+                  className={`bg-[#D97706] hover:bg-[#B45309] text-white py-2.5 px-3 rounded-xl flex flex-col items-center justify-center font-label-caps uppercase font-bold text-xs shadow-sm hover:scale-[1.01] active:scale-[0.98] transition-all border-b-4 border-amber-900 ${
+                    isMatchFinished ? 'opacity-40 cursor-not-allowed filter grayscale' : ''
+                  }`}
                 >
                   <span>BURST FINISH</span>
                   <span className="text-[10px] bg-black/20 px-2 py-0.5 rounded mt-0.5 font-mono">
@@ -535,8 +628,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
                 <button
                   id="btn-red-over-finish"
+                  disabled={isMatchFinished}
                   onClick={() => handlePointClick('A', 'over', config.victoryConditions.overFinishPts)}
-                  className="bg-[#16A34A] hover:bg-[#15803D] text-white py-2.5 px-3 rounded-xl flex flex-col items-center justify-center font-label-caps uppercase font-bold text-xs shadow-sm hover:scale-[1.01] active:scale-[0.98] transition-all border-b-4 border-green-900"
+                  className={`bg-[#16A34A] hover:bg-[#15803D] text-white py-2.5 px-3 rounded-xl flex flex-col items-center justify-center font-label-caps uppercase font-bold text-xs shadow-sm hover:scale-[1.01] active:scale-[0.98] transition-all border-b-4 border-green-900 ${
+                    isMatchFinished ? 'opacity-40 cursor-not-allowed filter grayscale' : ''
+                  }`}
                 >
                   <span>OVER FINISH</span>
                   <span className="text-[10px] bg-black/20 px-2 py-0.5 rounded mt-0.5 font-mono">
@@ -549,8 +645,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               <div className="grid grid-cols-2 gap-2.5">
                 <button
                   id="btn-red-stadium-out"
+                  disabled={isMatchFinished}
                   onClick={() => handlePointClick('A', 'stadium', config.victoryConditions.stadiumOutPts)}
-                  className="bg-slate-600 hover:bg-slate-700 text-white py-2 px-3 rounded-xl flex flex-col items-center justify-center font-label-caps uppercase font-bold text-xs shadow-sm transition-all border-b-4 border-slate-900"
+                  className={`bg-slate-600 hover:bg-slate-700 text-white py-2 px-3 rounded-xl flex flex-col items-center justify-center font-label-caps uppercase font-bold text-xs shadow-sm transition-all border-b-4 border-slate-900 ${
+                    isMatchFinished ? 'opacity-40 cursor-not-allowed filter grayscale' : ''
+                  }`}
                 >
                   <span>STADIUM OUT</span>
                   <span className="text-[10px] bg-black/25 px-2 py-0.5 rounded mt-0.5 font-mono">
@@ -560,8 +659,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
                 <button
                   id="btn-red-spin-finish"
+                  disabled={isMatchFinished}
                   onClick={() => handlePointClick('A', 'spin', config.victoryConditions.spinFinishPts)}
-                  className="bg-[#0284C7] hover:bg-[#0369A1] text-white py-2 px-3 rounded-xl flex flex-col items-center justify-center font-label-caps uppercase font-bold text-xs shadow-sm transition-all border-b-4 border-sky-900"
+                  className={`bg-[#0284C7] hover:bg-[#0369A1] text-white py-2 px-3 rounded-xl flex flex-col items-center justify-center font-label-caps uppercase font-bold text-xs shadow-sm transition-all border-b-4 border-sky-900 ${
+                    isMatchFinished ? 'opacity-40 cursor-not-allowed filter grayscale' : ''
+                  }`}
                 >
                   <span>SPIN FINISH</span>
                   <span className="text-[10px] bg-black/25 px-2 py-0.5 rounded mt-0.5 font-mono">
@@ -700,8 +802,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               {/* Xtreme Finish (3 PTS) */}
               <button
                 id="btn-blue-xtreme-finish"
+                disabled={isMatchFinished}
                 onClick={() => handlePointClick('B', 'xtreme', config.victoryConditions.xtremeDashPts)}
-                className="w-full bg-[#0284C7] hover:bg-[#0369A1] text-white py-3 px-4 rounded-xl flex items-center justify-between font-label-caps uppercase tracking-wider font-black shadow-md shadow-sky-500/20 hover:scale-[1.01] active:scale-[0.98] transition-all border-b-4 border-sky-900"
+                className={`w-full bg-[#0284C7] hover:bg-[#0369A1] text-white py-3 px-4 rounded-xl flex items-center justify-between font-label-caps uppercase tracking-wider font-black shadow-md shadow-sky-500/20 hover:scale-[1.01] active:scale-[0.98] transition-all border-b-4 border-sky-900 ${
+                  isMatchFinished ? 'opacity-40 cursor-not-allowed filter grayscale' : ''
+                }`}
               >
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-lg">bolt</span>
@@ -716,8 +821,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               <div className="grid grid-cols-2 gap-2.5">
                 <button
                   id="btn-blue-burst-finish"
+                  disabled={isMatchFinished}
                   onClick={() => handlePointClick('B', 'burst', config.victoryConditions.burstFinishPts)}
-                  className="bg-[#D97706] hover:bg-[#B45309] text-white py-2.5 px-3 rounded-xl flex flex-col items-center justify-center font-label-caps uppercase font-bold text-xs shadow-sm hover:scale-[1.01] active:scale-[0.98] transition-all border-b-4 border-amber-900"
+                  className={`bg-[#D97706] hover:bg-[#B45309] text-white py-2.5 px-3 rounded-xl flex flex-col items-center justify-center font-label-caps uppercase font-bold text-xs shadow-sm hover:scale-[1.01] active:scale-[0.98] transition-all border-b-4 border-amber-900 ${
+                    isMatchFinished ? 'opacity-40 cursor-not-allowed filter grayscale' : ''
+                  }`}
                 >
                   <span>BURST FINISH</span>
                   <span className="text-[10px] bg-black/20 px-2 py-0.5 rounded mt-0.5 font-mono">
@@ -727,8 +835,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
                 <button
                   id="btn-blue-over-finish"
+                  disabled={isMatchFinished}
                   onClick={() => handlePointClick('B', 'over', config.victoryConditions.overFinishPts)}
-                  className="bg-[#16A34A] hover:bg-[#15803D] text-white py-2.5 px-3 rounded-xl flex flex-col items-center justify-center font-label-caps uppercase font-bold text-xs shadow-sm hover:scale-[1.01] active:scale-[0.98] transition-all border-b-4 border-green-900"
+                  className={`bg-[#16A34A] hover:bg-[#15803D] text-white py-2.5 px-3 rounded-xl flex flex-col items-center justify-center font-label-caps uppercase font-bold text-xs shadow-sm hover:scale-[1.01] active:scale-[0.98] transition-all border-b-4 border-green-900 ${
+                    isMatchFinished ? 'opacity-40 cursor-not-allowed filter grayscale' : ''
+                  }`}
                 >
                   <span>OVER FINISH</span>
                   <span className="text-[10px] bg-black/20 px-2 py-0.5 rounded mt-0.5 font-mono">
@@ -741,8 +852,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               <div className="grid grid-cols-2 gap-2.5">
                 <button
                   id="btn-blue-stadium-out"
+                  disabled={isMatchFinished}
                   onClick={() => handlePointClick('B', 'stadium', config.victoryConditions.stadiumOutPts)}
-                  className="bg-slate-600 hover:bg-slate-700 text-white py-2 px-3 rounded-xl flex flex-col items-center justify-center font-label-caps uppercase font-bold text-xs shadow-sm transition-all border-b-4 border-slate-900"
+                  className={`bg-slate-600 hover:bg-slate-700 text-white py-2 px-3 rounded-xl flex flex-col items-center justify-center font-label-caps uppercase font-bold text-xs shadow-sm transition-all border-b-4 border-slate-900 ${
+                    isMatchFinished ? 'opacity-40 cursor-not-allowed filter grayscale' : ''
+                  }`}
                 >
                   <span>STADIUM OUT</span>
                   <span className="text-[10px] bg-black/25 px-2 py-0.5 rounded mt-0.5 font-mono">
@@ -752,8 +866,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
                 <button
                   id="btn-blue-spin-finish"
+                  disabled={isMatchFinished}
                   onClick={() => handlePointClick('B', 'spin', config.victoryConditions.spinFinishPts)}
-                  className="bg-[#0284C7] hover:bg-[#0369A1] text-white py-2 px-3 rounded-xl flex flex-col items-center justify-center font-label-caps uppercase font-bold text-xs shadow-sm transition-all border-b-4 border-sky-900"
+                  className={`bg-[#0284C7] hover:bg-[#0369A1] text-white py-2 px-3 rounded-xl flex flex-col items-center justify-center font-label-caps uppercase font-bold text-xs shadow-sm transition-all border-b-4 border-sky-900 ${
+                    isMatchFinished ? 'opacity-40 cursor-not-allowed filter grayscale' : ''
+                  }`}
                 >
                   <span>SPIN FINISH</span>
                   <span className="text-[10px] bg-black/25 px-2 py-0.5 rounded mt-0.5 font-mono">

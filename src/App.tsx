@@ -198,10 +198,14 @@ export default function App() {
     isOpen: boolean;
     winner: Blader | null;
     match: Match | null;
+    isTournamentFinal?: boolean;
+    nextMatch?: Match | null;
   }>({
     isOpen: false,
     winner: null,
-    match: null
+    match: null,
+    isTournamentFinal: false,
+    nextMatch: null
   });
   const [newBattleModalOpen, setNewBattleModalOpen] = useState<boolean>(false);
   const [supportModalOpen, setSupportModalOpen] = useState<boolean>(false);
@@ -357,7 +361,7 @@ export default function App() {
     pointType: 'xtreme' | 'burst' | 'over' | 'spin' | 'stadium',
     points: number
   ) => {
-    if (!currentMatch) return;
+    if (!currentMatch || currentMatch.status === 'finished') return;
 
     const updatedScoreA = corner === 'A' ? currentMatch.scoreA + points : currentMatch.scoreA;
     const updatedScoreB = corner === 'B' ? currentMatch.scoreB + points : currentMatch.scoreB;
@@ -412,21 +416,21 @@ export default function App() {
 
     // Update matches list and advance winner in bracket tree
     if (isMatchWon && winningBlader) {
-      setMatches((prev) => {
-        const advanced = advanceWinnerInBracket(prev, currentMatch.id, winningBlader);
-        advanced.forEach((m) => {
-          if (m.id === currentMatch.id || m.id === currentMatch.nextMatchId) {
-            syncMatchToSupabase(m);
-          }
-        });
-        return advanced;
+      const advancedMatches = advanceWinnerInBracket(matches, currentMatch.id, winningBlader);
+      setMatches(advancedMatches);
+      advancedMatches.forEach((m) => {
+        if (m.id === currentMatch.id || m.id === currentMatch.nextMatchId) {
+          syncMatchToSupabase(m);
+        }
       });
-    } else {
-      setMatches((prev) => prev.map((m) => (m.id === currentMatch.id ? updatedMatch : m)));
-    }
 
-    // Update Blader stats if won
-    if (isMatchWon && winningBlader) {
+      const totalRounds = advancedMatches.length > 0 ? Math.max(...advancedMatches.map((m) => m.roundNumber || 1)) : 1;
+      const isFinal = !currentMatch.nextMatchId || currentMatch.roundNumber === totalRounds || (currentMatch.roundName?.toLowerCase().includes('final') ?? false);
+      const nextPlayableMatch = advancedMatches.find(
+        (m) => m.id !== currentMatch.id && m.status !== 'finished' && m.bladerA && m.bladerB
+      ) || null;
+
+      // Update Blader stats if won
       const losingBlader = corner === 'A' ? currentMatch.bladerB : currentMatch.bladerA;
       setBladers((prev) =>
         prev.map((b) => {
@@ -472,8 +476,12 @@ export default function App() {
       setWinnerModalData({
         isOpen: true,
         winner: winningBlader,
-        match: updatedMatch
+        match: updatedMatch,
+        isTournamentFinal: isFinal || !nextPlayableMatch,
+        nextMatch: nextPlayableMatch
       });
+    } else {
+      setMatches((prev) => prev.map((m) => (m.id === currentMatch.id ? updatedMatch : m)));
     }
   };
 
@@ -932,6 +940,7 @@ export default function App() {
             currentMatch={currentMatch}
             config={config}
             allBladers={bladers}
+            matches={matches}
             onUpdateScore={handleUpdateScore}
             onResetMatch={handleResetMatch}
             onSelectOnDeckMatch={handleSelectOnDeckMatch}
@@ -940,6 +949,8 @@ export default function App() {
             onQuickStartMatch={handleQuickStartByName}
             onOpenNewBattle={() => setNewBattleModalOpen(true)}
             onNavigateToBladers={() => setActiveScreen('bladers')}
+            onNavigateToBracket={() => setActiveScreen('bracket')}
+            onSelectMatchForConsole={handleSelectMatchForConsole}
           />
         )}
 
@@ -1071,14 +1082,20 @@ export default function App() {
         <WinnerModal
           winner={winnerModalData.winner}
           match={winnerModalData.match}
-          onClose={() => setWinnerModalData({ isOpen: false, winner: null, match: null })}
+          isTournamentFinal={winnerModalData.isTournamentFinal}
+          nextMatch={winnerModalData.nextMatch}
+          onClose={() => setWinnerModalData({ isOpen: false, winner: null, match: null, isTournamentFinal: false, nextMatch: null })}
           onGoToBracket={() => {
-            setWinnerModalData({ isOpen: false, winner: null, match: null });
+            setWinnerModalData({ isOpen: false, winner: null, match: null, isTournamentFinal: false, nextMatch: null });
             setActiveScreen('bracket');
           }}
           onNextMatch={() => {
-            setWinnerModalData({ isOpen: false, winner: null, match: null });
-            handleRandomizeOnDeck();
+            const nextM = winnerModalData.nextMatch;
+            setWinnerModalData({ isOpen: false, winner: null, match: null, isTournamentFinal: false, nextMatch: null });
+            if (nextM) {
+              setCurrentMatch(nextM);
+              setActiveScreen('dashboard');
+            }
           }}
         />
       )}

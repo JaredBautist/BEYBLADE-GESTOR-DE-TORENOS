@@ -155,16 +155,22 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
         </div>
 
         {/* Quick action: Load in console */}
-        {isPlayable && !isFinished && (
+        {isPlayable && (
           <button
             onClick={() => {
               soundManager.playClick();
               onSelectMatchForConsole(match);
             }}
-            className="w-full mt-2.5 pt-2 border-t border-slate-100 dark:border-white/5 text-[11px] font-headline font-black uppercase text-[#0284c7] dark:text-[#04A8FC] hover:underline flex items-center justify-center gap-1.5 min-h-[32px] transition-colors"
+            className={`w-full mt-2.5 pt-2 border-t border-slate-100 dark:border-white/5 text-[11px] font-headline font-black uppercase flex items-center justify-center gap-1.5 min-h-[32px] transition-colors ${
+              isFinished
+                ? 'text-slate-500 hover:text-slate-900 dark:hover:text-white font-bold'
+                : 'text-[#0284c7] dark:text-[#04A8FC] hover:underline'
+            }`}
           >
-            <span className="material-symbols-outlined text-sm">sports_kabaddi</span>
-            <span>Lanzar a Battle Console</span>
+            <span className="material-symbols-outlined text-sm">
+              {isFinished ? 'visibility' : 'sports_kabaddi'}
+            </span>
+            <span>{isFinished ? 'Ver en Battle Console' : 'Lanzar a Battle Console'}</span>
           </button>
         )}
       </div>
