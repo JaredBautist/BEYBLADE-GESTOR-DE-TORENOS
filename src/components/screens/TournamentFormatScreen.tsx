@@ -387,6 +387,29 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
                       </p>
                     </button>
                   </div>
+                  
+                  {/* Meta de Puntos (Condición de Clasificación) */}
+                  <div className="mt-4 pt-4 border-t border-slate-700/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <label className="font-label-caps text-xs text-slate-300 uppercase font-bold flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-sm text-amber-400">track_changes</span>
+                        <span>Meta de Puntos (Condición):</span>
+                      </label>
+                      <p className="text-[10px] text-slate-400 mt-1 max-w-sm">
+                        Cantidad mínima de puntos que un blader debe acumular antes del corte para poder clasificar a los Playoffs.
+                      </p>
+                    </div>
+                    <div className="bg-black/20 border border-[#bec7d3]/20 dark:border-white/10 rounded-xl p-2 flex items-center w-full sm:w-32">
+                      <input
+                        type="number"
+                        min="1"
+                        value={formData.minPointsToQualify || 4}
+                        onChange={(e) => handleMinPointsToQualifyChange(parseInt(e.target.value) || 1)}
+                        className="w-full bg-transparent text-center text-[#04A8FC] font-headline font-black text-xl focus:outline-none"
+                      />
+                      <span className="text-xs font-bold text-slate-500 mr-2">PTS</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             ) : formData.type === 'series' ? (
@@ -481,6 +504,29 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
                         Los 2 Bladers con más puntos avanzan directamente a la Gran Final (1º vs 2º).
                       </p>
                     </button>
+                  </div>
+                  
+                  {/* Meta de Puntos (Condición de Clasificación) */}
+                  <div className="mt-4 pt-4 border-t border-slate-700/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <label className="font-label-caps text-xs text-slate-300 uppercase font-bold flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-sm text-amber-400">track_changes</span>
+                        <span>Meta de Puntos (Condición):</span>
+                      </label>
+                      <p className="text-[10px] text-slate-400 mt-1 max-w-sm">
+                        Cantidad mínima de puntos que un blader debe acumular antes del corte para poder clasificar a los Playoffs.
+                      </p>
+                    </div>
+                    <div className="bg-black/20 border border-[#bec7d3]/20 dark:border-white/10 rounded-xl p-2 flex items-center w-full sm:w-32">
+                      <input
+                        type="number"
+                        min="1"
+                        value={formData.minPointsToQualify || 4}
+                        onChange={(e) => handleMinPointsToQualifyChange(parseInt(e.target.value) || 1)}
+                        className="w-full bg-transparent text-center text-[#FF5500] font-headline font-black text-xl focus:outline-none"
+                      />
+                      <span className="text-xs font-bold text-slate-500 mr-2">PTS</span>
+                    </div>
                   </div>
                 </div>
 

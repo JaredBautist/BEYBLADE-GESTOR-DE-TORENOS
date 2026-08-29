@@ -211,8 +211,14 @@ export function generatePlayoffBracketFromRankings(
     targetCount = ranked.length >= 4 ? 4 : 2;
   }
 
-  // Top N highest ranked bladers advance to playoffs
-  const qualified = ranked.slice(0, targetCount);
+  // Filter bladers by minPointsToQualify (if defined)
+  const minPts = config.minPointsToQualify || 0;
+  const eligible = ranked.filter(b => (b.stats?.pointsScored || 0) >= minPts);
+
+  // Top N highest ranked eligible bladers advance to playoffs
+  const qualified = eligible.slice(0, targetCount);
+
+  if (qualified.length < 2) return [];
 
   // If 2 qualified -> Direct Grand Final
   if (qualified.length === 2) {
@@ -245,7 +251,7 @@ export function generatePlayoffBracketFromRankings(
       roundName: 'Semifinales - Duelo 1',
       matchNumber: 1,
       bladerA: qualified[0], // 1st Seed
-      bladerB: qualified[3] || qualified[2], // 4th Seed
+      bladerB: qualified[3] || null, // 4th Seed (or null for BYE)
       scoreA: 0,
       scoreB: 0,
       targetScore: config.victoryConditions?.pointsToWin || 5,
