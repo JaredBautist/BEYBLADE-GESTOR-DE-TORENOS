@@ -539,67 +539,114 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
           ) : (
             /* Interactive Multi-Column Tree Bracket Canvas */
             <div
-              className="overflow-x-auto pb-8 pt-4 transition-transform duration-200 origin-top-left"
+              className="overflow-x-auto pb-8 pt-4 transition-transform duration-200 origin-top-left flex justify-center min-w-full"
               style={{ transform: `scale(${zoomLevel})` }}
             >
-              <div className="flex items-stretch gap-6 sm:gap-8 min-w-max">
-                {roundNumbers.map((rNum, idx) => {
-                  const rMatches = roundsMap[rNum] || [];
-                  const rTitle = rMatches[0]?.roundName?.split(' - ')[0] || `Ronda ${rNum}`;
-                  const isFinalRound = rNum === totalRounds;
-
-                  return (
-                    <div key={rNum} className="w-72 sm:w-80 flex flex-col flex-shrink-0 space-y-4">
-                      {/* Round Column Header */}
-                      <div className={`p-3 rounded-2xl text-center border font-headline font-black uppercase text-xs sm:text-sm shadow-sm ${
-                        isFinalRound
-                          ? 'bg-amber-500 text-black border-amber-400 font-black'
-                          : 'bg-white dark:bg-[#1a1a24] text-slate-900 dark:text-white border-slate-200 dark:border-white/10'
-                      }`}>
-                        <div className="flex items-center justify-center gap-1.5">
-                          {isFinalRound && <span className="material-symbols-outlined text-sm">emoji_events</span>}
-                          <span>{rTitle}</span>
-                        </div>
-                        <div className={`text-[10px] font-label-caps uppercase mt-0.5 ${
-                          isFinalRound ? 'text-black/70' : 'text-slate-400'
+              <div className="flex items-stretch justify-center gap-6 sm:gap-8 min-w-max">
+                {(() => {
+                  const isEliminationTree = config.type === 'elimination' || matches.some(m => m.stage === 'playoff');
+                  
+                  // Component for a single round column
+                  const RoundColumn = ({ rNum, matchesSlice, isFinal }: { rNum: number, matchesSlice: typeof matches, isFinal?: boolean }) => {
+                    const rTitle = matchesSlice[0]?.roundName?.split(' - ')[0] || `Ronda ${rNum}`;
+                    return (
+                      <div key={rNum} className="w-72 sm:w-80 flex flex-col flex-shrink-0 space-y-4">
+                        <div className={`p-3 rounded-2xl text-center border font-headline font-black uppercase text-xs sm:text-sm shadow-sm ${
+                          isFinal ? 'bg-amber-500 text-black border-amber-400 font-black' : 'bg-white dark:bg-[#1a1a24] text-slate-900 dark:text-white border-slate-200 dark:border-white/10'
                         }`}>
-                          {rMatches.length} {rMatches.length === 1 ? 'Duelo Decisivo' : 'Duelos'}
+                          <div className="flex items-center justify-center gap-1.5">
+                            {isFinal && <span className="material-symbols-outlined text-sm">emoji_events</span>}
+                            <span>{rTitle}</span>
+                          </div>
+                          <div className={`text-[10px] font-label-caps uppercase mt-0.5 ${
+                            isFinal ? 'text-black/70' : 'text-slate-400'
+                          }`}>
+                            {matchesSlice.length} {matchesSlice.length === 1 ? 'Duelo Decisivo' : 'Duelos'}
+                          </div>
+                        </div>
+                        <div className="flex flex-col justify-around flex-1 gap-4">
+                          {matchesSlice.map((m) => (
+                            <div key={m.id} className="relative">
+                              {renderMatchCard(m, matchesSlice.length > 4)}
+                            </div>
+                          ))}
                         </div>
                       </div>
+                    );
+                  };
 
-                      {/* Matches Column */}
-                      <div className="flex flex-col justify-around flex-1 gap-4">
-                        {rMatches.map((m) => (
-                          <div key={m.id} className="relative">
-                            {renderMatchCard(m, rMatches.length > 4)}
-                          </div>
-                        ))}
+                  const ChampionBlock = () => (
+                    <div className="w-72 sm:w-80 flex flex-col space-y-4 mt-4">
+                      <div className="p-3 rounded-2xl text-center border border-amber-500/40 bg-amber-500/10 font-headline font-black uppercase text-xs sm:text-sm text-amber-500 shadow-sm flex items-center justify-center gap-1.5">
+                        <span className="material-symbols-outlined text-base">military_tech</span>
+                        <span>CAMPEÓN</span>
+                      </div>
+                      <div className="glass-panel p-6 rounded-3xl border-2 border-amber-400/60 bg-gradient-to-b from-amber-500/15 to-transparent text-center space-y-3 shadow-lg">
+                        <div className="w-16 h-16 rounded-2xl bg-amber-500 text-black flex items-center justify-center mx-auto shadow-md">
+                          <span className="material-symbols-outlined text-3xl">emoji_events</span>
+                        </div>
+                        <div>
+                          <h4 className="font-headline font-black text-base uppercase text-slate-900 dark:text-white">
+                            {champion ? champion.name : 'Por Definir'}
+                          </h4>
+                          <p className="text-[11px] font-label-caps text-slate-500 uppercase mt-0.5">
+                            {champion ? `${champion.team || 'Independiente'}` : 'Ganador Gran Final'}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   );
-                })}
 
-                {/* Final Champion Column */}
-                <div className="w-64 sm:w-72 flex flex-col flex-shrink-0 space-y-4 justify-center">
-                  <div className="p-3 rounded-2xl text-center border border-amber-500/40 bg-amber-500/10 font-headline font-black uppercase text-xs sm:text-sm text-amber-500 shadow-sm flex items-center justify-center gap-1.5">
-                    <span className="material-symbols-outlined text-base">military_tech</span>
-                    <span>CAMPEÓN</span>
-                  </div>
+                  if (isEliminationTree && roundNumbers.length > 1) {
+                    const finalRoundNum = Math.max(...roundNumbers);
+                    const finalMatches = roundsMap[finalRoundNum] || [];
+                    const nonFinalRounds = roundNumbers.filter(r => r !== finalRoundNum);
 
-                  <div className="glass-panel p-6 rounded-3xl border-2 border-amber-400/60 bg-gradient-to-b from-amber-500/15 to-transparent text-center space-y-3 shadow-lg">
-                    <div className="w-16 h-16 rounded-2xl bg-amber-500 text-black flex items-center justify-center mx-auto shadow-md">
-                      <span className="material-symbols-outlined text-3xl">emoji_events</span>
-                    </div>
-                    <div>
-                      <h4 className="font-headline font-black text-base uppercase text-slate-900 dark:text-white">
-                        {champion ? champion.name : 'Por Definir'}
-                      </h4>
-                      <p className="text-[11px] font-label-caps text-slate-500 uppercase mt-0.5">
-                        {champion ? `${champion.team || 'Independiente'}` : 'Ganador Gran Final'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                    return (
+                      <>
+                        {/* Left Half */}
+                        <div className="flex gap-6 sm:gap-8">
+                          {nonFinalRounds.map(rNum => {
+                            const rMatches = roundsMap[rNum] || [];
+                            const leftMatches = rMatches.slice(0, Math.ceil(rMatches.length / 2));
+                            if (leftMatches.length === 0) return null;
+                            return <RoundColumn key={`left-${rNum}`} rNum={rNum} matchesSlice={leftMatches} />;
+                          })}
+                        </div>
+                        
+                        {/* Center (Final & Champion) */}
+                        <div className="flex flex-col flex-shrink-0 justify-center gap-4 sm:gap-6">
+                          <RoundColumn rNum={finalRoundNum} matchesSlice={finalMatches} isFinal />
+                          <ChampionBlock />
+                        </div>
+
+                        {/* Right Half */}
+                        <div className="flex flex-row-reverse gap-6 sm:gap-8">
+                          {nonFinalRounds.map(rNum => {
+                            const rMatches = roundsMap[rNum] || [];
+                            const rightMatches = rMatches.slice(Math.ceil(rMatches.length / 2));
+                            if (rightMatches.length === 0) return null;
+                            return <RoundColumn key={`right-${rNum}`} rNum={rNum} matchesSlice={rightMatches} />;
+                          })}
+                        </div>
+                      </>
+                    );
+                  }
+
+                  // Default Linear Render
+                  return (
+                    <>
+                      {roundNumbers.map((rNum) => {
+                        const rMatches = roundsMap[rNum] || [];
+                        const isFinalRound = rNum === totalRounds;
+                        return <RoundColumn key={`linear-${rNum}`} rNum={rNum} matchesSlice={rMatches} isFinal={isFinalRound} />;
+                      })}
+                      <div className="flex flex-col justify-center flex-shrink-0">
+                        <ChampionBlock />
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             </div>
           )}
