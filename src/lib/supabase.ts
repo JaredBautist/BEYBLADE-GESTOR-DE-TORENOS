@@ -497,11 +497,13 @@ export async function syncCommunityConfigToSupabase(config: {
     });
     if (error) {
       console.error('Supabase sync community config error:', error);
+      alert('Error guardando configuración en la base de datos: ' + error.message);
       return { success: false, error: error.message };
     }
     return { success: true };
   } catch (e: any) {
     console.warn('Supabase sync community config warning:', e);
+    alert('Excepción guardando configuración: ' + e?.message);
     return { success: false, error: e?.message };
   }
 }

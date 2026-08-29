@@ -111,15 +111,6 @@ export const CommunityConfigScreen: React.FC<CommunityConfigScreenProps> = ({
   const triggerSave = (updated: TournamentConfig, msg = 'Configuración de comunidad guardada y sincronizada') => {
     setFormData(updated);
     onSaveConfig(updated);
-    syncCommunityConfigToSupabase({
-      leagueName: updated.leagueName,
-      communityTagline: updated.communityTagline,
-      communityCity: updated.communityCity,
-      organizerName: updated.organizerName,
-      eventName: updated.name,
-      season: updated.season,
-      logoUrl: updated.logoUrl
-    });
     setSaveFeedback(msg);
     setTimeout(() => setSaveFeedback(''), 3000);
   };
