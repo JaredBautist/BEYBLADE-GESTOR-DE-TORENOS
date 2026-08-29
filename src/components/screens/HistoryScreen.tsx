@@ -441,10 +441,16 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
                   {/* Detailed match encounters list directly inside card */}
                   {t.matchesSummary && t.matchesSummary.length > 0 && (
                     <div className="pt-2 border-t border-slate-100 dark:border-white/5 space-y-2">
-                      <span className="text-[10px] font-label-caps uppercase text-slate-500 font-bold flex items-center gap-1.5">
-                        <span className="material-symbols-outlined text-xs text-[#04A8FC]">sports_kabaddi</span>
-                        <span>Detalle de Enfrentamientos ({t.matchesSummary.length})</span>
-                      </span>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-label-caps uppercase text-slate-500 font-bold flex items-center gap-1.5">
+                          <span className="material-symbols-outlined text-xs text-[#04A8FC]">sports_kabaddi</span>
+                          <span>Detalle de Enfrentamientos ({t.matchesSummary.length})</span>
+                        </span>
+                        <span className="text-[9px] font-label-caps uppercase px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500 font-black">
+                          {t.format === 'series' ? 'Serie 1 Ronda' : 'Bracket'}
+                        </span>
+                      </div>
+
                       <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
                         {t.matchesSummary.map((m, mIdx) => (
                           <div
@@ -475,17 +481,31 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
                     </div>
                   )}
 
-                  {/* Recap Action Button */}
-                  <button
-                    onClick={() => {
-                      soundManager.playClick();
-                      setSelectedTournamentRecap(t);
-                    }}
-                    className="w-full pt-2.5 border-t border-slate-100 dark:border-white/5 flex items-center justify-center gap-2 text-xs font-headline font-bold uppercase text-[#04A8FC] hover:text-[#008fe0] transition-colors py-2"
-                  >
-                    <span className="material-symbols-outlined text-base">visibility</span>
-                    <span>Ver Recapitulativo Completo</span>
-                  </button>
+                  {/* Recap Action Buttons */}
+                  <div className="pt-2.5 border-t border-slate-100 dark:border-white/5 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button
+                      onClick={() => {
+                        soundManager.playClick();
+                        setRecapViewMode('bracket');
+                        setSelectedTournamentRecap(t);
+                      }}
+                      className="w-full flex items-center justify-center gap-1.5 text-[11px] font-headline font-black uppercase text-amber-500 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 rounded-xl py-2 transition-all shadow-sm"
+                    >
+                      <span className="material-symbols-outlined text-sm">account_tree</span>
+                      <span>Ver Árbol Bracket</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        soundManager.playClick();
+                        setRecapViewMode('summary');
+                        setSelectedTournamentRecap(t);
+                      }}
+                      className="w-full flex items-center justify-center gap-1.5 text-[11px] font-headline font-bold uppercase text-[#04A8FC] bg-[#04A8FC]/10 hover:bg-[#04A8FC]/20 border border-[#04A8FC]/30 rounded-xl py-2 transition-all"
+                    >
+                      <span className="material-symbols-outlined text-sm">visibility</span>
+                      <span>Recapitulativo</span>
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -495,18 +515,18 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
 
 
 
-      {/* TOURNAMENT RECAP MODAL (READ-ONLY ARCHIVE VIEW) */}
+      {/* TOURNAMENT RECAP & BRACKET MODAL (READ-ONLY ARCHIVE VIEW) */}
       {selectedTournamentRecap && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in overflow-y-auto">
-          <div className="relative w-full max-w-3xl bg-white dark:bg-[#15151c] rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-white/10 shadow-2xl overflow-hidden p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6 my-auto max-h-[92vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto">
+          <div className="relative w-full max-w-5xl bg-white dark:bg-[#15151c] rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-white/10 shadow-2xl overflow-hidden p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6 my-auto max-h-[94vh] overflow-y-auto">
             {/* Header */}
             <div className="flex items-start justify-between gap-3 border-b border-slate-200 dark:border-white/10 pb-3 sm:pb-4">
               <div className="space-y-1 min-w-0 flex-1">
                 <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                  <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[9px] sm:text-[10px] font-label-caps uppercase font-black">
+                  <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[9px] sm:text-[10px] font-label-caps uppercase font-black">
                     {selectedTournamentRecap.season || 'Temporada Oficial'} • {selectedTournamentRecap.date}
                   </span>
-                  <span className="px-2 py-0.5 rounded-full bg-[#04A8FC]/10 text-[#04A8FC] border border-[#04A8FC]/20 text-[9px] sm:text-[10px] font-label-caps uppercase font-bold">
+                  <span className="px-2.5 py-0.5 rounded-full bg-[#04A8FC]/10 text-[#04A8FC] border border-[#04A8FC]/20 text-[9px] sm:text-[10px] font-label-caps uppercase font-bold">
                     {selectedTournamentRecap.format === 'series'
                       ? 'Serie (1 Ronda)'
                       : selectedTournamentRecap.format === 'elimination'
@@ -530,111 +550,269 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
               </button>
             </div>
 
-            {/* Read-Only Status Banner */}
-            <div className="p-3 sm:p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-300 dark:border-amber-500/30 flex items-center gap-2.5 sm:gap-3 text-xs text-amber-800 dark:text-amber-300 font-label-caps uppercase">
-              <span className="material-symbols-outlined text-base sm:text-lg text-amber-500 flex-shrink-0">lock</span>
-              <span className="text-[11px] sm:text-xs leading-tight">
-                <strong>Registro Oficial (Solo Lectura):</strong> Resultados oficiales y definitivos de la comunidad.
+            {/* View Mode Switcher: Tree Bracket vs Match List */}
+            <div className="flex items-center justify-between gap-2 border-b border-slate-200 dark:border-white/10 pb-3 flex-wrap">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    soundManager.playClick();
+                    setRecapViewMode('bracket');
+                  }}
+                  className={`px-4 py-2 rounded-xl text-xs font-headline font-bold uppercase transition-all flex items-center gap-1.5 ${
+                    recapViewMode === 'bracket'
+                      ? 'bg-amber-500 text-black shadow-md font-black'
+                      : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-sm">account_tree</span>
+                  <span>Árbol del Bracket (Visual)</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    soundManager.playClick();
+                    setRecapViewMode('summary');
+                  }}
+                  className={`px-4 py-2 rounded-xl text-xs font-headline font-bold uppercase transition-all flex items-center gap-1.5 ${
+                    recapViewMode === 'summary'
+                      ? 'bg-[#04A8FC] text-white shadow-md font-black'
+                      : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-sm">list_alt</span>
+                  <span>Lista de Duelos & Métricas</span>
+                </button>
+              </div>
+
+              <span className="text-[10px] font-label-caps uppercase text-amber-600 dark:text-amber-400 font-bold">
+                Archivo Inmutable • Registro Oficial
               </span>
             </div>
 
-            {/* Honor Podium Card */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-              {/* Champion Card */}
-              <div className="glass-panel p-3.5 sm:p-5 rounded-2xl border-2 border-amber-400/60 bg-gradient-to-r from-amber-500/20 via-yellow-500/10 to-transparent flex items-center gap-3 sm:gap-4 shadow-md min-w-0">
-                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-amber-500 text-black flex items-center justify-center font-black shadow-md flex-shrink-0">
-                  <span className="material-symbols-outlined text-2xl sm:text-3xl">military_tech</span>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <span className="text-[9px] sm:text-[10px] font-label-caps uppercase text-amber-600 dark:text-amber-400 font-black tracking-widest block">
-                    🥇 Gran Campeón
-                  </span>
-                  <h3 className="font-headline font-black text-base sm:text-xl uppercase text-slate-900 dark:text-white truncate">
-                    {selectedTournamentRecap.winnerName}
-                  </h3>
-                </div>
-              </div>
+            {/* TAB CONTENT: VISUAL BRACKET TREE */}
+            {recapViewMode === 'bracket' && (
+              <div className="space-y-4 animate-fade-in">
+                {/* Visual Tree Canvas */}
+                <div className="p-4 sm:p-6 rounded-3xl bg-slate-900/90 border border-slate-700/60 overflow-x-auto min-h-[320px] flex items-center shadow-inner relative">
+                  <div className="absolute inset-0 bg-[radial-gradient(#04A8FC_1px,transparent_1px)] [background-size:16px_16px] opacity-10 pointer-events-none"></div>
 
-              {/* Runner Up Card */}
-              <div className="glass-panel p-3.5 sm:p-5 rounded-2xl border border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-white/5 flex items-center gap-3 sm:gap-4 shadow-sm min-w-0">
-                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-slate-300 dark:bg-slate-700 text-slate-800 dark:text-white flex items-center justify-center font-black shadow-sm flex-shrink-0">
-                  <span className="material-symbols-outlined text-xl sm:text-2xl">workspace_premium</span>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <span className="text-[9px] sm:text-[10px] font-label-caps uppercase text-slate-500 font-bold tracking-widest block">
-                    🥈 Subcampeón
-                  </span>
-                  <h3 className="font-headline font-black text-base sm:text-lg uppercase text-slate-800 dark:text-slate-200 truncate">
-                    {selectedTournamentRecap.runnerUpName || 'Por Definir'}
-                  </h3>
-                </div>
-              </div>
-            </div>
+                  {selectedTournamentRecap.matchesSummary && selectedTournamentRecap.matchesSummary.length > 0 ? (
+                    <div className="flex items-center gap-6 sm:gap-10 min-w-max mx-auto py-2">
+                      {/* Group matches by base round */}
+                      {(() => {
+                        const roundMap: { [key: string]: typeof selectedTournamentRecap.matchesSummary } = {};
+                        const roundOrder: string[] = [];
 
-            {/* Metrics Overview */}
-            <div className="grid grid-cols-3 gap-2 sm:gap-3 text-center">
-              <div className="p-2.5 sm:p-3.5 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 min-w-0">
-                <span className="text-slate-400 text-[9px] sm:text-[10px] font-label-caps uppercase block truncate">Bladers</span>
-                <span className="font-headline font-black text-sm sm:text-xl text-slate-900 dark:text-white block truncate">
-                  {selectedTournamentRecap.totalBladers}
-                </span>
-              </div>
-              <div className="p-2.5 sm:p-3.5 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 min-w-0">
-                <span className="text-slate-400 text-[9px] sm:text-[10px] font-label-caps uppercase block truncate">Combates</span>
-                <span className="font-headline font-black text-sm sm:text-xl text-slate-900 dark:text-white block truncate">
-                  {selectedTournamentRecap.totalMatches}
-                </span>
-              </div>
-              <div className="p-2.5 sm:p-3.5 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 min-w-0">
-                <span className="text-slate-400 text-[9px] sm:text-[10px] font-label-caps uppercase block truncate">Puntos</span>
-                <span className="font-headline font-black text-sm sm:text-xl text-[#04A8FC] block truncate">
-                  {selectedTournamentRecap.totalPoints}
-                </span>
-              </div>
-            </div>
+                        selectedTournamentRecap.matchesSummary.forEach((m) => {
+                          const rName = m.roundName || 'Duelo';
+                          const cleanName = rName.replace(/\s*-\s*Duelo\s*\d+/i, '').trim();
+                          if (!roundMap[cleanName]) {
+                            roundMap[cleanName] = [];
+                            roundOrder.push(cleanName);
+                          }
+                          roundMap[cleanName].push(m);
+                        });
 
-            {/* Match History Table / Grid */}
-            <div className="space-y-2.5 sm:space-y-3">
-              <h4 className="font-headline font-black text-xs sm:text-sm uppercase text-slate-900 dark:text-white flex items-center gap-2">
-                <span className="material-symbols-outlined text-base text-[#04A8FC]">sports_kabaddi</span>
-                <span>Detalle Completo de Enfrentamientos Disputados</span>
-              </h4>
+                        return roundOrder.map((roundName, rIdx) => (
+                          <div key={roundName} className="space-y-4 flex flex-col justify-around min-w-[220px] sm:min-w-[260px]">
+                            {/* Round Column Header */}
+                            <div className="text-center pb-2 border-b border-slate-700">
+                              <span className="text-[10px] font-label-caps uppercase font-black tracking-widest text-[#04A8FC] bg-[#04A8FC]/10 px-3 py-1 rounded-full border border-[#04A8FC]/30">
+                                {roundName}
+                              </span>
+                            </div>
 
-              {selectedTournamentRecap.matchesSummary && selectedTournamentRecap.matchesSummary.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3 max-h-72 sm:max-h-80 overflow-y-auto pr-1">
-                  {selectedTournamentRecap.matchesSummary.map((m, idx) => (
-                    <div
-                      key={idx}
-                      className="p-3 sm:p-3.5 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 flex items-center justify-between gap-3 text-xs min-w-0 shadow-sm"
-                    >
-                      <div className="flex items-center gap-2.5 font-headline font-bold uppercase min-w-0 flex-1">
-                        <span className="px-2 py-1 rounded-lg bg-black/10 dark:bg-white/10 text-slate-700 dark:text-slate-300 text-[10px] font-mono font-black flex-shrink-0">
-                          {m.roundName || `#${idx + 1}`}
-                        </span>
-                        <div className="truncate min-w-0 flex-1 text-[11px] sm:text-xs">
-                          <span className={m.winner === m.bladerA ? 'text-amber-500 font-black' : 'text-slate-700 dark:text-slate-300'}>
-                            {m.bladerA} ({m.scoreA})
-                          </span>
-                          <span className="text-slate-400 mx-1.5 font-mono text-[9px]">VS</span>
-                          <span className={m.winner === m.bladerB ? 'text-amber-500 font-black' : 'text-slate-700 dark:text-slate-300'}>
-                            {m.bladerB} ({m.scoreB})
-                          </span>
+                            {/* Matches in this round */}
+                            <div className="space-y-4">
+                              {roundMap[roundName].map((match, mIdx) => (
+                                <div
+                                  key={mIdx}
+                                  className="p-3.5 rounded-2xl bg-[#1a1c23] border border-slate-700/80 shadow-md space-y-2 relative group hover:border-[#04A8FC] transition-all"
+                                >
+                                  <div className="flex items-center justify-between text-[9px] font-label-caps uppercase text-slate-400 pb-1 border-b border-slate-800 font-bold">
+                                    <span>{match.roundName || `Combate #${mIdx + 1}`}</span>
+                                    <span className="text-amber-400 font-black">FIN</span>
+                                  </div>
+
+                                  {/* Red Corner */}
+                                  <div
+                                    className={`flex items-center justify-between p-2 rounded-xl text-xs uppercase font-headline font-bold ${
+                                      match.winner === match.bladerA
+                                        ? 'bg-red-500/20 text-red-400 border border-red-500/40 font-black'
+                                        : 'bg-white/5 text-slate-400'
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-1.5 truncate min-w-0">
+                                      <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></span>
+                                      <span className="truncate">{match.bladerA}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      {match.winner === match.bladerA && (
+                                        <span className="material-symbols-outlined text-xs text-amber-400">crown</span>
+                                      )}
+                                      <span className="font-mono text-sm">{match.scoreA}</span>
+                                    </div>
+                                  </div>
+
+                                  {/* Blue Corner */}
+                                  <div
+                                    className={`flex items-center justify-between p-2 rounded-xl text-xs uppercase font-headline font-bold ${
+                                      match.winner === match.bladerB
+                                        ? 'bg-blue-500/20 text-blue-400 border border-blue-500/40 font-black'
+                                        : 'bg-white/5 text-slate-400'
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-1.5 truncate min-w-0">
+                                      <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"></span>
+                                      <span className="truncate">{match.bladerB}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      {match.winner === match.bladerB && (
+                                        <span className="material-symbols-outlined text-xs text-amber-400">crown</span>
+                                      )}
+                                      <span className="font-mono text-sm">{match.scoreB}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ));
+                      })()}
+
+                      {/* Final Grand Champion Pillar */}
+                      <div className="flex flex-col items-center justify-center min-w-[200px] pl-4 border-l-2 border-dashed border-amber-500/30">
+                        <div className="p-5 rounded-3xl bg-gradient-to-b from-amber-500/25 via-amber-500/10 to-transparent border-2 border-amber-400/80 shadow-2xl text-center space-y-3 relative overflow-hidden">
+                          <div className="w-14 h-14 rounded-2xl bg-amber-500 text-black flex items-center justify-center font-black mx-auto shadow-lg shadow-amber-500/30 animate-pulse">
+                            <span className="material-symbols-outlined text-3xl">emoji_events</span>
+                          </div>
+
+                          <div>
+                            <span className="text-[10px] font-label-caps uppercase text-amber-400 font-black tracking-widest block">
+                              🏆 GRAN CAMPEÓN
+                            </span>
+                            <h4 className="font-headline font-black text-lg uppercase text-white truncate max-w-[170px]">
+                              {selectedTournamentRecap.winnerName}
+                            </h4>
+                          </div>
+
+                          <div className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-mono font-bold border border-amber-500/30">
+                            {selectedTournamentRecap.totalPoints} PTS TOTALES
+                          </div>
                         </div>
                       </div>
-
-                      <div className="flex items-center gap-1 text-[9px] sm:text-[10px] font-headline font-black uppercase text-amber-500 bg-amber-500/10 px-2 py-1 rounded-lg flex-shrink-0">
-                        <span className="material-symbols-outlined text-xs">crown</span>
-                        <span className="max-w-[75px] truncate">{m.winner}</span>
-                      </div>
                     </div>
-                  ))}
+                  ) : (
+                    <div className="text-center py-12 text-slate-400 text-xs mx-auto">
+                      No hay datos de enfrentamientos registrados para generar el árbol de este torneo.
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <p className="text-xs text-slate-500 italic p-4 bg-slate-50 dark:bg-white/5 rounded-2xl text-center">
-                  Resultados generales consolidados por el juez oficial del torneo.
-                </p>
-              )}
-            </div>
+              </div>
+            )}
+
+            {/* TAB CONTENT: SUMMARY & MATCH LIST */}
+            {recapViewMode === 'summary' && (
+              <div className="space-y-4 animate-fade-in">
+                {/* Honor Podium Card */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  {/* Champion Card */}
+                  <div className="glass-panel p-3.5 sm:p-5 rounded-2xl border-2 border-amber-400/60 bg-gradient-to-r from-amber-500/20 via-yellow-500/10 to-transparent flex items-center gap-3 sm:gap-4 shadow-md min-w-0">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-amber-500 text-black flex items-center justify-center font-black shadow-md flex-shrink-0">
+                      <span className="material-symbols-outlined text-2xl sm:text-3xl">military_tech</span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <span className="text-[9px] sm:text-[10px] font-label-caps uppercase text-amber-600 dark:text-amber-400 font-black tracking-widest block">
+                        🥇 Gran Campeón
+                      </span>
+                      <h3 className="font-headline font-black text-base sm:text-xl uppercase text-slate-900 dark:text-white truncate">
+                        {selectedTournamentRecap.winnerName}
+                      </h3>
+                    </div>
+                  </div>
+
+                  {/* Runner Up Card */}
+                  <div className="glass-panel p-3.5 sm:p-5 rounded-2xl border border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-white/5 flex items-center gap-3 sm:gap-4 shadow-sm min-w-0">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-slate-300 dark:bg-slate-700 text-slate-800 dark:text-white flex items-center justify-center font-black shadow-sm flex-shrink-0">
+                      <span className="material-symbols-outlined text-xl sm:text-2xl">workspace_premium</span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <span className="text-[9px] sm:text-[10px] font-label-caps uppercase text-slate-500 font-bold tracking-widest block">
+                        🥈 Subcampeón
+                      </span>
+                      <h3 className="font-headline font-black text-base sm:text-lg uppercase text-slate-800 dark:text-slate-200 truncate">
+                        {selectedTournamentRecap.runnerUpName || 'Por Definir'}
+                      </h3>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Metrics Overview */}
+                <div className="grid grid-cols-3 gap-2 sm:gap-3 text-center">
+                  <div className="p-2.5 sm:p-3.5 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 min-w-0">
+                    <span className="text-slate-400 text-[9px] sm:text-[10px] font-label-caps uppercase block truncate">Bladers</span>
+                    <span className="font-headline font-black text-sm sm:text-xl text-slate-900 dark:text-white block truncate">
+                      {selectedTournamentRecap.totalBladers}
+                    </span>
+                  </div>
+                  <div className="p-2.5 sm:p-3.5 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 min-w-0">
+                    <span className="text-slate-400 text-[9px] sm:text-[10px] font-label-caps uppercase block truncate">Combates</span>
+                    <span className="font-headline font-black text-sm sm:text-xl text-slate-900 dark:text-white block truncate">
+                      {selectedTournamentRecap.totalMatches}
+                    </span>
+                  </div>
+                  <div className="p-2.5 sm:p-3.5 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 min-w-0">
+                    <span className="text-slate-400 text-[9px] sm:text-[10px] font-label-caps uppercase block truncate">Puntos</span>
+                    <span className="font-headline font-black text-sm sm:text-xl text-[#04A8FC] block truncate">
+                      {selectedTournamentRecap.totalPoints}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Match History Table / Grid */}
+                <div className="space-y-2.5 sm:space-y-3">
+                  <h4 className="font-headline font-black text-xs sm:text-sm uppercase text-slate-900 dark:text-white flex items-center gap-2">
+                    <span className="material-symbols-outlined text-base text-[#04A8FC]">sports_kabaddi</span>
+                    <span>Detalle Completo de Enfrentamientos Disputados</span>
+                  </h4>
+
+                  {selectedTournamentRecap.matchesSummary && selectedTournamentRecap.matchesSummary.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3 max-h-72 sm:max-h-80 overflow-y-auto pr-1">
+                      {selectedTournamentRecap.matchesSummary.map((m, idx) => (
+                        <div
+                          key={idx}
+                          className="p-3 sm:p-3.5 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 flex items-center justify-between gap-3 text-xs min-w-0 shadow-sm"
+                        >
+                          <div className="flex items-center gap-2.5 font-headline font-bold uppercase min-w-0 flex-1">
+                            <span className="px-2 py-1 rounded-lg bg-black/10 dark:bg-white/10 text-slate-700 dark:text-slate-300 text-[10px] font-mono font-black flex-shrink-0">
+                              {m.roundName || `#${idx + 1}`}
+                            </span>
+                            <div className="truncate min-w-0 flex-1 text-[11px] sm:text-xs">
+                              <span className={m.winner === m.bladerA ? 'text-amber-500 font-black' : 'text-slate-700 dark:text-slate-300'}>
+                                {m.bladerA} ({m.scoreA})
+                              </span>
+                              <span className="text-slate-400 mx-1.5 font-mono text-[9px]">VS</span>
+                              <span className={m.winner === m.bladerB ? 'text-amber-500 font-black' : 'text-slate-700 dark:text-slate-300'}>
+                                {m.bladerB} ({m.scoreB})
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1 text-[9px] sm:text-[10px] font-headline font-black uppercase text-amber-500 bg-amber-500/10 px-2 py-1 rounded-lg flex-shrink-0">
+                            <span className="material-symbols-outlined text-xs">crown</span>
+                            <span className="max-w-[75px] truncate">{m.winner}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-500 italic p-4 bg-slate-50 dark:bg-white/5 rounded-2xl text-center">
+                      Resultados generales consolidados por el juez oficial del torneo.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Modal Footer */}
             <div className="flex justify-end pt-3 border-t border-slate-200 dark:border-white/10">
