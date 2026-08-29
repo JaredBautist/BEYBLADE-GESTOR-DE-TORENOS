@@ -282,11 +282,11 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
                         Formato Serie
                       </div>
                       <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-[#FF5500]/20 text-[#FF5500] border border-[#FF5500]/30">
-                        1 Batalla y Chao
+                        1 Batalla Decisiva
                       </span>
                     </div>
                     <div className="font-label-caps text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                      1 solo combo por Blader. 1 ronda decisiva: cualquier finish gana la batalla inmediatamente. El perdedor queda fuera de inmediato ("una batalla y chao").
+                      Igual que Liga (acumulación de puntos todos contra todos), pero con 1 solo Beyblade. Cada enfrentamiento es a 1 ronda decisiva: cualquier finish gana los puntos ("1 batalla y chao").
                     </div>
                   </div>
                 </label>
@@ -488,7 +488,7 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
                 <div className="p-3 rounded-xl bg-[#FF5500]/10 border border-[#FF5500]/20 flex items-center gap-2">
                   <span className="material-symbols-outlined text-[#FF5500] text-base flex-shrink-0">info</span>
                   <p className="text-[10px] text-slate-300 leading-tight">
-                    <strong className="text-[#FF5500]">Formato Serie:</strong> Cada batalla es decisiva — 1 ronda, cualquier finish gana. El perdedor queda eliminado de inmediato ("una batalla y chao").
+                    <strong className="text-[#FF5500]">Formato Serie:</strong> Cada enfrentamiento es decisivo — 1 ronda, cualquier finish gana y otorga los puntos. Acumulación por jornadas (Round Robin) para el corte al Top.
                   </p>
                 </div>
               </div>
