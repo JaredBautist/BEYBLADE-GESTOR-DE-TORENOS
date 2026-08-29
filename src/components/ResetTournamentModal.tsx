@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { soundManager } from '../utils/audio';
 import { Blader, Match, TournamentConfig } from '../types';
 
+export type ResetMode = 'archive_and_clean' | 'archive_and_reset' | 'matches_only' | 'factory_reset';
+
 interface ResetTournamentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirmReset: (mode: 'matches_only' | 'archive_and_reset' | 'factory_reset') => void;
+  onConfirmReset: (mode: ResetMode) => void;
   bladers: Blader[];
   matches: Match[];
   config: TournamentConfig;
@@ -19,16 +21,16 @@ export const ResetTournamentModal: React.FC<ResetTournamentModalProps> = ({
   matches,
   config
 }) => {
-  const [selectedMode, setSelectedMode] = useState<'matches_only' | 'archive_and_reset' | 'factory_reset'>('archive_and_reset');
+  const [selectedMode, setSelectedMode] = useState<ResetMode>('archive_and_clean');
 
   if (!isOpen) return null;
 
   const finishedMatches = matches.filter((m) => m.status === 'finished');
-  const leadingBlader = [...bladers].sort((a, b) => b.stats.wins - a.stats.wins)[0];
+  const leadingBlader = [...bladers].sort((a, b) => (b.stats?.wins || 0) - (a.stats?.wins || 0))[0];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
-      <div className="relative w-full max-w-lg bg-white dark:bg-[#15151c] rounded-3xl border border-slate-200 dark:border-white/10 shadow-2xl overflow-hidden p-6 md:p-8 space-y-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+      <div className="relative w-full max-w-lg bg-white dark:bg-[#15151c] rounded-3xl border border-slate-200 dark:border-white/10 shadow-2xl overflow-hidden p-5 sm:p-7 md:p-8 space-y-5">
         
         {/* Header */}
         <div className="flex items-start justify-between gap-4 border-b border-slate-200 dark:border-white/10 pb-4">
@@ -41,7 +43,7 @@ export const ResetTournamentModal: React.FC<ResetTournamentModalProps> = ({
                 REINICIAR TORNEO
               </h2>
               <p className="font-body-text text-xs text-slate-500 dark:text-slate-400">
-                Selecciona la modalidad de reinicio para la Comunidad Beyblade Cúcuta.
+                Selecciona cómo deseas reiniciar el torneo en la comunidad.
               </p>
             </div>
           </div>
@@ -59,30 +61,66 @@ export const ResetTournamentModal: React.FC<ResetTournamentModalProps> = ({
         {/* Current State Summary */}
         <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-between text-xs font-label-caps uppercase">
           <div>
-            <span className="text-slate-500 dark:text-slate-400 block">Bladers Inscritos:</span>
-            <span className="font-bold text-slate-900 dark:text-white text-sm">{bladers.length} Bladers</span>
+            <span className="text-slate-500 dark:text-slate-400 block text-[10px]">Bladers:</span>
+            <span className="font-bold text-slate-900 dark:text-white text-sm">{bladers.length} Registrados</span>
           </div>
           <div>
-            <span className="text-slate-500 dark:text-slate-400 block">Combates Jugados:</span>
+            <span className="text-slate-500 dark:text-slate-400 block text-[10px]">Combates:</span>
             <span className="font-bold text-slate-900 dark:text-white text-sm">{finishedMatches.length} de {matches.length}</span>
           </div>
           {leadingBlader && (
             <div>
-              <span className="text-slate-500 dark:text-slate-400 block">Líder Actual:</span>
-              <span className="font-bold text-amber-500 text-sm">{leadingBlader.name}</span>
+              <span className="text-slate-500 dark:text-slate-400 block text-[10px]">Líder:</span>
+              <span className="font-bold text-amber-500 text-sm truncate max-w-[90px] block">{leadingBlader.name}</span>
             </div>
           )}
         </div>
 
         {/* Options */}
-        <div className="space-y-3">
-          {/* Option 1: Archive & Reset */}
+        <div className="space-y-2.5 max-h-[50vh] overflow-y-auto pr-1">
+          {/* Option 1: Archive & Clean Everything for New Tournament */}
+          <div
+            onClick={() => {
+              soundManager.playClick();
+              setSelectedMode('archive_and_clean');
+            }}
+            className={`flex items-start gap-3.5 p-3.5 sm:p-4 rounded-2xl border cursor-pointer transition-all ${
+              selectedMode === 'archive_and_clean'
+                ? 'border-[#04A8FC] bg-[#04A8FC]/10 ring-2 ring-[#04A8FC]/30 shadow-sm'
+                : 'border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5'
+            }`}
+          >
+            <div className="mt-0.5">
+              <input
+                type="radio"
+                name="reset_mode"
+                checked={selectedMode === 'archive_and_clean'}
+                onChange={() => setSelectedMode('archive_and_clean')}
+                className="w-4 h-4 text-[#04A8FC] focus:ring-[#04A8FC] cursor-pointer"
+              />
+            </div>
+            <div className="space-y-1 select-none flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-headline font-black text-xs sm:text-sm text-slate-900 dark:text-white uppercase">
+                  Archivar en Historial y Limpiar Todo a 0
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[9px] font-black uppercase">
+                  Nuevo Torneo
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Guarda este torneo completo en el <strong>Historial & Hall of Fame</strong> y <strong>limpia totalmente la Battle Console, el Bracket y el Padrón de Bladers</strong> a 0 para empezar las inscripciones del nuevo torneo desde cero.
+              </p>
+            </div>
+          </div>
+
+          {/* Option 2: Archive & Keep Bladers */}
           <div
             onClick={() => {
               soundManager.playClick();
               setSelectedMode('archive_and_reset');
             }}
-            className={`flex items-start gap-3.5 p-4 rounded-2xl border cursor-pointer transition-all ${
+            className={`flex items-start gap-3.5 p-3.5 sm:p-4 rounded-2xl border cursor-pointer transition-all ${
               selectedMode === 'archive_and_reset'
                 ? 'border-[#04A8FC] bg-[#04A8FC]/10 ring-2 ring-[#04A8FC]/30 shadow-sm'
                 : 'border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5'
@@ -98,27 +136,22 @@ export const ResetTournamentModal: React.FC<ResetTournamentModalProps> = ({
               />
             </div>
             <div className="space-y-1 select-none flex-1">
-              <div className="flex items-center gap-2">
-                <span className="font-headline font-bold text-sm text-slate-900 dark:text-white uppercase">
-                  Archivar en Historial y Nuevo Torneo
-                </span>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase">
-                  Recomendado
-                </span>
-              </div>
-              <p className="text-xs text-slate-600 dark:text-slate-400">
-                Guarda los resultados actuales en la base de datos de <strong>Historial & Hall of Fame</strong> y restablece marcadores a 0 conservando los Bladers registrados.
+              <span className="font-headline font-bold text-xs sm:text-sm text-slate-900 dark:text-white uppercase">
+                Archivar en Historial y Mantener Mismos Bladers
+              </span>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Guarda el torneo actual en el Historial y <strong>conserva a los Bladers ya registrados</strong>, restableciendo sus marcadores a 0 - 0 y generando nuevos cruces.
               </p>
             </div>
           </div>
 
-          {/* Option 2: Matches only */}
+          {/* Option 3: Matches only */}
           <div
             onClick={() => {
               soundManager.playClick();
               setSelectedMode('matches_only');
             }}
-            className={`flex items-start gap-3.5 p-4 rounded-2xl border cursor-pointer transition-all ${
+            className={`flex items-start gap-3.5 p-3.5 sm:p-4 rounded-2xl border cursor-pointer transition-all ${
               selectedMode === 'matches_only'
                 ? 'border-[#04A8FC] bg-[#04A8FC]/10 ring-2 ring-[#04A8FC]/30 shadow-sm'
                 : 'border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5'
@@ -134,22 +167,22 @@ export const ResetTournamentModal: React.FC<ResetTournamentModalProps> = ({
               />
             </div>
             <div className="space-y-1 select-none flex-1">
-              <span className="font-headline font-bold text-sm text-slate-900 dark:text-white uppercase">
-                Reiniciar Marcadores y Cruces
+              <span className="font-headline font-bold text-xs sm:text-sm text-slate-900 dark:text-white uppercase">
+                Reiniciar Solo Marcadores y Cruces (0 - 0)
               </span>
-              <p className="text-xs text-slate-600 dark:text-slate-400">
-                Pone los marcadores a 0 y limpia los combates para empezar una nueva ronda. <strong>Mantiene la lista de Bladers y sus combos intactos.</strong>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Pone los marcadores a 0 y limpia los combates sin archivar en el historial. Mantiene los Bladers intactos.
               </p>
             </div>
           </div>
 
-          {/* Option 3: Factory Reset */}
+          {/* Option 4: Factory Reset */}
           <div
             onClick={() => {
               soundManager.playClick();
               setSelectedMode('factory_reset');
             }}
-            className={`flex items-start gap-3.5 p-4 rounded-2xl border cursor-pointer transition-all ${
+            className={`flex items-start gap-3.5 p-3.5 sm:p-4 rounded-2xl border cursor-pointer transition-all ${
               selectedMode === 'factory_reset'
                 ? 'border-red-500 bg-red-500/10 ring-2 ring-red-500/30 shadow-sm'
                 : 'border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5'
@@ -165,11 +198,11 @@ export const ResetTournamentModal: React.FC<ResetTournamentModalProps> = ({
               />
             </div>
             <div className="space-y-1 select-none flex-1">
-              <span className="font-headline font-bold text-sm text-red-600 dark:text-red-400 uppercase">
-                Reinicio Completo de Fábrica (Limpiar Todo)
+              <span className="font-headline font-bold text-xs sm:text-sm text-red-600 dark:text-red-400 uppercase">
+                Reinicio Completo de Fábrica (Borrar Todo)
               </span>
-              <p className="text-xs text-slate-600 dark:text-slate-400">
-                Elimina todos los Bladers, combates activos y configuraciones para empezar desde cero absoluto.
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Elimina todos los Bladers, combates activos y piezas para restaurar la base de datos limpia.
               </p>
             </div>
           </div>

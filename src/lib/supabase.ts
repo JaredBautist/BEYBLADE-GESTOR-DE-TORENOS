@@ -270,6 +270,20 @@ export async function deleteBladerFromSupabase(id: string): Promise<{ success: b
   }
 }
 
+export async function deleteAllBladersFromSupabase(): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { error } = await supabase.from('bladers').delete().neq('id', '___force_delete_all_bladers___');
+    if (error) {
+      console.error('Supabase deleteAllBladers error:', error);
+      return { success: false, error: error.message };
+    }
+    return { success: true };
+  } catch (e: any) {
+    console.warn('Supabase deleteAllBladers warning:', e);
+    return { success: false, error: e?.message };
+  }
+}
+
 // -------------------------------------------------------------
 // BEYBLADE X PARTS API
 // -------------------------------------------------------------
@@ -372,6 +386,20 @@ export async function deleteComboFromSupabase(id: string) {
     await supabase.from('combos').delete().eq('id', id);
   } catch (e) {
     console.warn('Supabase delete combo warning:', e);
+  }
+}
+
+export async function deleteAllCombosFromSupabase(): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { error } = await supabase.from('combos').delete().neq('id', '___force_delete_all_combos___');
+    if (error) {
+      console.error('Supabase deleteAllCombos error:', error);
+      return { success: false, error: error.message };
+    }
+    return { success: true };
+  } catch (e: any) {
+    console.warn('Supabase deleteAllCombos warning:', e);
+    return { success: false, error: e?.message };
   }
 }
 

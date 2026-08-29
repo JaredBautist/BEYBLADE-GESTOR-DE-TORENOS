@@ -27,18 +27,20 @@ import { HistoryScreen } from './components/screens/HistoryScreen';
 import { WinnerModal } from './components/WinnerModal';
 import { NewBattleModal } from './components/NewBattleModal';
 import { SupportModal } from './components/SupportModal';
-import { ResetTournamentModal } from './components/ResetTournamentModal';
+import { ResetTournamentModal, ResetMode } from './components/ResetTournamentModal';
 import {
   syncBladerToSupabase,
   syncAllBladersToSupabase,
   fetchBladersFromSupabase,
   deleteBladerFromSupabase,
+  deleteAllBladersFromSupabase,
   syncPartToSupabase,
   fetchPartsFromSupabase,
   deletePartFromSupabase,
   syncComboToSupabase,
   fetchCombosFromSupabase,
   deleteComboFromSupabase,
+  deleteAllCombosFromSupabase,
   syncTournamentRecordToSupabase,
   fetchHistoryFromSupabase,
   deleteHistoryRecordFromSupabase,
@@ -936,11 +938,11 @@ export default function App() {
   };
 
   // COMPLETE & ROBUST RESET TOURNAMENT HANDLER
-  const handleConfirmReset = async (mode: 'matches_only' | 'archive_and_reset' | 'factory_reset') => {
+  const handleConfirmReset = async (mode: ResetMode) => {
     setShowResetModal(false);
 
-    if (mode === 'archive_and_reset') {
-      // 1. Detect champion accurately from Gran Final match or sorted wins
+    // Common Champion and Summary Extraction for Archiving
+    const getTournamentRecordToArchive = (): TournamentRecord => {
       const finalMatch = matches.find(
         (m) =>
           m.roundName?.toLowerCase().includes('final') ||
@@ -966,7 +968,7 @@ export default function App() {
       const totalPoints = bladers.reduce((acc, b) => acc + (b.stats?.pointsScored || 0), 0);
       const finishedMatchesList = matches.filter((m) => m.status === 'finished');
 
-      const newRecord: TournamentRecord = {
+      return {
         id: `tourney-record-${Date.now()}`,
         title: config.name || 'Torneo Beyblade X Cúcuta',
         date: new Date().toLocaleDateString('es-CO', {
@@ -992,11 +994,48 @@ export default function App() {
           winner: m.winnerName || (m.scoreA > m.scoreB ? m.bladerA?.name || '' : m.bladerB?.name || '')
         }))
       };
+    };
 
-      // Save to history & Supabase
-      handleAddHistoryRecord(newRecord);
+    // MODE 1: ARCHIVE AND CLEAN EVERYTHING (NEW TOURNAMENT FROM 0)
+    if (mode === 'archive_and_clean') {
+      if (bladers.length > 0 || matches.length > 0) {
+        const newRecord = getTournamentRecordToArchive();
+        handleAddHistoryRecord(newRecord);
+      }
 
-      // 2. Reset bladers' tournament stats to 0 for the fresh new tournament
+      // Purge everything from Supabase
+      await deleteAllMatchesFromSupabase();
+      await deleteAllBladersFromSupabase();
+      await deleteAllCombosFromSupabase();
+
+      // Clear local state
+      setMatches([]);
+      setBladers([]);
+      setRegisteredCombos([]);
+      setCurrentMatch(null);
+
+      // Clear localStorage
+      try {
+        localStorage.removeItem('bbx_bladers');
+        localStorage.removeItem('bbx_matches');
+        localStorage.removeItem('bbx_combos');
+      } catch (e) {
+        console.warn('LocalStorage clear error:', e);
+      }
+
+      soundManager.playVictory();
+      setActiveScreen('bladers');
+      return;
+    }
+
+    // MODE 2: ARCHIVE AND KEEP BLADERS (0 - 0)
+    if (mode === 'archive_and_reset') {
+      if (bladers.length > 0 || matches.length > 0) {
+        const newRecord = getTournamentRecordToArchive();
+        handleAddHistoryRecord(newRecord);
+      }
+
+      // Reset bladers' tournament stats to 0
       const resetBladers: Blader[] = bladers.map((b) => ({
         ...b,
         stats: {
@@ -1013,7 +1052,7 @@ export default function App() {
       setBladers(resetBladers);
       await syncAllBladersToSupabase(resetBladers);
 
-      // 3. Purge all previous matches from Supabase database & local storage
+      // Purge old matches and generate fresh ones
       await deleteAllMatchesFromSupabase();
       try {
         localStorage.removeItem('bbx_matches');
@@ -1021,7 +1060,6 @@ export default function App() {
         console.warn('Could not clear local matches storage:', e);
       }
 
-      // 4. Generate a clean, fresh bracket for the new tournament
       if (resetBladers.length >= 2) {
         const freshMatches = generateTournamentBracket(resetBladers, config);
         setMatches(freshMatches);
@@ -1040,6 +1078,7 @@ export default function App() {
       return;
     }
 
+    // MODE 3: MATCHES ONLY (0 - 0)
     if (mode === 'matches_only') {
       const resetBladers: Blader[] = bladers.map((b) => ({
         ...b,
@@ -1082,12 +1121,17 @@ export default function App() {
       return;
     }
 
+    // MODE 4: COMPLETE FACTORY RESET
     if (mode === 'factory_reset') {
+      await deleteAllMatchesFromSupabase();
+      await deleteAllBladersFromSupabase();
+      await deleteAllCombosFromSupabase();
+
       setBladers([]);
       setMatches([]);
       setRegisteredCombos([]);
       setCurrentMatch(null);
-      await deleteAllMatchesFromSupabase();
+
       try {
         localStorage.removeItem('bbx_bladers');
         localStorage.removeItem('bbx_matches');
