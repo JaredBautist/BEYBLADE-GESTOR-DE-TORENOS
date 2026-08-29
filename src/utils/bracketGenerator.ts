@@ -206,18 +206,17 @@ export function generatePlayoffBracketFromRankings(
   const ranked = getRankedBladers(bladers);
   if (ranked.length < 2) return [];
 
-  let qualified: Blader[] = [];
+  const minPts = config.minPointsToQualify || 20;
+  const targetCount = config.playoffCutoffCount || (ranked.length >= 8 ? 8 : ranked.length >= 4 ? 4 : 2);
 
-  if (config.playoffCutoffType === 'min_points') {
-    const minPts = config.minPointsToQualify || 4;
-    qualified = ranked.filter((b) => (b.stats?.pointsScored || 0) >= minPts);
-    // If not enough qualified by min points, fallback to Top 2
-    if (qualified.length < 2) {
-      qualified = ranked.slice(0, Math.min(2, ranked.length));
-    }
-  } else {
-    // Default: Top N (8, 4, or 2)
-    const targetCount = config.playoffCutoffCount || (ranked.length >= 8 ? 8 : ranked.length >= 4 ? 4 : 2);
+  // Bladers must accumulate at least minPts to qualify to Playoffs; others are eliminated (< minPts)
+  const eligibleByPoints = ranked.filter((b) => (b.stats?.pointsScored || 0) >= minPts);
+
+  // Take the Top N among those who reached the points threshold
+  let qualified = eligibleByPoints.slice(0, targetCount);
+
+  // Fallback to top ranked if fewer than 2 reached the threshold
+  if (qualified.length < 2) {
     qualified = ranked.slice(0, Math.min(targetCount, ranked.length));
   }
 
@@ -458,17 +457,17 @@ export function generateTournamentBracket(
 ): Match[] {
   if (bladers.length < 2) return [];
 
-  // Single Elimination format always creates knockout bracket
-  if (config.type === 'elimination') {
+  // Single Elimination and Series format ALWAYS create direct knockout bracket ("una batalla y chao")
+  if (config.type === 'elimination' || config.type === 'series') {
     return generateSingleEliminationBracket(bladers, config);
   }
 
-  // League or Series format
+  // League format (2-phase: Regular Phase by Points -> Playoffs Cutoff)
   if (config.tournamentPhase === 'playoffs') {
     return generatePlayoffBracketFromRankings(bladers, config);
   }
 
-  // If 2 bladers, direct match
+  // If 2 bladers in League, direct match
   if (bladers.length === 2) {
     return [
       {
@@ -480,7 +479,7 @@ export function generateTournamentBracket(
         bladerB: bladers[1],
         scoreA: 0,
         scoreB: 0,
-        targetScore: config.type === 'series' ? 1 : config.victoryConditions?.pointsToWin || 5,
+        targetScore: config.victoryConditions?.pointsToWin || 5,
         status: 'live',
         winnerId: null,
         cornerA: 'Red',
@@ -491,7 +490,7 @@ export function generateTournamentBracket(
     ];
   }
 
-  // Regular Phase matches for League / Series
+  // Regular Phase matches for League
   return generateRegularPhaseMatches(bladers, config);
 }
 

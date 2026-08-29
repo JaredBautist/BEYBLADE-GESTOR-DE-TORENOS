@@ -162,23 +162,17 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
           </div>
         </div>
 
-        {/* Quick action: Load in console */}
-        {isPlayable && (
+        {/* Action Button */}
+        {isPlayable && !isFinished && (
           <button
             onClick={() => {
               soundManager.playClick();
               onSelectMatchForConsole(match);
             }}
-            className={`w-full mt-2.5 pt-2 border-t border-slate-100 dark:border-white/5 text-[11px] font-headline font-black uppercase flex items-center justify-center gap-1.5 min-h-[32px] transition-colors ${
-              isFinished
-                ? 'text-slate-500 hover:text-slate-900 dark:hover:text-white font-bold'
-                : 'text-[#0284c7] dark:text-[#04A8FC] hover:underline'
-            }`}
+            className="w-full mt-2.5 py-1.5 bg-[#04A8FC] hover:bg-[#008fe0] text-white rounded-lg font-headline font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1 shadow-sm transition-all"
           >
-            <span className="material-symbols-outlined text-sm">
-              {isFinished ? 'visibility' : 'sports_kabaddi'}
-            </span>
-            <span>{isFinished ? 'Ver en Battle Console' : 'Lanzar a Battle Console'}</span>
+            <span className="material-symbols-outlined text-xs">sports_kabaddi</span>
+            <span>Cargar en Consola</span>
           </button>
         )}
       </div>
@@ -186,21 +180,25 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 pb-12">
+    <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 border-b border-[#bec7d3]/30 dark:border-white/10 pb-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="w-2.5 h-2.5 rounded-full bg-[#04A8FC] animate-pulse"></span>
             <span className="font-label-caps text-xs text-[#04A8FC] uppercase tracking-widest font-bold">
-              ÁRBOL EN TIEMPO REAL • {bladers.length} BLADERS
+              {config.type === 'league' ? 'LIGA OFICIAL • ACUMULACIÓN Y CORTE' : config.type === 'series' ? 'FORMATO SERIE (1 BATALLA Y FUERA)' : 'ÁRBOL DE ELIMINACIÓN DIRECTA'} • {bladers.length} BLADERS
             </span>
           </div>
           <h1 className="font-headline font-black text-3xl md:text-5xl text-[#1a1c1e] dark:text-white uppercase tracking-tight italic">
             TOURNAMENT BRACKET
           </h1>
           <p className="font-body-text text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
-            Árbol oficial de eliminación directa Comunidad Beyblade Cúcuta. Los ganadores avanzan automáticamente de ronda.
+            {config.type === 'series'
+              ? 'Formato Serie Oficial (1 Batalla y Chao). El ganador avanza de ronda y el perdedor queda automáticamente fuera.'
+              : config.type === 'league'
+              ? 'Fase de grupos por acumulación de puntos y corte a eliminatorias de Playoffs.'
+              : 'Árbol oficial de eliminación directa Comunidad Beyblade Cúcuta. Los ganadores avanzan automáticamente de ronda.'}
           </p>
         </div>
 
@@ -208,7 +206,7 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           {/* View mode switcher */}
           <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-headline font-bold uppercase">
-            {config.type !== 'elimination' && (
+            {config.type === 'league' && (
               <button
                 onClick={() => {
                   soundManager.playClick();
@@ -265,7 +263,7 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
               className="bg-[#04A8FC] hover:bg-[#008fe0] text-white px-3.5 py-2 rounded-xl text-xs font-headline font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-[#04A8FC]/20 transition-all active:scale-95"
             >
               <span className="material-symbols-outlined text-sm">shuffle</span>
-              <span>{config.type === 'elimination' ? 'Sortear Bracket' : 'Generar Fase Regular'}</span>
+              <span>{config.type === 'league' ? 'Generar Fase Regular' : 'Sortear Bracket'}</span>
             </button>
           )}
 
@@ -335,16 +333,14 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
         </div>
       )}
 
-      {/* VIEW MODE: STANDINGS LEADERBOARD (FOR LEAGUE / SERIES FORMATS) */}
+      {/* VIEW MODE: STANDINGS LEADERBOARD (FOR LEAGUE FORMAT) */}
       {viewMode === 'standings' && (
         <div className="space-y-6 animate-fade-in">
           {/* Phase Banner & Cutoff Rules */}
           {(() => {
             const ranked = getRankedBladers(bladers);
-            const cutoffTarget = config.playoffCutoffType === 'min_points'
-              ? 0
-              : (config.playoffCutoffCount || (ranked.length >= 8 ? 8 : ranked.length >= 4 ? 4 : 2));
-            const minPts = config.minPointsToQualify || 4;
+            const minPts = config.minPointsToQualify || 20;
+            const cutoffTarget = config.playoffCutoffCount || (ranked.length >= 8 ? 8 : ranked.length >= 4 ? 4 : 2);
 
             const regularMatches = matches.filter((m) => m.stage === 'regular');
             const finishedRegularMatches = regularMatches.filter((m) => m.status === 'finished');
@@ -358,13 +354,11 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
                     <div className="flex items-center gap-2">
                       <span className="material-symbols-outlined text-[#04A8FC] text-xl">tune</span>
                       <h3 className="font-headline font-black text-sm sm:text-base uppercase text-slate-900 dark:text-white">
-                        Criterio de Corte para Fase Final (Playoffs)
+                        Criterio de Puntos & Corte a Fase Final (Playoffs)
                       </h3>
                     </div>
                     <p className="text-xs text-slate-600 dark:text-slate-300 font-label-caps uppercase">
-                      {config.playoffCutoffType === 'min_points'
-                        ? `Avanzan a Playoffs los Bladers con ≥ ${minPts} PUNTOS acumulados. Los demás quedan eliminados.`
-                        : `Clasifican los TOP ${cutoffTarget} Bladers (${cutoffTarget === 8 ? 'Cuartos de Final' : cutoffTarget === 4 ? 'Semifinales' : 'Gran Final'}). Los demás quedan descalificados.`}
+                      Para clasificar a {cutoffTarget === 8 ? 'Cuartos de Final (Top 8)' : cutoffTarget === 4 ? 'Semifinales (Top 4)' : 'Gran Final (Top 2)'} se requiere acumular al menos <strong className="text-[#04A8FC]">≥ {minPts} PUNTOS</strong>. Los Bladers con menos de {minPts} PTS quedan automáticamente eliminados/descartados.
                     </p>
                   </div>
 
@@ -399,14 +393,15 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
                           <th className="py-3 px-2 sm:px-3 text-center">V - D</th>
                           <th className="py-3 px-3 sm:px-4 text-center font-headline text-slate-900 dark:text-white">Puntos</th>
                           <th className="py-3 px-2 sm:px-3 text-center hidden md:table-cell">Finishes</th>
-                          <th className="py-3 px-3 sm:px-4 text-center">Estado Oficial</th>
+                          <th className="py-3 px-3 sm:px-4 text-center">Estado de Clasificación</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-white/5 font-bold">
                         {ranked.map((b, idx) => {
-                          const isQualifying = config.playoffCutoffType === 'min_points'
-                            ? (b.stats?.pointsScored || 0) >= minPts
-                            : idx < cutoffTarget;
+                          const points = b.stats?.pointsScored || 0;
+                          const hasMinPoints = points >= minPts;
+                          const isQualifying = hasMinPoints && idx < cutoffTarget;
+                          const isDisqualifiedByPoints = !hasMinPoints;
 
                           const matchesPlayed = b.stats?.matchesPlayed || 0;
                           const matchesLimit = config.regularPhaseMatchesPerBlader || 2;
@@ -416,8 +411,8 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
                               key={b.id}
                               className={`transition-colors ${
                                 isQualifying
-                                  ? 'bg-emerald-500/5 hover:bg-emerald-500/10'
-                                  : 'hover:bg-black/5 dark:hover:bg-white/5 opacity-70'
+                                  ? 'bg-emerald-500/10 hover:bg-emerald-500/15'
+                                  : 'hover:bg-black/5 dark:hover:bg-white/5 opacity-75'
                               }`}
                             >
                               {/* Position */}
@@ -456,7 +451,7 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
 
                               {/* Points */}
                               <td className="py-3 px-3 sm:px-4 text-center font-headline font-black text-sm sm:text-base text-[#04A8FC]">
-                                {b.stats?.pointsScored || 0} PTS
+                                {points} PTS
                               </td>
 
                               {/* Finishes breakdown */}
@@ -470,16 +465,21 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
                               {/* Status Tag */}
                               <td className="py-3 px-3 sm:px-4 text-center">
                                 {isQualifying ? (
-                                  <span className="px-2.5 py-1 rounded-full text-[9px] sm:text-[10px] font-black bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 inline-flex items-center gap-1">
+                                  <span className="px-2.5 py-1 rounded-full text-[9px] sm:text-[10px] font-black bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 inline-flex items-center gap-1 shadow-sm">
                                     <span className="material-symbols-outlined text-xs">check_circle</span>
                                     <span>
                                       {cutoffTarget === 8 ? 'Pasa a Cuartos' : cutoffTarget === 4 ? 'Pasa a Semis' : 'Pasa a Final'}
                                     </span>
                                   </span>
-                                ) : (
+                                ) : isDisqualifiedByPoints ? (
                                   <span className="px-2.5 py-1 rounded-full text-[9px] sm:text-[10px] font-bold bg-red-500/10 text-red-500 border border-red-500/20 inline-flex items-center gap-1">
                                     <span className="material-symbols-outlined text-xs">cancel</span>
-                                    <span>Eliminado</span>
+                                    <span>Eliminado (&lt; {minPts} PTS)</span>
+                                  </span>
+                                ) : (
+                                  <span className="px-2.5 py-1 rounded-full text-[9px] sm:text-[10px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 inline-flex items-center gap-1">
+                                    <span className="material-symbols-outlined text-xs">warning</span>
+                                    <span>Fuera de Top {cutoffTarget}</span>
                                   </span>
                                 )}
                               </td>
