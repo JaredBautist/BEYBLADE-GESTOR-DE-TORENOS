@@ -184,18 +184,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Bottom Actions */}
       <div className="px-3 pt-4 border-t border-slate-200 dark:border-white/10 space-y-1.5">
-        <button
-          id="btn-new-battle-sidebar"
-          onClick={() => {
-            soundManager.playClick();
-            onOpenNewBattle();
-            onCloseMobile?.();
-          }}
-          className="w-full bg-[#04A8FC] hover:bg-[#008fe0] text-white py-2.5 px-4 rounded-xl font-label-caps text-xs uppercase tracking-wider font-black shadow-md shadow-[#04A8FC]/20 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all"
-        >
-          <span className="material-symbols-outlined text-base">add_circle</span>
-          <span>Nuevo Duelo</span>
-        </button>
 
         <button
           id="btn-support-sidebar"
