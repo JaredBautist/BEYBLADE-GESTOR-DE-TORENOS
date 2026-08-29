@@ -13,19 +13,10 @@ interface HistoryScreenProps {
 export const HistoryScreen: React.FC<HistoryScreenProps> = ({
   bladers,
   history,
-  onAddHistoryRecord,
   onDeleteHistoryRecord
 }) => {
-  const [activeTab, setActiveTab] = useState<'hall_of_fame' | 'tournaments' | 'casuals'>('hall_of_fame');
-  const [showAddCasualModal, setShowAddCasualModal] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<'hall_of_fame' | 'tournaments'>('hall_of_fame');
   const [selectedTournamentRecap, setSelectedTournamentRecap] = useState<TournamentRecord | null>(null);
-
-  // Casual match form state
-  const [casualBladerA, setCasualBladerA] = useState<string>(bladers[0]?.name || '');
-  const [casualBladerB, setCasualBladerB] = useState<string>(bladers[1]?.name || '');
-  const [casualScoreA, setCasualScoreA] = useState<number>(4);
-  const [casualScoreB, setCasualScoreB] = useState<number>(2);
-  const [casualNotes, setCasualNotes] = useState<string>('Duelo Amistoso Cúcuta');
 
   const activeBladers = bladers.filter((b) => (b.stats?.matchesPlayed || 0) > 0 || (b.stats?.pointsScored || 0) > 0 || (b.stats?.wins || 0) > 0);
   const sortedByWins = [...activeBladers].sort((a, b) => (b.stats?.wins || 0) - (a.stats?.wins || 0));
@@ -33,43 +24,7 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
   const sortedByBurst = [...activeBladers].sort((a, b) => (b.stats?.burstFinishes || 0) - (a.stats?.burstFinishes || 0));
   const sortedByPoints = [...activeBladers].sort((a, b) => (b.stats?.pointsScored || 0) - (a.stats?.pointsScored || 0));
 
-  const officialTournaments = history.filter((h) => h.type === 'tournament');
-  const casualEncounters = history.filter((h) => h.type === 'casual');
-
-  const handleCreateCasualRecord = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!casualBladerA.trim() || !casualBladerB.trim() || !onAddHistoryRecord) return;
-
-    soundManager.playScore();
-
-    const winnerName = casualScoreA >= casualScoreB ? casualBladerA.trim() : casualBladerB.trim();
-    const runnerUpName = casualScoreA >= casualScoreB ? casualBladerB.trim() : casualBladerA.trim();
-
-    const newRecord: TournamentRecord = {
-      id: `casual-${Date.now()}`,
-      title: casualNotes.trim() || 'Encuentro Casual',
-      date: new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric' }),
-      type: 'casual',
-      format: 'elimination',
-      winnerName,
-      runnerUpName,
-      totalMatches: 1,
-      totalBladers: 2,
-      totalPoints: casualScoreA + casualScoreB,
-      matchesSummary: [
-        {
-          bladerA: casualBladerA.trim(),
-          bladerB: casualBladerB.trim(),
-          scoreA: casualScoreA,
-          scoreB: casualScoreB,
-          winner: winnerName
-        }
-      ]
-    };
-
-    onAddHistoryRecord(newRecord);
-    setShowAddCasualModal(false);
-  };
+  const officialTournaments = history;
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-12">
@@ -80,21 +35,15 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
             HISTORIAL & HALL OF FAME
           </h1>
           <p className="font-body-text text-xs sm:text-sm md:text-base text-slate-600 dark:text-slate-400">
-            Registros de torneos culminados, encuentros casuales amistosos y líderes históricos en Cúcuta.
+            Registros inmutables de torneos culminados, cuadros de honor y líderes históricos en Cúcuta.
           </p>
         </div>
 
-        {/* Action Button */}
-        <button
-          onClick={() => {
-            soundManager.playClick();
-            setShowAddCasualModal(true);
-          }}
-          className="w-full sm:w-auto justify-center bg-[#04A8FC] hover:bg-[#008fe0] text-white px-4 py-2.5 rounded-xl font-headline font-black text-xs uppercase flex items-center gap-2 shadow-md shadow-[#04A8FC]/20 transition-all hover:scale-[1.02] active:scale-95"
-        >
-          <span className="material-symbols-outlined text-base">sports_kabaddi</span>
-          <span>Registrar Encuentro Casual</span>
-        </button>
+        {/* Status Badge */}
+        <div className="flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-label-caps text-xs uppercase font-black shadow-sm">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>Archivo Histórico 100% Automatizado</span>
+        </div>
       </div>
 
       {/* Tabs Navigation (Responsive scroll/wrap) */}
@@ -104,14 +53,14 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
             soundManager.playClick();
             setActiveTab('hall_of_fame');
           }}
-          className={`flex-1 sm:flex-initial px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl font-headline font-black text-[11px] sm:text-xs uppercase flex items-center justify-center gap-1.5 sm:gap-2 transition-all whitespace-nowrap ${
+          className={`flex-1 sm:flex-initial px-4 sm:px-6 py-2.5 rounded-xl font-headline font-black text-xs uppercase flex items-center justify-center gap-2 transition-all whitespace-nowrap ${
             activeTab === 'hall_of_fame'
               ? 'bg-[#04A8FC] text-white shadow-md'
               : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
           <span className="material-symbols-outlined text-sm">emoji_events</span>
-          <span>Hall of Fame</span>
+          <span>Hall of Fame & Récords</span>
         </button>
 
         <button
@@ -119,29 +68,14 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
             soundManager.playClick();
             setActiveTab('tournaments');
           }}
-          className={`flex-1 sm:flex-initial px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl font-headline font-black text-[11px] sm:text-xs uppercase flex items-center justify-center gap-1.5 sm:gap-2 transition-all whitespace-nowrap ${
+          className={`flex-1 sm:flex-initial px-4 sm:px-6 py-2.5 rounded-xl font-headline font-black text-xs uppercase flex items-center justify-center gap-2 transition-all whitespace-nowrap ${
             activeTab === 'tournaments'
               ? 'bg-[#04A8FC] text-white shadow-md'
               : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
           <span className="material-symbols-outlined text-sm">military_tech</span>
-          <span>Torneos ({officialTournaments.length})</span>
-        </button>
-
-        <button
-          onClick={() => {
-            soundManager.playClick();
-            setActiveTab('casuals');
-          }}
-          className={`flex-1 sm:flex-initial px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl font-headline font-black text-[11px] sm:text-xs uppercase flex items-center justify-center gap-1.5 sm:gap-2 transition-all whitespace-nowrap ${
-            activeTab === 'casuals'
-              ? 'bg-[#04A8FC] text-white shadow-md'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-          }`}
-        >
-          <span className="material-symbols-outlined text-sm">swords</span>
-          <span>Casuales ({casualEncounters.length})</span>
+          <span>Torneos Culminados ({officialTournaments.length})</span>
         </button>
       </div>
 
@@ -399,186 +333,7 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
         </div>
       )}
 
-      {/* TAB 3: CASUAL ENCOUNTERS */}
-      {activeTab === 'casuals' && (
-        <div className="space-y-4">
-          {casualEncounters.length === 0 ? (
-            <div className="glass-panel p-8 sm:p-12 rounded-3xl border border-dashed border-slate-300 dark:border-white/10 text-center space-y-3 bg-white dark:bg-[#15151c]">
-              <div className="w-14 h-14 rounded-2xl bg-[#04A8FC]/10 text-[#04A8FC] flex items-center justify-center mx-auto">
-                <span className="material-symbols-outlined text-3xl">sports_kabaddi</span>
-              </div>
-              <h4 className="font-headline font-black text-lg uppercase text-slate-900 dark:text-white">
-                No hay encuentros casuales registrados
-              </h4>
-              <p className="text-xs text-slate-500 max-w-md mx-auto">
-                Registra duelos rápidos y combates amistosos entre los miembros de la comunidad para que cuenten en el historial.
-              </p>
-              <button
-                onClick={() => setShowAddCasualModal(true)}
-                className="bg-[#04A8FC] hover:bg-[#008fe0] text-white px-5 py-2.5 rounded-xl font-headline font-bold text-xs uppercase"
-              >
-                Registrar Primer Duelo Casual
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {casualEncounters.map((c) => (
-                <div
-                  key={c.id}
-                  className="glass-panel p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#15151c] shadow-sm hover:border-[#04A8FC] transition-all space-y-3 relative group"
-                >
-                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-2">
-                    <span className="text-[10px] font-label-caps uppercase text-[#04A8FC] font-bold">
-                      Casual • {c.date}
-                    </span>
-                    {onDeleteHistoryRecord && (
-                      <button
-                        onClick={() => {
-                          soundManager.playClick();
-                          onDeleteHistoryRecord(c.id);
-                        }}
-                        className="text-slate-400 hover:text-red-500 p-0.5 transition-opacity"
-                      >
-                        <span className="material-symbols-outlined text-sm">delete</span>
-                      </button>
-                    )}
-                  </div>
 
-                  <h5 className="font-headline font-bold text-sm uppercase text-slate-900 dark:text-white truncate">
-                    {c.title}
-                  </h5>
-
-                  {c.matchesSummary && c.matchesSummary.length > 0 ? (
-                    <div className="p-2.5 sm:p-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 flex items-center justify-between font-headline font-bold uppercase text-xs gap-2 min-w-0">
-                      <span className={`truncate min-w-0 ${c.matchesSummary[0].winner === c.matchesSummary[0].bladerA ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-400'}`}>
-                        {c.matchesSummary[0].bladerA} ({c.matchesSummary[0].scoreA})
-                      </span>
-                      <span className="text-slate-400 font-mono text-[10px] flex-shrink-0">VS</span>
-                      <span className={`truncate min-w-0 text-right ${c.matchesSummary[0].winner === c.matchesSummary[0].bladerB ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-400'}`}>
-                        {c.matchesSummary[0].bladerB} ({c.matchesSummary[0].scoreB})
-                      </span>
-                    </div>
-                  ) : (
-                    <p className="text-xs font-headline font-bold uppercase text-emerald-500 truncate">
-                      Ganador: {c.winnerName}
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Modal to register casual encounter */}
-      {showAddCasualModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#15151c] border border-slate-200 dark:border-white/10 rounded-3xl max-w-md w-full p-6 md:p-8 shadow-2xl space-y-5">
-            <div className="flex justify-between items-center border-b border-slate-200 dark:border-white/10 pb-3">
-              <h3 className="font-headline font-black text-lg uppercase text-slate-900 dark:text-white">
-                REGISTRAR ENCUENTRO CASUAL
-              </h3>
-              <button
-                onClick={() => setShowAddCasualModal(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/10 text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center justify-center font-bold"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateCasualRecord} className="space-y-4">
-              <div>
-                <label className="block text-xs font-label-caps uppercase font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Título o Lugar del Duelo
-                </label>
-                <input
-                  type="text"
-                  value={casualNotes}
-                  onChange={(e) => setCasualNotes(e.target.value)}
-                  placeholder="Ej. Reto en Parque Santander"
-                  className="w-full bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white font-headline focus:ring-2 focus:ring-[#04A8FC] focus:outline-none shadow-sm"
-                />
-              </div>
-
-              {/* Blader A and Score */}
-              <div className="grid grid-cols-3 gap-2">
-                <div className="col-span-2">
-                  <label className="block text-[11px] font-label-caps uppercase font-bold text-slate-600 dark:text-slate-400 mb-1">
-                    Blader A
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={casualBladerA}
-                    onChange={(e) => setCasualBladerA(e.target.value)}
-                    placeholder="Nombre Blader A"
-                    className="w-full bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white font-headline focus:ring-2 focus:ring-[#04A8FC] shadow-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-label-caps uppercase font-bold text-slate-600 dark:text-slate-400 mb-1">
-                    Puntos
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="10"
-                    value={casualScoreA}
-                    onChange={(e) => setCasualScoreA(parseInt(e.target.value) || 0)}
-                    className="w-full bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white font-bold text-center"
-                  />
-                </div>
-              </div>
-
-              {/* Blader B and Score */}
-              <div className="grid grid-cols-3 gap-2">
-                <div className="col-span-2">
-                  <label className="block text-[11px] font-label-caps uppercase font-bold text-slate-600 dark:text-slate-400 mb-1">
-                    Blader B
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={casualBladerB}
-                    onChange={(e) => setCasualBladerB(e.target.value)}
-                    placeholder="Nombre Blader B"
-                    className="w-full bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white font-headline focus:ring-2 focus:ring-[#04A8FC] shadow-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-label-caps uppercase font-bold text-slate-600 dark:text-slate-400 mb-1">
-                    Puntos
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="10"
-                    value={casualScoreB}
-                    onChange={(e) => setCasualScoreB(parseInt(e.target.value) || 0)}
-                    className="w-full bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white font-bold text-center"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-white/10">
-                <button
-                  type="button"
-                  onClick={() => setShowAddCasualModal(false)}
-                  className="px-4 py-2 text-xs font-label-caps uppercase font-bold text-slate-600 hover:text-slate-900 dark:hover:text-white"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="bg-[#04A8FC] hover:bg-[#008fe0] text-white px-5 py-2 rounded-xl text-xs font-headline font-black uppercase shadow-md transition-all"
-                >
-                  Guardar Encuentro
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* TOURNAMENT RECAP MODAL (READ-ONLY ARCHIVE VIEW) */}
       {selectedTournamentRecap && (
