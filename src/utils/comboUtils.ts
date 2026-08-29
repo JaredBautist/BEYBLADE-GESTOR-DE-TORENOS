@@ -1,4 +1,5 @@
 import { BeybladePart, Blader, BladerCombo, RegisteredCombo } from '../types';
+import { getBitCategory, getBladeCategory } from '../data/bitCatalog';
 
 /**
  * Robust parser for Beyblade X combo strings like:
@@ -86,8 +87,8 @@ export function syncComboPiecesToCatalog(
       const p: BeybladePart = {
         name: blade,
         type: 'Blade',
-        category: 'Attack',
-        description: `Blade registrada automáticamente de los combos del torneo.`
+        category: getBladeCategory(blade),
+        description: `Blade registrada de los combos del torneo (${getBladeCategory(blade)}).`
       };
       newPartsAdded.push(p);
       onAddPart(p);
@@ -99,7 +100,7 @@ export function syncComboPiecesToCatalog(
         name: ratchet,
         type: 'Ratchet',
         category: 'Balance',
-        description: `Ratchet registrado automáticamente en el torneo.`
+        description: `Ratchet registrado en los combos del torneo.`
       };
       newPartsAdded.push(p);
       onAddPart(p);
@@ -107,11 +108,12 @@ export function syncComboPiecesToCatalog(
 
     if (bit && !existingNamesLower.has(bit.toLowerCase())) {
       existingNamesLower.add(bit.toLowerCase());
+      const bitCategory = getBitCategory(bit);
       const p: BeybladePart = {
         name: bit,
         type: 'Bit',
-        category: 'Attack',
-        description: `Bit registrado automáticamente en el torneo.`
+        category: bitCategory,
+        description: `Punta (Bit) oficial registrada en el torneo (${bitCategory}).`
       };
       newPartsAdded.push(p);
       onAddPart(p);
@@ -154,36 +156,9 @@ export function createRegisteredCombosFromBlader(
           ec.bit.toLowerCase() === bit.toLowerCase())
     );
 
-    // Infer archetype from bit / blade
-    let inferredType: 'Attack' | 'Defense' | 'Stamina' | 'Balance' = existing?.type || 'Attack';
-    const comboStr = `${blade} ${bit}`.toLowerCase();
-    if (!existing?.type) {
-      if (
-        comboStr.includes('ball') ||
-        comboStr.includes('orb') ||
-        comboStr.includes('disc ball') ||
-        comboStr.includes('rod') ||
-        comboStr.includes('arrow')
-      ) {
-        inferredType = 'Stamina';
-      } else if (
-        comboStr.includes('needle') ||
-        comboStr.includes('shield') ||
-        comboStr.includes('hex') ||
-        comboStr.includes('chain') ||
-        comboStr.includes('knight')
-      ) {
-        inferredType = 'Defense';
-      } else if (
-        comboStr.includes('point') ||
-        comboStr.includes('taper') ||
-        comboStr.includes('unite') ||
-        comboStr.includes('scythe') ||
-        comboStr.includes('viper')
-      ) {
-        inferredType = 'Balance';
-      }
-    }
+    // Infer archetype accurately from official bit category (or blade if bit unknown)
+    const inferredType: 'Attack' | 'Defense' | 'Stamina' | 'Balance' =
+      existing?.type || (bit ? getBitCategory(bit) : getBladeCategory(blade));
 
     return {
       id: comboId,

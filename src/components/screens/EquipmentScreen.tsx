@@ -3,6 +3,7 @@ import { BeybladePart, Blader, RegisteredCombo } from '../../types';
 import { soundManager } from '../../utils/audio';
 import { compressImage } from '../../utils/imageUtils';
 import { BladerAvatar } from '../BladerAvatar';
+import { OFFICIAL_BITS } from '../../data/bitCatalog';
 
 interface EquipmentScreenProps {
   parts: BeybladePart[];
@@ -29,6 +30,9 @@ export const EquipmentScreen: React.FC<EquipmentScreenProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<'All' | 'Blade' | 'Ratchet' | 'Bit'>('All');
   const [comboFilterType, setComboFilterType] = useState<string>('All');
   const [comboFilterBlader, setComboFilterBlader] = useState<string>('All');
+  const [showBitGuideModal, setShowBitGuideModal] = useState<boolean>(false);
+  const [bitGuideCategoryFilter, setBitGuideCategoryFilter] = useState<'All' | 'Attack' | 'Defense' | 'Stamina' | 'Balance'>('All');
+  const [bitGuideSearch, setBitGuideSearch] = useState<string>('');
 
   // Lightbox modal for zooming combo photos
   const [previewImageModal, setPreviewImageModal] = useState<{ isOpen: boolean; url: string; title: string }>({
@@ -86,6 +90,13 @@ export const EquipmentScreen: React.FC<EquipmentScreenProps> = ({
       c.bladerId === comboFilterBlader ||
       c.bladerName.toLowerCase() === comboFilterBlader.toLowerCase();
     return matchesType && matchesBlader;
+  });
+
+  const filteredOfficialBits = OFFICIAL_BITS.filter((b) => {
+    const matchesCat = bitGuideCategoryFilter === 'All' || b.category === bitGuideCategoryFilter;
+    const q = bitGuideSearch.trim().toLowerCase();
+    const matchesQuery = !q || b.name.toLowerCase().includes(q) || b.code.toLowerCase().includes(q) || b.categoryEs.toLowerCase().includes(q);
+    return matchesCat && matchesQuery;
   });
 
   return (
@@ -391,7 +402,7 @@ export const EquipmentScreen: React.FC<EquipmentScreenProps> = ({
         <div className="space-y-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             {/* Category Filter */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               {(['All', 'Blade', 'Ratchet', 'Bit'] as const).map((cat) => (
                 <button
                   key={cat}
@@ -409,6 +420,18 @@ export const EquipmentScreen: React.FC<EquipmentScreenProps> = ({
                 </button>
               ))}
             </div>
+
+            {/* Official Bit Guide trigger */}
+            <button
+              onClick={() => {
+                soundManager.playClick();
+                setShowBitGuideModal(true);
+              }}
+              className="bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-purple-500/20 hover:from-amber-500/30 hover:to-purple-500/30 text-slate-900 dark:text-white border border-amber-500/40 px-4 py-2 rounded-xl text-xs font-headline font-black uppercase flex items-center gap-2 transition-all shadow-sm"
+            >
+              <span className="material-symbols-outlined text-base text-amber-500">menu_book</span>
+              <span>Guía Oficial de Puntas (42 Bits)</span>
+            </button>
           </div>
 
           {/* Parts Grid */}
@@ -446,6 +469,17 @@ export const EquipmentScreen: React.FC<EquipmentScreenProps> = ({
                       (c.name && c.name.toLowerCase().includes(partNameLower))
                   ).length;
 
+                const categoryColor =
+                  part.category === 'Attack'
+                    ? 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30'
+                    : part.category === 'Defense'
+                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                    : part.category === 'Stamina'
+                    ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30'
+                    : part.category === 'Balance'
+                    ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30'
+                    : 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/30';
+
                 return (
                   <div
                     key={part.name}
@@ -453,13 +487,7 @@ export const EquipmentScreen: React.FC<EquipmentScreenProps> = ({
                   >
                     <div className="flex items-center justify-between">
                       <span
-                        className={`text-[10px] font-label-caps font-black px-2 py-0.5 rounded-lg uppercase ${
-                          part.type === 'Blade'
-                            ? 'bg-red-500/10 text-red-600 dark:text-red-400'
-                            : part.type === 'Ratchet'
-                            ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
-                            : 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
-                        }`}
+                        className={`text-[10px] font-label-caps font-black px-2 py-0.5 rounded-lg uppercase border ${categoryColor}`}
                       >
                         {part.type} {part.category ? `• ${part.category}` : ''}
                       </span>
@@ -516,6 +544,132 @@ export const EquipmentScreen: React.FC<EquipmentScreenProps> = ({
             })}
           </div>
           )}
+        </div>
+      )}
+
+      {/* OFFICIAL BITS GUIDE MODAL */}
+      {showBitGuideModal && (
+        <div
+          onClick={() => setShowBitGuideModal(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in cursor-pointer"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative max-w-4xl w-full bg-white dark:bg-[#15151c] rounded-3xl border border-slate-200 dark:border-white/10 overflow-hidden shadow-2xl space-y-4 p-5 sm:p-7 max-h-[90vh] flex flex-col cursor-default"
+          >
+            {/* Modal Header */}
+            <div className="flex items-start justify-between border-b border-slate-200 dark:border-white/10 pb-4">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+                  <span className="text-[11px] font-label-caps uppercase text-[#04A8FC] font-black tracking-widest">
+                    CLASIFICACIÓN OFICIAL DE PUNTAS BEYBLADE X
+                  </span>
+                </div>
+                <h3 className="font-headline font-black text-xl sm:text-2xl uppercase text-slate-900 dark:text-white">
+                  Padrón de Puntas & Arquetipos ({OFFICIAL_BITS.length} Bits)
+                </h3>
+              </div>
+              <button
+                onClick={() => {
+                  soundManager.playClick();
+                  setShowBitGuideModal(false);
+                }}
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/10 text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center justify-center font-bold transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Category Filters & Search */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
+              <div className="flex items-center gap-1.5 flex-wrap w-full sm:w-auto">
+                {(['All', 'Attack', 'Stamina', 'Defense', 'Balance'] as const).map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => {
+                      soundManager.playClick();
+                      setBitGuideCategoryFilter(cat);
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-headline font-bold uppercase transition-all ${
+                      bitGuideCategoryFilter === cat
+                        ? cat === 'Attack'
+                          ? 'bg-red-500 text-white shadow-sm font-black'
+                          : cat === 'Stamina'
+                          ? 'bg-amber-500 text-black shadow-sm font-black'
+                          : cat === 'Defense'
+                          ? 'bg-emerald-600 text-white shadow-sm font-black'
+                          : cat === 'Balance'
+                          ? 'bg-purple-600 text-white shadow-sm font-black'
+                          : 'bg-[#04A8FC] text-white shadow-sm font-black'
+                        : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                    }`}
+                  >
+                    {cat === 'All'
+                      ? 'Todas (42)'
+                      : cat === 'Attack'
+                      ? 'Ataque (13)'
+                      : cat === 'Stamina'
+                      ? 'Resistencia (8)'
+                      : cat === 'Defense'
+                      ? 'Defensa (9)'
+                      : 'Equilibrio (12)'}
+                  </button>
+                ))}
+              </div>
+
+              <div className="relative w-full sm:w-60">
+                <input
+                  type="text"
+                  placeholder="Buscar punta o código..."
+                  value={bitGuideSearch}
+                  onChange={(e) => setBitGuideSearch(e.target.value)}
+                  className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#04A8FC]"
+                />
+                <span className="material-symbols-outlined text-base text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2">
+                  search
+                </span>
+              </div>
+            </div>
+
+            {/* Scrollable Bits Grid */}
+            <div className="flex-1 overflow-y-auto pr-1 no-scrollbar space-y-3 max-h-[58vh]">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {filteredOfficialBits.map((b) => {
+                  const badgeColor =
+                    b.category === 'Attack'
+                      ? 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30'
+                      : b.category === 'Defense'
+                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                      : b.category === 'Stamina'
+                      ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30'
+                      : 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30';
+
+                  return (
+                    <div
+                      key={b.name}
+                      className="p-3.5 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50/60 dark:bg-white/5 space-y-2 hover:border-[#04A8FC] transition-all"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-xs font-black px-2 py-0.5 rounded-md bg-black/10 dark:bg-white/10 text-slate-900 dark:text-white">
+                          [{b.code}]
+                        </span>
+                        <span className={`text-[10px] font-label-caps uppercase font-black px-2 py-0.5 rounded-lg border ${badgeColor}`}>
+                          {b.categoryEs}
+                        </span>
+                      </div>
+                      <h4 className="font-headline font-black text-sm uppercase text-slate-900 dark:text-white">
+                        {b.name}
+                      </h4>
+                      <p className="text-[11px] text-slate-600 dark:text-slate-400 font-body-text leading-tight">
+                        {b.description}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
