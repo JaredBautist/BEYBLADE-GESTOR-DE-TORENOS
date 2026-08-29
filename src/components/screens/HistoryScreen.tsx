@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Blader, TournamentRecord } from '../../types';
 import { soundManager } from '../../utils/audio';
 import { BladerAvatar } from '../BladerAvatar';
+import { getBitCategory } from '../../data/bitCatalog';
 
 interface HistoryScreenProps {
   bladers: Blader[];
@@ -17,6 +18,7 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'hall_of_fame' | 'tournaments'>('hall_of_fame');
   const [selectedTournamentRecap, setSelectedTournamentRecap] = useState<TournamentRecord | null>(null);
+  const [recapViewMode, setRecapViewMode] = useState<'bracket' | 'combos' | 'summary'>('bracket');
 
   // Aggregate stats across ALL archived tournaments in history + current bladers
   const bladerStatsMap = new Map<
@@ -423,18 +425,24 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
                   </div>
 
                   {/* Summary Stats */}
-                  <div className="grid grid-cols-3 gap-1.5 sm:gap-2 text-center text-xs font-label-caps uppercase pt-1">
+                  <div className="grid grid-cols-4 gap-1.5 sm:gap-2 text-center text-xs font-label-caps uppercase pt-1">
                     <div className="p-2 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 min-w-0">
-                      <span className="text-slate-400 block text-[9px] truncate">Participantes</span>
-                      <span className="font-black text-slate-900 dark:text-white text-[11px] sm:text-xs block truncate">{t.totalBladers} Bladers</span>
+                      <span className="text-slate-400 block text-[9px] truncate">Bladers</span>
+                      <span className="font-black text-slate-900 dark:text-white text-[11px] sm:text-xs block truncate">{t.totalBladers}</span>
+                    </div>
+                    <div className="p-2 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 min-w-0">
+                      <span className="text-slate-400 block text-[9px] truncate">Combos</span>
+                      <span className="font-black text-[#04A8FC] text-[11px] sm:text-xs block truncate">
+                        {t.registeredCombos?.length || t.participantsSnapshot?.reduce((acc, p) => acc + (p.combos?.length || 0), 0) || t.totalBladers}
+                      </span>
                     </div>
                     <div className="p-2 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 min-w-0">
                       <span className="text-slate-400 block text-[9px] truncate">Combates</span>
-                      <span className="font-black text-slate-900 dark:text-white text-[11px] sm:text-xs block truncate">{t.totalMatches} Duelos</span>
+                      <span className="font-black text-slate-900 dark:text-white text-[11px] sm:text-xs block truncate">{t.totalMatches}</span>
                     </div>
                     <div className="p-2 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 min-w-0">
                       <span className="text-slate-400 block text-[9px] truncate">Puntos</span>
-                      <span className="font-black text-[#04A8FC] text-[11px] sm:text-xs block truncate">{t.totalPoints} Pts</span>
+                      <span className="font-black text-amber-500 text-[11px] sm:text-xs block truncate">{t.totalPoints}</span>
                     </div>
                   </div>
 
@@ -482,17 +490,28 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
                   )}
 
                   {/* Recap Action Buttons */}
-                  <div className="pt-2.5 border-t border-slate-100 dark:border-white/5 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="pt-2.5 border-t border-slate-100 dark:border-white/5 grid grid-cols-3 gap-1.5 sm:gap-2">
                     <button
                       onClick={() => {
                         soundManager.playClick();
                         setRecapViewMode('bracket');
                         setSelectedTournamentRecap(t);
                       }}
-                      className="w-full flex items-center justify-center gap-1.5 text-[11px] font-headline font-black uppercase text-amber-500 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 rounded-xl py-2 transition-all shadow-sm"
+                      className="w-full flex items-center justify-center gap-1 text-[10px] sm:text-[11px] font-headline font-black uppercase text-amber-500 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 rounded-xl py-2 transition-all shadow-sm truncate"
                     >
-                      <span className="material-symbols-outlined text-sm">account_tree</span>
-                      <span>Ver Árbol Bracket</span>
+                      <span className="material-symbols-outlined text-xs sm:text-sm">account_tree</span>
+                      <span className="truncate">Árbol</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        soundManager.playClick();
+                        setRecapViewMode('combos');
+                        setSelectedTournamentRecap(t);
+                      }}
+                      className="w-full flex items-center justify-center gap-1 text-[10px] sm:text-[11px] font-headline font-black uppercase text-[#04A8FC] bg-[#04A8FC]/10 hover:bg-[#04A8FC]/20 border border-[#04A8FC]/30 rounded-xl py-2 transition-all truncate"
+                    >
+                      <span className="material-symbols-outlined text-xs sm:text-sm">sports_kabaddi</span>
+                      <span className="truncate">Combos</span>
                     </button>
                     <button
                       onClick={() => {
@@ -500,10 +519,10 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
                         setRecapViewMode('summary');
                         setSelectedTournamentRecap(t);
                       }}
-                      className="w-full flex items-center justify-center gap-1.5 text-[11px] font-headline font-bold uppercase text-[#04A8FC] bg-[#04A8FC]/10 hover:bg-[#04A8FC]/20 border border-[#04A8FC]/30 rounded-xl py-2 transition-all"
+                      className="w-full flex items-center justify-center gap-1 text-[10px] sm:text-[11px] font-headline font-bold uppercase text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 border border-slate-200 dark:border-white/10 rounded-xl py-2 transition-all truncate"
                     >
-                      <span className="material-symbols-outlined text-sm">visibility</span>
-                      <span>Recapitulativo</span>
+                      <span className="material-symbols-outlined text-xs sm:text-sm">visibility</span>
+                      <span className="truncate">Resumen</span>
                     </button>
                   </div>
                 </div>
@@ -550,22 +569,37 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
               </button>
             </div>
 
-            {/* View Mode Switcher: Tree Bracket vs Match List */}
+            {/* View Mode Switcher: Tree Bracket vs Combos vs Match List */}
             <div className="flex items-center justify-between gap-2 border-b border-slate-200 dark:border-white/10 pb-3 flex-wrap">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <button
                   onClick={() => {
                     soundManager.playClick();
                     setRecapViewMode('bracket');
                   }}
-                  className={`px-4 py-2 rounded-xl text-xs font-headline font-bold uppercase transition-all flex items-center gap-1.5 ${
+                  className={`px-3.5 py-2 rounded-xl text-xs font-headline font-bold uppercase transition-all flex items-center gap-1.5 ${
                     recapViewMode === 'bracket'
                       ? 'bg-amber-500 text-black shadow-md font-black'
                       : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
                   }`}
                 >
                   <span className="material-symbols-outlined text-sm">account_tree</span>
-                  <span>Árbol del Bracket (Visual)</span>
+                  <span>Árbol del Bracket</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    soundManager.playClick();
+                    setRecapViewMode('combos');
+                  }}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-headline font-bold uppercase transition-all flex items-center gap-1.5 ${
+                    recapViewMode === 'combos'
+                      ? 'bg-[#04A8FC] text-white shadow-md font-black'
+                      : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-sm">sports_kabaddi</span>
+                  <span>Combos & Decks</span>
                 </button>
 
                 <button
@@ -573,14 +607,14 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
                     soundManager.playClick();
                     setRecapViewMode('summary');
                   }}
-                  className={`px-4 py-2 rounded-xl text-xs font-headline font-bold uppercase transition-all flex items-center gap-1.5 ${
+                  className={`px-3.5 py-2 rounded-xl text-xs font-headline font-bold uppercase transition-all flex items-center gap-1.5 ${
                     recapViewMode === 'summary'
-                      ? 'bg-[#04A8FC] text-white shadow-md font-black'
+                      ? 'bg-purple-600 text-white shadow-md font-black'
                       : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
                   }`}
                 >
                   <span className="material-symbols-outlined text-sm">list_alt</span>
-                  <span>Lista de Duelos & Métricas</span>
+                  <span>Duelos & Podio</span>
                 </button>
               </div>
 
@@ -708,6 +742,175 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
                     </div>
                   )}
                 </div>
+              </div>
+            )}
+
+            {/* TAB CONTENT: COMBOS & DECKS REGISTRADOS */}
+            {recapViewMode === 'combos' && (
+              <div className="space-y-4 animate-fade-in">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-headline font-black text-xs sm:text-sm uppercase text-slate-900 dark:text-white flex items-center gap-2">
+                    <span className="material-symbols-outlined text-base text-[#04A8FC]">sports_kabaddi</span>
+                    <span>Decks & Beys Oficiales Utilizados en este Torneo</span>
+                  </h4>
+                  <span className="text-[10px] font-label-caps uppercase text-slate-500 font-bold">
+                    {selectedTournamentRecap.registeredCombos?.length ||
+                      selectedTournamentRecap.participantsSnapshot?.reduce((acc, p) => acc + (p.combos?.length || 0), 0) ||
+                      selectedTournamentRecap.totalBladers}{' '}
+                    Combos Registrados
+                  </span>
+                </div>
+
+                {selectedTournamentRecap.participantsSnapshot && selectedTournamentRecap.participantsSnapshot.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto pr-1">
+                    {selectedTournamentRecap.participantsSnapshot.map((blader, bIdx) => (
+                      <div
+                        key={bIdx}
+                        className="p-4 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 space-y-3 shadow-sm"
+                      >
+                        {/* Blader Header */}
+                        <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 pb-2.5">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <BladerAvatar blader={blader as any} size="sm" />
+                            <div className="min-w-0">
+                              <h5 className="font-headline font-black text-sm uppercase text-slate-900 dark:text-white truncate flex items-center gap-1.5">
+                                <span>{blader.name}</span>
+                                {selectedTournamentRecap.winnerName === blader.name && (
+                                  <span className="material-symbols-outlined text-sm text-amber-500" title="Campeón">crown</span>
+                                )}
+                              </h5>
+                              <span className="text-[10px] font-label-caps uppercase text-slate-500 truncate block">
+                                {blader.team || 'Independiente'} {blader.alias ? `• "${blader.alias}"` : ''}
+                              </span>
+                            </div>
+                          </div>
+
+                          {blader.stats && (
+                            <div className="text-right">
+                              <span className="text-[10px] font-label-caps uppercase font-black text-emerald-500 block">
+                                {blader.stats.wins}V - {blader.stats.losses}D
+                              </span>
+                              <span className="text-[9px] font-mono text-slate-400">
+                                {blader.stats.pointsScored} pts
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Combos list for this blader */}
+                        {blader.combos && blader.combos.length > 0 ? (
+                          <div className="space-y-2">
+                            {blader.combos.map((combo, cIdx) => {
+                              const bitCategory = getBitCategory(combo.bit);
+                              const typeColor =
+                                bitCategory === 'Attack'
+                                  ? 'bg-red-500/20 text-red-400 border-red-500/30'
+                                  : bitCategory === 'Stamina'
+                                  ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                                  : bitCategory === 'Defense'
+                                  ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                                  : 'bg-purple-500/20 text-purple-400 border-purple-500/30';
+
+                              return (
+                                <div
+                                  key={cIdx}
+                                  className="p-3 rounded-xl bg-white dark:bg-[#12131a] border border-slate-200 dark:border-white/5 space-y-2 relative overflow-hidden"
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <span className="font-headline font-black text-xs uppercase text-slate-900 dark:text-white truncate">
+                                      {combo.name || `${combo.blade} ${combo.ratchet} ${combo.bit}`}
+                                    </span>
+                                    <span className={`text-[9px] font-label-caps uppercase px-2 py-0.5 rounded-full font-black border ${typeColor}`}>
+                                      {bitCategory}
+                                    </span>
+                                  </div>
+
+                                  {/* Pieces Breakdown */}
+                                  <div className="grid grid-cols-3 gap-1.5 text-center text-[10px] font-mono">
+                                    <div className="p-1.5 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5">
+                                      <span className="text-slate-400 block text-[8px] uppercase">Blade</span>
+                                      <span className="font-bold text-slate-800 dark:text-slate-200 truncate block">{combo.blade}</span>
+                                    </div>
+                                    <div className="p-1.5 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5">
+                                      <span className="text-slate-400 block text-[8px] uppercase">Ratchet</span>
+                                      <span className="font-bold text-slate-800 dark:text-slate-200 truncate block">{combo.ratchet}</span>
+                                    </div>
+                                    <div className="p-1.5 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5">
+                                      <span className="text-slate-400 block text-[8px] uppercase">Bit</span>
+                                      <span className="font-bold text-slate-800 dark:text-slate-200 truncate block">{combo.bit}</span>
+                                    </div>
+                                  </div>
+
+                                  {/* Combo Photo if available */}
+                                  {combo.image && (
+                                    <div className="pt-1">
+                                      <img
+                                        src={combo.image}
+                                        alt={combo.name}
+                                        className="w-full h-24 object-cover rounded-lg border border-slate-200 dark:border-white/10"
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="p-2.5 text-center text-[11px] text-slate-400 italic bg-white/5 rounded-xl">
+                            Combo no especificado en el registro del torneo.
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : selectedTournamentRecap.registeredCombos && selectedTournamentRecap.registeredCombos.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-[60vh] overflow-y-auto pr-1">
+                    {selectedTournamentRecap.registeredCombos.map((combo, cIdx) => {
+                      const bitCategory = getBitCategory(combo.bit);
+                      const typeColor =
+                        bitCategory === 'Attack'
+                          ? 'bg-red-500/20 text-red-400 border-red-500/30'
+                          : bitCategory === 'Stamina'
+                          ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                          : bitCategory === 'Defense'
+                          ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                          : 'bg-purple-500/20 text-purple-400 border-purple-500/30';
+
+                      return (
+                        <div
+                          key={cIdx}
+                          className="p-3.5 rounded-2xl bg-white dark:bg-[#12131a] border border-slate-200 dark:border-white/10 space-y-2 shadow-sm"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-label-caps uppercase text-slate-500 font-bold truncate">
+                              {combo.bladerName}
+                            </span>
+                            <span className={`text-[9px] font-label-caps uppercase px-1.5 py-0.5 rounded-full font-black border ${typeColor}`}>
+                              {bitCategory}
+                            </span>
+                          </div>
+
+                          <h5 className="font-headline font-black text-xs uppercase text-slate-900 dark:text-white truncate">
+                            {combo.blade} {combo.ratchet} {combo.bit}
+                          </h5>
+
+                          {combo.image && (
+                            <img
+                              src={combo.image}
+                              alt={combo.blade}
+                              className="w-full h-24 object-cover rounded-lg border border-slate-200 dark:border-white/10"
+                            />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="p-8 text-center bg-slate-50 dark:bg-white/5 rounded-2xl text-xs text-slate-500">
+                    <span className="material-symbols-outlined text-3xl mb-1 text-slate-400 block">inventory_2</span>
+                    <span>No hay combos históricos archivados para este torneo.</span>
+                  </div>
+                )}
               </div>
             )}
 

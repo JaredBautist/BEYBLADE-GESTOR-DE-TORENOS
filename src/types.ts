@@ -69,6 +69,21 @@ export interface TournamentRecord {
   totalBladers: number;
   totalPoints: number;
   winnerAvatar?: string;
+  participantsSnapshot?: {
+    id: string;
+    name: string;
+    alias?: string;
+    team?: string;
+    avatarUrl?: string;
+    combos?: BeybladeCombo[];
+    stats?: {
+      wins: number;
+      losses: number;
+      pointsScored: number;
+      matchesPlayed?: number;
+    };
+  }[];
+  registeredCombos?: RegisteredCombo[];
   matchesSummary?: {
     roundName?: string;
     bladerA: string;

@@ -422,6 +422,8 @@ export async function syncTournamentRecordToSupabase(record: TournamentRecord) {
       total_bladers: record.totalBladers,
       total_points: record.totalPoints,
       winner_avatar: record.winnerAvatar || null,
+      participants_snapshot: record.participantsSnapshot || [],
+      registered_combos: record.registeredCombos || [],
       matches_summary: record.matchesSummary || [],
       created_at: new Date().toISOString()
     });
@@ -451,6 +453,8 @@ export async function fetchHistoryFromSupabase(): Promise<TournamentRecord[] | n
       totalBladers: row.total_bladers || 0,
       totalPoints: row.total_points || 0,
       winnerAvatar: row.winner_avatar,
+      participantsSnapshot: row.participants_snapshot || [],
+      registeredCombos: row.registered_combos || [],
       matchesSummary: row.matches_summary || []
     }));
   } catch (e) {

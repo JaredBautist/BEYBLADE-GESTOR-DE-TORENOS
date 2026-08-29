@@ -985,6 +985,23 @@ export default function App() {
         totalMatches: finishedMatchesList.length || matches.length,
         totalBladers: bladers.length,
         totalPoints: totalPoints || 12,
+        participantsSnapshot: bladers.map((b) => ({
+          id: b.id,
+          name: b.name,
+          alias: b.alias,
+          team: b.team,
+          avatarUrl: b.avatarUrl,
+          combos: b.combos || [],
+          stats: {
+            wins: b.stats?.wins || 0,
+            losses: b.stats?.losses || 0,
+            pointsScored: b.stats?.pointsScored || 0,
+            matchesPlayed: b.stats?.matchesPlayed || 0
+          }
+        })),
+        registeredCombos: registeredCombos && registeredCombos.length > 0
+          ? registeredCombos
+          : bladers.flatMap((b) => createRegisteredCombosFromBlader(b)),
         matchesSummary: matches.map((m, mIndex) => ({
           roundName: m.roundName || `Duelo #${m.matchNumber || mIndex + 1}`,
           bladerA: m.bladerA?.name || 'Blader A',
