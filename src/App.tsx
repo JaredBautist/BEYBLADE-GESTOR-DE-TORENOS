@@ -64,6 +64,7 @@ export default function App() {
   const [activeScreen, setActiveScreen] = useState<ActiveScreen>('tournament_format');
   const [isDark, setIsDark] = useState<boolean>(true);
   const [isMuted, setIsMuted] = useState<boolean>(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
 
   // Core Tournament State with localStorage & Supabase
   const [config, setConfig] = useState<TournamentConfig>(() => {
@@ -1224,6 +1225,38 @@ export default function App() {
         />
       </div>
 
+      {/* Mobile Drawer (Slide-over Sidebar with full options & Reset) */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-50 md:hidden animate-fade-in">
+          {/* Backdrop */}
+          <div
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity"
+          />
+
+          {/* Drawer Panel */}
+          <div className="fixed inset-y-0 left-0 w-72 max-w-[85vw] bg-white dark:bg-[#111116] shadow-2xl z-50 animate-slide-in">
+            <Sidebar
+              activeScreen={activeScreen}
+              setActiveScreen={setActiveScreen}
+              onOpenNewBattle={() => setNewBattleModalOpen(true)}
+              onOpenSupportModal={() => setSupportModalOpen(true)}
+              onResetTournament={() => setShowResetModal(true)}
+              onCloseMobile={() => setIsMobileMenuOpen(false)}
+              leagueName={config.leagueName}
+              season={config.season}
+              communityCity={config.communityCity}
+              logoUrl={config.logoUrl}
+              onUploadLogo={(url) => {
+                const updated = { ...config, logoUrl: url };
+                setConfig(updated);
+                syncConfigToSupabase(updated);
+              }}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Top Header */}
       <Header
         activeScreen={activeScreen}
@@ -1233,6 +1266,8 @@ export default function App() {
         isMuted={isMuted}
         setIsMuted={setIsMuted}
         onOpenNewBladerModal={() => setActiveScreen('bladers')}
+        onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        onResetTournament={() => setShowResetModal(true)}
         logoUrl={config.logoUrl}
         leagueName={config.leagueName}
         communityTagline={config.communityTagline}
@@ -1273,6 +1308,7 @@ export default function App() {
             onStartTournament={() => {
               setActiveScreen('bladers');
             }}
+            onResetTournament={() => setShowResetModal(true)}
           />
         )}
 

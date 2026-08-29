@@ -9,6 +9,7 @@ interface SidebarProps {
   onOpenNewBattle: () => void;
   onOpenSupportModal: () => void;
   onResetTournament: () => void;
+  onCloseMobile?: () => void;
   leagueName?: string;
   season?: string;
   communityCity?: string;
@@ -22,6 +23,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenNewBattle,
   onOpenSupportModal,
   onResetTournament,
+  onCloseMobile,
   leagueName = 'Comunidad Beyblade Cúcuta',
   season = 'Temporada Oficial',
   communityCity = 'Cúcuta',
@@ -73,7 +75,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   return (
-    <aside className="fixed left-0 top-0 h-full w-64 bg-white dark:bg-[#111116] border-r border-slate-200 dark:border-white/10 backdrop-blur-md shadow-[4px_0_20px_rgba(0,0,0,0.03)] dark:shadow-[4px_0_24px_rgba(0,0,0,0.4)] z-50 flex flex-col pt-6 pb-6 transition-all duration-200">
+    <aside className="h-full w-full bg-white dark:bg-[#111116] border-r border-slate-200 dark:border-white/10 backdrop-blur-md shadow-[4px_0_20px_rgba(0,0,0,0.03)] dark:shadow-[4px_0_24px_rgba(0,0,0,0.4)] flex flex-col pt-6 pb-6 transition-all duration-200 relative overflow-y-auto">
+      {/* Mobile Close Button */}
+      {onCloseMobile && (
+        <button
+          onClick={() => {
+            soundManager.playClick();
+            onCloseMobile();
+          }}
+          className="md:hidden absolute top-4 right-4 w-8 h-8 rounded-xl bg-slate-100 dark:bg-white/10 flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm"
+          title="Cerrar Menú"
+        >
+          <span className="material-symbols-outlined text-lg">close</span>
+        </button>
+      )}
+
       {/* Hidden file input for logo upload */}
       <input
         type="file"
@@ -102,7 +118,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <div className="w-full h-full bg-white dark:bg-white rounded-[14px] flex items-center justify-center overflow-hidden p-1 shadow-inner relative">
               <CommunityLogo size="md" customImageUrl={logoUrl} communityText={communityCity || leagueName} className="w-full h-full object-contain" />
               
-              {/* Change photo overlay button on hover */}
               <div
                 className={`absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white text-[10px] font-bold uppercase transition-opacity backdrop-blur-xs ${
                   isDragging ? 'opacity-100 bg-[#04A8FC]/80' : 'opacity-0 group-hover:opacity-100'
@@ -123,60 +138,63 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <h2 className="text-slate-900 dark:text-white font-headline font-black text-lg uppercase tracking-tight">
           {leagueName}
         </h2>
+        <p className="text-xs text-[#0284c7] dark:text-[#04A8FC] font-label-caps uppercase tracking-wider font-bold">
+          {season}
+        </p>
       </div>
 
       {/* Navigation List */}
-      <div className="flex-1 px-3 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
           const isActive = activeScreen === item.id;
           return (
             <button
               key={item.id}
-              id={`sidebar-nav-${item.id}`}
+              id={`nav-item-${item.id}`}
               onClick={() => {
                 soundManager.playClick();
                 setActiveScreen(item.id);
+                onCloseMobile?.();
               }}
-              className={`w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl font-label-caps text-xs uppercase tracking-wider transition-all duration-150 text-left ${
+              className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl font-label-caps text-xs uppercase tracking-wider transition-all duration-150 ${
                 isActive
-                  ? 'bg-[#04A8FC] text-white font-black shadow-md shadow-[#04A8FC]/25 translate-x-1'
-                  : 'text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 hover:translate-x-1 font-bold'
+                  ? 'bg-gradient-to-r from-sky-50 to-white dark:from-[#04A8FC]/20 dark:to-[#04A8FC]/5 text-[#0284c7] dark:text-white font-black border-l-4 border-[#04A8FC] shadow-sm'
+                  : 'text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 font-bold'
               }`}
             >
-              <span
-                className="material-symbols-outlined text-lg"
-                style={{ fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0" }}
-              >
-                {item.icon}
-              </span>
-              <span className="flex-1 truncate">{item.label}</span>
+              <div className="flex items-center gap-3">
+                <span
+                  className={`material-symbols-outlined text-lg ${
+                    isActive ? 'text-[#0284c7] dark:text-[#04A8FC]' : 'text-slate-400 dark:text-gray-400'
+                  }`}
+                >
+                  {item.icon}
+                </span>
+                <span>{item.label}</span>
+              </div>
               {item.badge && (
-                <span className="bg-[#AC191F] text-white text-[9px] px-1.5 py-0.5 rounded-full font-bold">
+                <span className="bg-[#04A8FC] text-white text-[10px] font-black px-1.5 py-0.5 rounded-full shadow-sm font-mono">
                   {item.badge}
                 </span>
               )}
             </button>
           );
         })}
-      </div>
+      </nav>
 
-      {/* Bottom links */}
-      <div className="px-3 pt-3 border-t border-slate-200 dark:border-white/10 space-y-1">
-        {/* Config Comunidad (SaaS Community Settings) */}
+      {/* Bottom Actions */}
+      <div className="px-3 pt-4 border-t border-slate-200 dark:border-white/10 space-y-1.5">
         <button
-          id="btn-community-config-sidebar"
+          id="btn-new-battle-sidebar"
           onClick={() => {
             soundManager.playClick();
-            setActiveScreen('community_config');
+            onOpenNewBattle();
+            onCloseMobile?.();
           }}
-          className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-label-caps text-xs uppercase tracking-wider transition-all ${
-            activeScreen === 'community_config'
-              ? 'bg-[#04A8FC] text-white font-black shadow-md shadow-[#04A8FC]/25'
-              : 'text-slate-700 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 font-bold'
-          }`}
+          className="w-full bg-[#04A8FC] hover:bg-[#008fe0] text-white py-2.5 px-4 rounded-xl font-label-caps text-xs uppercase tracking-wider font-black shadow-md shadow-[#04A8FC]/20 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all"
         >
-          <span className="material-symbols-outlined text-base">domain</span>
-          <span>Config. Comunidad</span>
+          <span className="material-symbols-outlined text-base">add_circle</span>
+          <span>Nuevo Duelo</span>
         </button>
 
         <button
@@ -184,6 +202,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           onClick={() => {
             soundManager.playClick();
             onOpenSupportModal();
+            onCloseMobile?.();
           }}
           className="w-full flex items-center gap-3 px-4 py-2 text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl font-label-caps text-xs uppercase tracking-wider transition-all font-bold"
         >
@@ -191,15 +210,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <span>Soporte & Guía</span>
         </button>
 
+        {/* Reiniciar Torneo Button (Highly Visible) */}
         <button
           id="btn-reset-sidebar"
           onClick={() => {
             soundManager.playClick();
             onResetTournament();
+            onCloseMobile?.();
           }}
-          className="w-full flex items-center gap-3 px-4 py-2 text-[#DC2626] hover:bg-red-50 dark:hover:bg-[#AC191F]/10 rounded-xl font-label-caps text-xs uppercase tracking-wider transition-all font-black"
+          className="w-full flex items-center gap-3 px-4 py-2.5 text-[#DC2626] bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-xl font-label-caps text-xs uppercase tracking-wider transition-all font-black shadow-sm"
         >
-          <span className="material-symbols-outlined text-base">restart_alt</span>
+          <span className="material-symbols-outlined text-base text-[#DC2626] animate-pulse">restart_alt</span>
           <span>Reiniciar Torneo</span>
         </button>
       </div>

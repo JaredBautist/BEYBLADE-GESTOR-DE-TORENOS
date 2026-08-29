@@ -8,13 +8,15 @@ interface TournamentFormatScreenProps {
   registeredBladersCount: number;
   onSaveConfig: (updated: TournamentConfig) => void;
   onStartTournament: () => void;
+  onResetTournament?: () => void;
 }
 
 export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
   config,
   registeredBladersCount,
   onSaveConfig,
-  onStartTournament
+  onStartTournament,
+  onResetTournament
 }) => {
   const [formData, setFormData] = useState<TournamentConfig>({ ...config });
   const [isSaved, setIsSaved] = useState<boolean>(false);
@@ -676,6 +678,32 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
               </div>
             </div>
           </div>
+
+          {/* Quick Reset Tournament Action */}
+          {onResetTournament && (
+            <div className="glass-panel p-5 rounded-2xl border border-red-500/30 bg-red-500/5 space-y-3">
+              <div className="flex items-center gap-2 text-red-500">
+                <span className="material-symbols-outlined text-lg">restart_alt</span>
+                <h4 className="font-headline font-black text-xs uppercase tracking-wide">
+                  Gestión del Torneo
+                </h4>
+              </div>
+              <p className="text-[11px] font-body-text text-slate-500 dark:text-slate-400">
+                ¿Finalizó el torneo actual o deseas comenzar uno nuevo desde cero? Archiva los resultados en el historial y reinicia los marcadores y combates.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  soundManager.playClick();
+                  onResetTournament();
+                }}
+                className="w-full py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-500 text-white font-headline font-black text-xs uppercase tracking-wider shadow-md shadow-red-600/20 transition-all flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.98]"
+              >
+                <span className="material-symbols-outlined text-sm">restart_alt</span>
+                <span>Reiniciar Torneo</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

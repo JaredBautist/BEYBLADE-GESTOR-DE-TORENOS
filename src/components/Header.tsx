@@ -11,6 +11,8 @@ interface HeaderProps {
   isMuted: boolean;
   setIsMuted: (muted: boolean) => void;
   onOpenNewBladerModal: () => void;
+  onToggleMobileMenu?: () => void;
+  onResetTournament?: () => void;
   logoUrl?: string;
   leagueName?: string;
   communityTagline?: string;
@@ -26,6 +28,8 @@ export const Header: React.FC<HeaderProps> = ({
   isMuted,
   setIsMuted,
   onOpenNewBladerModal,
+  onToggleMobileMenu,
+  onResetTournament,
   logoUrl,
   leagueName = 'Comunidad Beyblade Cúcuta',
   communityTagline = 'CÚCUTA • OFICIAL',
@@ -36,6 +40,21 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="bg-white/95 dark:bg-[#131318]/95 border-b border-slate-200 dark:border-white/10 backdrop-blur-xl fixed top-0 left-0 right-0 md:left-64 z-40 h-16 flex items-center justify-between px-3 sm:px-4 md:px-8 transition-colors duration-200 shadow-sm">
       {/* Left branding / navigation */}
       <div className="flex items-center gap-2 sm:gap-4 md:gap-8 min-w-0">
+        {/* Mobile Hamburger Button */}
+        {onToggleMobileMenu && (
+          <button
+            id="btn-mobile-hamburger"
+            onClick={() => {
+              soundManager.playClick();
+              onToggleMobileMenu();
+            }}
+            className="md:hidden w-9 h-9 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-gray-300 border border-slate-200/80 dark:border-white/5 flex items-center justify-center transition-all flex-shrink-0"
+            title="Abrir Menú Principal"
+          >
+            <span className="material-symbols-outlined text-xl">menu</span>
+          </button>
+        )}
+
         <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
           <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white border border-slate-200 dark:border-white/10 p-0.5 flex items-center justify-center shadow-sm flex-shrink-0">
             <CommunityLogo size="sm" customImageUrl={logoUrl} communityText={communityCity || leagueName} className="w-full h-full object-contain" />
@@ -178,6 +197,21 @@ export const Header: React.FC<HeaderProps> = ({
         >
           <span className="material-symbols-outlined text-lg">settings</span>
         </button>
+
+        {/* Quick Reset Tournament Button */}
+        {onResetTournament && (
+          <button
+            id="btn-reset-header"
+            title="Reiniciar Torneo / Nuevo Torneo"
+            onClick={() => {
+              soundManager.playClick();
+              onResetTournament();
+            }}
+            className="w-9 h-9 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-[#DC2626] border border-red-500/20 flex items-center justify-center transition-all shadow-sm active:scale-95 flex-shrink-0"
+          >
+            <span className="material-symbols-outlined text-lg">restart_alt</span>
+          </button>
+        )}
 
         {/* Official Referee / Judge Badge */}
         <div className="relative group pl-1">
