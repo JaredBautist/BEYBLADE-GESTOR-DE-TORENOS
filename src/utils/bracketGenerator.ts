@@ -120,7 +120,9 @@ export function generateTournamentBracket(
 export function advanceWinnerInBracket(
   matches: Match[],
   finishedMatchId: string,
-  winningBlader: Blader
+  winningBlader: Blader,
+  finalScoreA?: number,
+  finalScoreB?: number
 ): Match[] {
   const currentMatch = matches.find((m) => m.id === finishedMatchId);
   if (!currentMatch) return matches;
@@ -130,6 +132,8 @@ export function advanceWinnerInBracket(
     if (m.id === finishedMatchId) {
       return {
         ...m,
+        scoreA: typeof finalScoreA === 'number' ? finalScoreA : m.scoreA,
+        scoreB: typeof finalScoreB === 'number' ? finalScoreB : m.scoreB,
         status: 'finished',
         winnerId: winningBlader.id,
         winnerName: winningBlader.name

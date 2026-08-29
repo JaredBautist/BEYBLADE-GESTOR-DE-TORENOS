@@ -450,25 +450,61 @@ export default function App() {
     };
 
     setCurrentMatch(updatedMatch);
-    syncMatchToSupabase(updatedMatch);
 
     // Update matches list and advance winner in bracket tree
-    if (isMatchWon && winningBlader) {
-      const advancedMatches = advanceWinnerInBracket(matches, currentMatch.id, winningBlader);
-      setMatches(advancedMatches);
-      advancedMatches.forEach((m) => {
-        if (m.id === currentMatch.id || m.id === currentMatch.nextMatchId) {
+    setMatches((prevMatches) => {
+      const updatedList = prevMatches.map((m) =>
+        m.id === updatedMatch.id ? updatedMatch : m
+      );
+
+      const finalMatches = isMatchWon && winningBlader
+        ? advanceWinnerInBracket(
+            updatedList,
+            currentMatch.id,
+            winningBlader,
+            updatedScoreA,
+            updatedScoreB
+          )
+        : updatedList;
+
+      finalMatches.forEach((m) => {
+        if (m.id === currentMatch.id || (isMatchWon && m.id === currentMatch.nextMatchId)) {
           syncMatchToSupabase(m);
         }
       });
 
-      const totalRounds = advancedMatches.length > 0 ? Math.max(...advancedMatches.map((m) => m.roundNumber || 1)) : 1;
-      const isFinal = !currentMatch.nextMatchId || currentMatch.roundNumber === totalRounds || (currentMatch.roundName?.toLowerCase().includes('final') ?? false);
-      const nextPlayableMatch = advancedMatches.find(
-        (m) => m.id !== currentMatch.id && m.status !== 'finished' && m.bladerA && m.bladerB
-      ) || null;
+      return finalMatches;
+    });
 
-      // Update Blader stats if won
+    // Update Blader stats: individual points scored & finish types
+    if (scoringBlader) {
+      setBladers((prev) =>
+        prev.map((b) => {
+          if (b.id === scoringBlader.id) {
+            const updatedB = {
+              ...b,
+              stats: {
+                ...b.stats,
+                pointsScored: (b.stats?.pointsScored || 0) + points,
+                xtremeFinishes:
+                  pointType === 'xtreme' ? (b.stats?.xtremeFinishes || 0) + 1 : (b.stats?.xtremeFinishes || 0),
+                burstFinishes:
+                  pointType === 'burst' ? (b.stats?.burstFinishes || 0) + 1 : (b.stats?.burstFinishes || 0),
+                overFinishes:
+                  pointType === 'over' ? (b.stats?.overFinishes || 0) + 1 : (b.stats?.overFinishes || 0),
+                spinFinishes:
+                  pointType === 'spin' ? (b.stats?.spinFinishes || 0) + 1 : (b.stats?.spinFinishes || 0)
+              }
+            };
+            syncBladerToSupabase(updatedB);
+            return updatedB;
+          }
+          return b;
+        })
+      );
+    }
+
+    if (isMatchWon && winningBlader) {
       const losingBlader = corner === 'A' ? currentMatch.bladerB : currentMatch.bladerA;
       setBladers((prev) =>
         prev.map((b) => {
@@ -477,18 +513,8 @@ export default function App() {
               ...b,
               stats: {
                 ...b.stats,
-                wins: b.stats.wins + 1,
-                matchesPlayed: b.stats.matchesPlayed + 1,
-                pointsScored:
-                  b.stats.pointsScored + (corner === 'A' ? updatedScoreA : updatedScoreB),
-                xtremeFinishes:
-                  pointType === 'xtreme' ? (b.stats.xtremeFinishes || 0) + 1 : (b.stats.xtremeFinishes || 0),
-                burstFinishes:
-                  pointType === 'burst' ? (b.stats.burstFinishes || 0) + 1 : (b.stats.burstFinishes || 0),
-                overFinishes:
-                  pointType === 'over' ? (b.stats.overFinishes || 0) + 1 : (b.stats.overFinishes || 0),
-                spinFinishes:
-                  pointType === 'spin' ? (b.stats.spinFinishes || 0) + 1 : (b.stats.spinFinishes || 0)
+                wins: (b.stats?.wins || 0) + 1,
+                matchesPlayed: (b.stats?.matchesPlayed || 0) + 1
               }
             };
             syncBladerToSupabase(updatedB);
@@ -499,8 +525,8 @@ export default function App() {
               ...b,
               stats: {
                 ...b.stats,
-                losses: (b.stats.losses || 0) + 1,
-                matchesPlayed: (b.stats.matchesPlayed || 0) + 1
+                losses: (b.stats?.losses || 0) + 1,
+                matchesPlayed: (b.stats?.matchesPlayed || 0) + 1
               }
             };
             syncBladerToSupabase(updatedL);
@@ -510,6 +536,12 @@ export default function App() {
         })
       );
 
+      const totalRounds = matches.length > 0 ? Math.max(...matches.map((m) => m.roundNumber || 1)) : 1;
+      const isFinal = !currentMatch.nextMatchId || currentMatch.roundNumber === totalRounds || (currentMatch.roundName?.toLowerCase().includes('final') ?? false);
+      const nextPlayableMatch = matches.find(
+        (m) => m.id !== currentMatch.id && m.status !== 'finished' && m.bladerA && m.bladerB
+      ) || null;
+
       // Open celebration modal
       setWinnerModalData({
         isOpen: true,
@@ -518,8 +550,6 @@ export default function App() {
         isTournamentFinal: isFinal || !nextPlayableMatch,
         nextMatch: nextPlayableMatch
       });
-    } else {
-      setMatches((prev) => prev.map((m) => (m.id === currentMatch.id ? updatedMatch : m)));
     }
   };
 
@@ -712,18 +742,70 @@ export default function App() {
   };
 
   const handleSetMatchWinner = (matchId: string, winnerId: string) => {
+    const targetMatch = matches.find((m) => m.id === matchId);
+    if (!targetMatch) return;
+
     const winnerBlader = bladers.find((b) => b.id === winnerId);
     if (!winnerBlader) return;
 
+    const isWinnerA = targetMatch.bladerA?.id === winnerId;
+    const targetScore = targetMatch.targetScore || 4;
+    const scoreA = targetMatch.scoreA > 0 || targetMatch.scoreB > 0
+      ? targetMatch.scoreA
+      : (isWinnerA ? targetScore : 0);
+    const scoreB = targetMatch.scoreA > 0 || targetMatch.scoreB > 0
+      ? targetMatch.scoreB
+      : (!isWinnerA ? targetScore : 0);
+
+    const winningScore = isWinnerA ? scoreA : scoreB;
+
     setMatches((prev) => {
-      const advanced = advanceWinnerInBracket(prev, matchId, winnerBlader);
+      const advanced = advanceWinnerInBracket(
+        prev,
+        matchId,
+        winnerBlader,
+        scoreA,
+        scoreB
+      );
       advanced.forEach((m) => {
-        if (m.id === matchId || m.id === m.nextMatchId) {
+        if (m.id === matchId || m.id === targetMatch.nextMatchId) {
           syncMatchToSupabase(m);
         }
       });
       return advanced;
     });
+
+    const losingBlader = isWinnerA ? targetMatch.bladerB : targetMatch.bladerA;
+    setBladers((prev) =>
+      prev.map((b) => {
+        if (b.id === winnerBlader.id) {
+          const updated = {
+            ...b,
+            stats: {
+              ...b.stats,
+              wins: (b.stats?.wins || 0) + 1,
+              matchesPlayed: (b.stats?.matchesPlayed || 0) + 1,
+              pointsScored: (b.stats?.pointsScored || 0) + (targetMatch.scoreA === 0 && targetMatch.scoreB === 0 ? winningScore : 0)
+            }
+          };
+          syncBladerToSupabase(updated);
+          return updated;
+        }
+        if (losingBlader && b.id === losingBlader.id) {
+          const updatedL = {
+            ...b,
+            stats: {
+              ...b.stats,
+              losses: (b.stats?.losses || 0) + 1,
+              matchesPlayed: (b.stats?.matchesPlayed || 0) + 1
+            }
+          };
+          syncBladerToSupabase(updatedL);
+          return updatedL;
+        }
+        return b;
+      })
+    );
 
     if (currentMatch && currentMatch.id === matchId) {
       setCurrentMatch((prev) =>
@@ -731,6 +813,8 @@ export default function App() {
           ? {
               ...prev,
               status: 'finished',
+              scoreA,
+              scoreB,
               winnerId,
               winnerName: winnerBlader.name
             }
