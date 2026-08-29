@@ -44,7 +44,8 @@ import {
   syncConfigToSupabase,
   fetchConfigFromSupabase,
   syncMatchToSupabase,
-  fetchMatchesFromSupabase
+  fetchMatchesFromSupabase,
+  subscribeToDatabaseChanges
 } from './lib/supabase';
 import { generateTournamentBracket, advanceWinnerInBracket } from './utils/bracketGenerator';
 import { soundManager } from './utils/audio';
@@ -259,7 +260,7 @@ export default function App() {
     }
   }, [tournamentHistory]);
 
-  // Initial fetch from Supabase on startup
+  // Initial fetch from Supabase on startup and Realtime Multi-Device Sync
   useEffect(() => {
     let isMounted = true;
 
@@ -308,8 +309,45 @@ export default function App() {
 
     loadRemoteData();
 
+    // Subscribe to Realtime Postgres Changes for live concurrency
+    const unsubscribe = subscribeToDatabaseChanges({
+      onBladersChange: async () => {
+        const bl = await fetchBladersFromSupabase();
+        if (bl && isMounted) {
+          const clean = bl.filter((b) => !isMockBlader(b));
+          if (clean.length > 0) setBladers(clean);
+        }
+      },
+      onMatchesChange: async () => {
+        const m = await fetchMatchesFromSupabase();
+        if (m && isMounted) {
+          setMatches(m);
+        }
+      },
+      onCombosChange: async () => {
+        const c = await fetchCombosFromSupabase();
+        if (c && isMounted) setRegisteredCombos(c);
+      },
+      onPartsChange: async () => {
+        const p = await fetchPartsFromSupabase();
+        if (p && isMounted) {
+          const clean = p.filter((x) => !isMockPart(x));
+          setParts(clean);
+        }
+      },
+      onHistoryChange: async () => {
+        const h = await fetchHistoryFromSupabase();
+        if (h && isMounted) setTournamentHistory(h);
+      },
+      onConfigChange: async () => {
+        const conf = await fetchConfigFromSupabase();
+        if (conf && isMounted) setConfig((prev) => ({ ...prev, ...conf }));
+      }
+    });
+
     return () => {
       isMounted = false;
+      unsubscribe();
     };
   }, []);
 

@@ -720,3 +720,73 @@ export async function deleteMatchFromSupabase(id: string) {
   }
 }
 
+// -------------------------------------------------------------
+// REALTIME MULTI-DEVICE CONCURRENCY SUBSCRIPTIONS
+// -------------------------------------------------------------
+export function subscribeToDatabaseChanges(callbacks: {
+  onBladersChange?: () => void;
+  onMatchesChange?: () => void;
+  onCombosChange?: () => void;
+  onPartsChange?: () => void;
+  onHistoryChange?: () => void;
+  onConfigChange?: () => void;
+}) {
+  const channel = supabase
+    .channel('public_realtime_changes')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'bladers' },
+      () => {
+        callbacks.onBladersChange?.();
+      }
+    )
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'matches' },
+      () => {
+        callbacks.onMatchesChange?.();
+      }
+    )
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'combos' },
+      () => {
+        callbacks.onCombosChange?.();
+      }
+    )
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'parts' },
+      () => {
+        callbacks.onPartsChange?.();
+      }
+    )
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'tournament_history' },
+      () => {
+        callbacks.onHistoryChange?.();
+      }
+    )
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'tournament_config' },
+      () => {
+        callbacks.onConfigChange?.();
+      }
+    )
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'community_config' },
+      () => {
+        callbacks.onConfigChange?.();
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}
+
+
