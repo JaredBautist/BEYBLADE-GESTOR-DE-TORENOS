@@ -390,11 +390,106 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
                 </div>
               </div>
             ) : formData.type === 'series' ? (
-              <div className="p-4 rounded-2xl bg-[#FF5500]/10 border border-[#FF5500]/30 flex items-center gap-3">
-                <span className="material-symbols-outlined text-[#FF5500] text-2xl flex-shrink-0">tv</span>
-                <div className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
-                  <strong className="text-[#FF5500] uppercase block font-headline font-black">Formato Serie Oficial (1 Batalla y Fuera)</strong>
-                  1 solo combo por Blader. 1 ronda decisiva: cualquier finish gana inmediatamente el combate. El perdedor queda automáticamente eliminado del torneo ("una batalla y chao").
+              <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/60 dark:bg-black/40 border-2 border-[#FF5500]/40 shadow-lg space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-700/60 pb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[#FF5500] text-xl">tv</span>
+                    <div>
+                      <h4 className="font-headline font-black text-sm sm:text-base uppercase text-white tracking-wide">
+                        Delimitación por Puntos & Corte a Fase Final (Playoffs)
+                      </h4>
+                      <p className="text-[11px] font-label-caps text-slate-400 uppercase">
+                        Fase 1: Acumulación de Puntos (1 Batalla y Chao) • Fase 2: Cuartos / Semis / Gran Final
+                      </p>
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full bg-[#FF5500]/20 text-[#FF5500] border border-[#FF5500]/30 text-[10px] font-label-caps font-black uppercase">
+                    Serie / Puntos
+                  </span>
+                </div>
+
+                {/* Criterio de Corte a Playoffs (Cuartos, Semis o Final) */}
+                <div className="space-y-3">
+                  <label className="font-label-caps text-xs text-slate-300 uppercase font-bold flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-sm text-amber-400">filter_alt</span>
+                    <span>Corte Clasificatorio a Fase Final (Playoffs):</span>
+                  </label>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    {/* Top 8 */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handlePlayoffCutoffTypeChange('top_n');
+                        handlePlayoffCutoffCountChange(8);
+                      }}
+                      className={`p-3.5 rounded-xl border text-left transition-all space-y-1.5 ${
+                        (formData.playoffCutoffCount || 4) === 8
+                          ? 'bg-amber-500/20 border-amber-400 text-white shadow-md'
+                          : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-headline font-black text-xs uppercase text-amber-400">Top 8</span>
+                        <span className="text-[9px] font-label-caps font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">Cuartos de Final</span>
+                      </div>
+                      <p className="text-[10px] text-slate-300 leading-tight">
+                        Los 8 Bladers con más puntos pasan a Cuartos de Final (1º vs 8º, 2º vs 7º, 3º vs 6º, 4º vs 5º).
+                      </p>
+                    </button>
+
+                    {/* Top 4 */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handlePlayoffCutoffTypeChange('top_n');
+                        handlePlayoffCutoffCountChange(4);
+                      }}
+                      className={`p-3.5 rounded-xl border text-left transition-all space-y-1.5 ${
+                        (formData.playoffCutoffCount || 4) === 4
+                          ? 'bg-[#04A8FC]/20 border-[#04A8FC] text-white shadow-md'
+                          : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-headline font-black text-xs uppercase text-[#04A8FC]">Top 4</span>
+                        <span className="text-[9px] font-label-caps font-bold px-1.5 py-0.5 rounded bg-[#04A8FC]/20 text-[#04A8FC]">Semifinales</span>
+                      </div>
+                      <p className="text-[10px] text-slate-300 leading-tight">
+                        Los 4 Bladers con más puntos pasan a Semifinales (1º vs 4º, 2º vs 3º). Los ganadores van a la Gran Final.
+                      </p>
+                    </button>
+
+                    {/* Top 2 */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handlePlayoffCutoffTypeChange('top_n');
+                        handlePlayoffCutoffCountChange(2);
+                      }}
+                      className={`p-3.5 rounded-xl border text-left transition-all space-y-1.5 ${
+                        (formData.playoffCutoffCount || 4) === 2
+                          ? 'bg-emerald-500/20 border-emerald-400 text-white shadow-md'
+                          : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-headline font-black text-xs uppercase text-emerald-400">Top 2</span>
+                        <span className="text-[9px] font-label-caps font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">Gran Final Directa</span>
+                      </div>
+                      <p className="text-[10px] text-slate-300 leading-tight">
+                        Los 2 Bladers con más puntos avanzan directamente a la Gran Final (1º vs 2º).
+                      </p>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Serie format banner */}
+                <div className="p-3 rounded-xl bg-[#FF5500]/10 border border-[#FF5500]/20 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[#FF5500] text-base flex-shrink-0">info</span>
+                  <p className="text-[10px] text-slate-300 leading-tight">
+                    <strong className="text-[#FF5500]">Formato Serie:</strong> Cada batalla es decisiva — 1 ronda, cualquier finish gana. El perdedor queda eliminado de inmediato ("una batalla y chao").
+                  </p>
                 </div>
               </div>
             ) : (
