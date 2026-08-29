@@ -322,6 +322,11 @@ export default function App() {
         const m = await fetchMatchesFromSupabase();
         if (m && isMounted) {
           setMatches(m);
+          setCurrentMatch((prev) => {
+            if (!prev) return null;
+            const updated = m.find((match) => match.id === prev.id);
+            return updated || prev;
+          });
         }
       },
       onCombosChange: async () => {
@@ -737,7 +742,8 @@ export default function App() {
   };
 
   const handleSelectMatchForConsole = (match: Match) => {
-    setCurrentMatch(match);
+    const latest = matches.find((m) => m.id === match.id) || match;
+    setCurrentMatch(latest);
     setActiveScreen('dashboard');
   };
 
