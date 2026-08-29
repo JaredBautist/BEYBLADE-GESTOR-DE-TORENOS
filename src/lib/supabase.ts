@@ -547,6 +547,11 @@ export async function syncTournamentFormatToSupabase(format: {
   maxParticipants: number;
   arenaStatus: string;
   isStarted?: boolean;
+  regularPhaseMatchesPerBlader?: number;
+  playoffCutoffType?: 'top_n' | 'min_points';
+  playoffCutoffCount?: 8 | 4 | 2;
+  minPointsToQualify?: number;
+  tournamentPhase?: 'regular' | 'playoffs' | 'single_elimination';
 }): Promise<{ success: boolean; error?: string }> {
   try {
     const { error } = await supabase.from('tournament_config').upsert({
@@ -557,6 +562,11 @@ export async function syncTournamentFormatToSupabase(format: {
       max_participants: format.maxParticipants,
       arena_status: format.arenaStatus,
       is_started: !!format.isStarted,
+      regular_phase_matches_per_blader: format.regularPhaseMatchesPerBlader ?? 2,
+      playoff_cutoff_type: format.playoffCutoffType ?? 'top_n',
+      playoff_cutoff_count: format.playoffCutoffCount ?? 4,
+      min_points_to_qualify: format.minPointsToQualify ?? 4,
+      tournament_phase: format.tournamentPhase ?? 'regular',
       updated_at: new Date().toISOString()
     });
     if (error) {
@@ -577,6 +587,11 @@ export async function fetchTournamentFormatFromSupabase(): Promise<{
   maxParticipants?: number;
   arenaStatus?: string;
   isStarted?: boolean;
+  regularPhaseMatchesPerBlader?: number;
+  playoffCutoffType?: 'top_n' | 'min_points';
+  playoffCutoffCount?: 8 | 4 | 2;
+  minPointsToQualify?: number;
+  tournamentPhase?: 'regular' | 'playoffs' | 'single_elimination';
 } | null> {
   try {
     const { data, error } = await supabase
@@ -591,7 +606,12 @@ export async function fetchTournamentFormatFromSupabase(): Promise<{
       victoryConditions: data.victory_conditions,
       maxParticipants: data.max_participants,
       arenaStatus: data.arena_status,
-      isStarted: data.is_started
+      isStarted: data.is_started,
+      regularPhaseMatchesPerBlader: data.regular_phase_matches_per_blader ?? 2,
+      playoffCutoffType: data.playoff_cutoff_type ?? 'top_n',
+      playoffCutoffCount: data.playoff_cutoff_count ?? 4,
+      minPointsToQualify: data.min_points_to_qualify ?? 4,
+      tournamentPhase: data.tournament_phase ?? 'regular'
     };
   } catch (e) {
     console.warn('Supabase fetch tournament format error:', e);

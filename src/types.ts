@@ -120,6 +120,11 @@ export interface TournamentFormatConfig {
   maxParticipants: number;
   arenaStatus: string;
   isStarted: boolean;
+  regularPhaseMatchesPerBlader?: number; // e.g. 2, 3, 4 matches per blader
+  playoffCutoffType?: 'top_n' | 'min_points';
+  playoffCutoffCount?: 8 | 4 | 2; // Top 8 Cuartos, Top 4 Semis, Top 2 Final
+  minPointsToQualify?: number; // e.g. 4 points
+  tournamentPhase?: 'regular' | 'playoffs' | 'single_elimination';
 }
 
 export interface TournamentConfig {
@@ -136,6 +141,11 @@ export interface TournamentConfig {
   maxParticipants: number;
   arenaStatus: string;
   isStarted: boolean;
+  regularPhaseMatchesPerBlader?: number; // e.g. 2, 3, 4 matches per blader
+  playoffCutoffType?: 'top_n' | 'min_points';
+  playoffCutoffCount?: 8 | 4 | 2; // Top 8 Cuartos, Top 4 Semis, Top 2 Final
+  minPointsToQualify?: number; // e.g. 4 points
+  tournamentPhase?: 'regular' | 'playoffs' | 'single_elimination';
 }
 
 export interface MatchEvent {
@@ -168,6 +178,7 @@ export interface Match {
   finishedAt?: string;
   cornerA: string; // 'Red'
   cornerB: string; // 'Blue'
+  stage?: 'regular' | 'playoff';
   nextMatchId?: string;
   nextMatchSlot?: 'A' | 'B';
 }

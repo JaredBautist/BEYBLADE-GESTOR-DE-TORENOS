@@ -15,7 +15,10 @@ export function getRoundName(roundNumber: number, totalRounds: number): string {
   return `Ronda ${roundNumber}`;
 }
 
-export function generateTournamentBracket(
+// -------------------------------------------------------------
+// 1. SINGLE ELIMINATION BRACKET (DIRECT KNOCKOUT)
+// -------------------------------------------------------------
+export function generateSingleEliminationBracket(
   bladers: Blader[],
   config: TournamentConfig
 ): Match[] {
@@ -48,11 +51,12 @@ export function generateTournamentBracket(
         bladerB: null,
         scoreA: 0,
         scoreB: 0,
-        targetScore: config.victoryConditions?.pointsToWin || 5,
+        targetScore: config.type === 'series' ? 1 : config.victoryConditions?.pointsToWin || 5,
         status: 'upcoming',
         winnerId: null,
         cornerA: 'Red',
         cornerB: 'Blue',
+        stage: 'playoff',
         events: []
       };
 
@@ -101,7 +105,7 @@ export function generateTournamentBracket(
         }
       }
     } else if (bA && bB) {
-      // First match with two bladers can be live
+      // First match with two bladers is live
       if (m === 0) {
         match.status = 'live';
       }
@@ -117,6 +121,383 @@ export function generateTournamentBracket(
   return allMatches;
 }
 
+// -------------------------------------------------------------
+// 2. REGULAR PHASE (POINTS ACCUMULATION & LIMITED ROUNDS)
+// -------------------------------------------------------------
+export function generateRegularPhaseMatches(
+  bladers: Blader[],
+  config: TournamentConfig
+): Match[] {
+  if (bladers.length < 2) return [];
+
+  const matchesPerBlader = Math.max(1, config.regularPhaseMatchesPerBlader || 2);
+  const participants = [...bladers].sort(() => 0.5 - Math.random());
+  const matches: Match[] = [];
+  let matchNumber = 1;
+
+  // Generate pair schedules across rounds
+  const totalRounds = matchesPerBlader;
+  const n = participants.length;
+
+  for (let r = 1; r <= totalRounds; r++) {
+    // Rotate participants for diverse pairings each round
+    const roundBladers = [...participants];
+    if (r > 1) {
+      const shift = (r - 1) % (n - 1 || 1);
+      const head = roundBladers[0];
+      const rest = roundBladers.slice(1);
+      const rotated = [...rest.slice(shift), ...rest.slice(0, shift)];
+      roundBladers.splice(0, roundBladers.length, head, ...rotated);
+    }
+
+    const pairCount = Math.floor(roundBladers.length / 2);
+    for (let p = 0; p < pairCount; p++) {
+      const bA = roundBladers[p];
+      const bB = roundBladers[roundBladers.length - 1 - p];
+
+      if (bA && bB && bA.id !== bB.id) {
+        const isFirst = matches.length === 0;
+        matches.push({
+          id: `match-reg-r${r}-m${p + 1}`,
+          roundNumber: r,
+          roundName: `Fase Regular • Ronda ${r}`,
+          matchNumber: matchNumber++,
+          bladerA: bA,
+          bladerB: bB,
+          scoreA: 0,
+          scoreB: 0,
+          targetScore: config.type === 'series' ? 1 : config.victoryConditions?.pointsToWin || 5,
+          status: isFirst ? 'live' : 'upcoming',
+          winnerId: null,
+          cornerA: 'Red',
+          cornerB: 'Blue',
+          stage: 'regular',
+          events: []
+        });
+      }
+    }
+  }
+
+  return matches;
+}
+
+// -------------------------------------------------------------
+// 3. PLAYOFF BRACKET FROM REGULAR PHASE RANKINGS (TOP CUTOFF)
+// -------------------------------------------------------------
+export function getRankedBladers(bladers: Blader[]): Blader[] {
+  return [...bladers].sort((a, b) => {
+    // 1. Points Scored
+    const ptsDiff = (b.stats?.pointsScored || 0) - (a.stats?.pointsScored || 0);
+    if (ptsDiff !== 0) return ptsDiff;
+    // 2. Matches Won
+    const winsDiff = (b.stats?.wins || 0) - (a.stats?.wins || 0);
+    if (winsDiff !== 0) return winsDiff;
+    // 3. Xtreme + Burst finishes
+    const finishesA = (a.stats?.xtremeFinishes || 0) * 3 + (a.stats?.burstFinishes || 0) * 2;
+    const finishesB = (b.stats?.xtremeFinishes || 0) * 3 + (b.stats?.burstFinishes || 0) * 2;
+    return finishesB - finishesA;
+  });
+}
+
+export function generatePlayoffBracketFromRankings(
+  bladers: Blader[],
+  config: TournamentConfig
+): Match[] {
+  const ranked = getRankedBladers(bladers);
+  if (ranked.length < 2) return [];
+
+  let qualified: Blader[] = [];
+
+  if (config.playoffCutoffType === 'min_points') {
+    const minPts = config.minPointsToQualify || 4;
+    qualified = ranked.filter((b) => (b.stats?.pointsScored || 0) >= minPts);
+    // If not enough qualified by min points, fallback to Top 2
+    if (qualified.length < 2) {
+      qualified = ranked.slice(0, Math.min(2, ranked.length));
+    }
+  } else {
+    // Default: Top N (8, 4, or 2)
+    const targetCount = config.playoffCutoffCount || (ranked.length >= 8 ? 8 : ranked.length >= 4 ? 4 : 2);
+    qualified = ranked.slice(0, Math.min(targetCount, ranked.length));
+  }
+
+  // If 2 qualified -> Direct Grand Final
+  if (qualified.length === 2) {
+    return [
+      {
+        id: 'playoff-grand-final',
+        roundNumber: 1,
+        roundName: 'Gran Final',
+        matchNumber: 1,
+        bladerA: qualified[0], // 1st Seed
+        bladerB: qualified[1], // 2nd Seed
+        scoreA: 0,
+        scoreB: 0,
+        targetScore: config.type === 'series' ? 1 : config.victoryConditions?.pointsToWin || 5,
+        status: 'live',
+        winnerId: null,
+        cornerA: 'Red',
+        cornerB: 'Blue',
+        stage: 'playoff',
+        events: []
+      }
+    ];
+  }
+
+  // If 4 qualified -> Semifinals & Grand Final
+  if (qualified.length <= 4) {
+    const semi1: Match = {
+      id: 'playoff-semi-1',
+      roundNumber: 1,
+      roundName: 'Semifinales - Duelo 1',
+      matchNumber: 1,
+      bladerA: qualified[0], // 1st Seed
+      bladerB: qualified[3] || qualified[2], // 4th Seed
+      scoreA: 0,
+      scoreB: 0,
+      targetScore: config.type === 'series' ? 1 : config.victoryConditions?.pointsToWin || 5,
+      status: 'live',
+      winnerId: null,
+      cornerA: 'Red',
+      cornerB: 'Blue',
+      stage: 'playoff',
+      nextMatchId: 'playoff-grand-final',
+      nextMatchSlot: 'A',
+      events: []
+    };
+
+    const semi2: Match = {
+      id: 'playoff-semi-2',
+      roundNumber: 1,
+      roundName: 'Semifinales - Duelo 2',
+      matchNumber: 2,
+      bladerA: qualified[1], // 2nd Seed
+      bladerB: qualified[2] || qualified[3], // 3rd Seed
+      scoreA: 0,
+      scoreB: 0,
+      targetScore: config.type === 'series' ? 1 : config.victoryConditions?.pointsToWin || 5,
+      status: 'upcoming',
+      winnerId: null,
+      cornerA: 'Red',
+      cornerB: 'Blue',
+      stage: 'playoff',
+      nextMatchId: 'playoff-grand-final',
+      nextMatchSlot: 'B',
+      events: []
+    };
+
+    const grandFinal: Match = {
+      id: 'playoff-grand-final',
+      roundNumber: 2,
+      roundName: 'Gran Final',
+      matchNumber: 3,
+      bladerA: null,
+      bladerB: null,
+      scoreA: 0,
+      scoreB: 0,
+      targetScore: config.type === 'series' ? 1 : config.victoryConditions?.pointsToWin || 5,
+      status: 'upcoming',
+      winnerId: null,
+      cornerA: 'Red',
+      cornerB: 'Blue',
+      stage: 'playoff',
+      events: []
+    };
+
+    return [semi1, semi2, grandFinal];
+  }
+
+  // If 8 qualified -> Quarterfinals, Semifinals & Grand Final
+  const qf1: Match = {
+    id: 'playoff-qf-1',
+    roundNumber: 1,
+    roundName: 'Cuartos de Final - Duelo 1',
+    matchNumber: 1,
+    bladerA: qualified[0], // 1st Seed
+    bladerB: qualified[7] || null, // 8th Seed
+    scoreA: 0,
+    scoreB: 0,
+    targetScore: config.type === 'series' ? 1 : config.victoryConditions?.pointsToWin || 5,
+    status: 'live',
+    winnerId: null,
+    cornerA: 'Red',
+    cornerB: 'Blue',
+    stage: 'playoff',
+    nextMatchId: 'playoff-semi-1',
+    nextMatchSlot: 'A',
+    events: []
+  };
+
+  const qf2: Match = {
+    id: 'playoff-qf-2',
+    roundNumber: 1,
+    roundName: 'Cuartos de Final - Duelo 2',
+    matchNumber: 2,
+    bladerA: qualified[3], // 4th Seed
+    bladerB: qualified[4] || null, // 5th Seed
+    scoreA: 0,
+    scoreB: 0,
+    targetScore: config.type === 'series' ? 1 : config.victoryConditions?.pointsToWin || 5,
+    status: 'upcoming',
+    winnerId: null,
+    cornerA: 'Red',
+    cornerB: 'Blue',
+    stage: 'playoff',
+    nextMatchId: 'playoff-semi-1',
+    nextMatchSlot: 'B',
+    events: []
+  };
+
+  const qf3: Match = {
+    id: 'playoff-qf-3',
+    roundNumber: 1,
+    roundName: 'Cuartos de Final - Duelo 3',
+    matchNumber: 3,
+    bladerA: qualified[1], // 2nd Seed
+    bladerB: qualified[6] || null, // 7th Seed
+    scoreA: 0,
+    scoreB: 0,
+    targetScore: config.type === 'series' ? 1 : config.victoryConditions?.pointsToWin || 5,
+    status: 'upcoming',
+    winnerId: null,
+    cornerA: 'Red',
+    cornerB: 'Blue',
+    stage: 'playoff',
+    nextMatchId: 'playoff-semi-2',
+    nextMatchSlot: 'A',
+    events: []
+  };
+
+  const qf4: Match = {
+    id: 'playoff-qf-4',
+    roundNumber: 1,
+    roundName: 'Cuartos de Final - Duelo 4',
+    matchNumber: 4,
+    bladerA: qualified[2], // 3rd Seed
+    bladerB: qualified[5] || null, // 6th Seed
+    scoreA: 0,
+    scoreB: 0,
+    targetScore: config.type === 'series' ? 1 : config.victoryConditions?.pointsToWin || 5,
+    status: 'upcoming',
+    winnerId: null,
+    cornerA: 'Red',
+    cornerB: 'Blue',
+    stage: 'playoff',
+    nextMatchId: 'playoff-semi-2',
+    nextMatchSlot: 'B',
+    events: []
+  };
+
+  const semi1: Match = {
+    id: 'playoff-semi-1',
+    roundNumber: 2,
+    roundName: 'Semifinales - Duelo 1',
+    matchNumber: 5,
+    bladerA: null,
+    bladerB: null,
+    scoreA: 0,
+    scoreB: 0,
+    targetScore: config.type === 'series' ? 1 : config.victoryConditions?.pointsToWin || 5,
+    status: 'upcoming',
+    winnerId: null,
+    cornerA: 'Red',
+    cornerB: 'Blue',
+    stage: 'playoff',
+    nextMatchId: 'playoff-grand-final',
+    nextMatchSlot: 'A',
+    events: []
+  };
+
+  const semi2: Match = {
+    id: 'playoff-semi-2',
+    roundNumber: 2,
+    roundName: 'Semifinales - Duelo 2',
+    matchNumber: 6,
+    bladerA: null,
+    bladerB: null,
+    scoreA: 0,
+    scoreB: 0,
+    targetScore: config.type === 'series' ? 1 : config.victoryConditions?.pointsToWin || 5,
+    status: 'upcoming',
+    winnerId: null,
+    cornerA: 'Red',
+    cornerB: 'Blue',
+    stage: 'playoff',
+    nextMatchId: 'playoff-grand-final',
+    nextMatchSlot: 'B',
+    events: []
+  };
+
+  const grandFinal: Match = {
+    id: 'playoff-grand-final',
+    roundNumber: 3,
+    roundName: 'Gran Final',
+    matchNumber: 7,
+    bladerA: null,
+    bladerB: null,
+    scoreA: 0,
+    scoreB: 0,
+    targetScore: config.type === 'series' ? 1 : config.victoryConditions?.pointsToWin || 5,
+    status: 'upcoming',
+    winnerId: null,
+    cornerA: 'Red',
+    cornerB: 'Blue',
+    stage: 'playoff',
+    events: []
+  };
+
+  return [qf1, qf2, qf3, qf4, semi1, semi2, grandFinal];
+}
+
+// -------------------------------------------------------------
+// 4. MAIN TOURNAMENT GENERATOR ROUTER
+// -------------------------------------------------------------
+export function generateTournamentBracket(
+  bladers: Blader[],
+  config: TournamentConfig
+): Match[] {
+  if (bladers.length < 2) return [];
+
+  // Single Elimination format always creates knockout bracket
+  if (config.type === 'elimination') {
+    return generateSingleEliminationBracket(bladers, config);
+  }
+
+  // League or Series format
+  if (config.tournamentPhase === 'playoffs') {
+    return generatePlayoffBracketFromRankings(bladers, config);
+  }
+
+  // If 2 bladers, direct match
+  if (bladers.length === 2) {
+    return [
+      {
+        id: 'match-final-direct',
+        roundNumber: 1,
+        roundName: 'Gran Final',
+        matchNumber: 1,
+        bladerA: bladers[0],
+        bladerB: bladers[1],
+        scoreA: 0,
+        scoreB: 0,
+        targetScore: config.type === 'series' ? 1 : config.victoryConditions?.pointsToWin || 5,
+        status: 'live',
+        winnerId: null,
+        cornerA: 'Red',
+        cornerB: 'Blue',
+        stage: 'playoff',
+        events: []
+      }
+    ];
+  }
+
+  // Regular Phase matches for League / Series
+  return generateRegularPhaseMatches(bladers, config);
+}
+
+// -------------------------------------------------------------
+// 5. ADVANCE WINNER IN BRACKET
+// -------------------------------------------------------------
 export function advanceWinnerInBracket(
   matches: Match[],
   finishedMatchId: string,
@@ -154,3 +535,4 @@ export function advanceWinnerInBracket(
     return m;
   });
 }
+

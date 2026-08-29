@@ -52,7 +52,11 @@ import {
   deleteAllMatchesFromSupabase,
   subscribeToDatabaseChanges
 } from './lib/supabase';
-import { generateTournamentBracket, advanceWinnerInBracket } from './utils/bracketGenerator';
+import {
+  generateTournamentBracket,
+  advanceWinnerInBracket,
+  generatePlayoffBracketFromRankings
+} from './utils/bracketGenerator';
 import { soundManager } from './utils/audio';
 import { syncComboPiecesToCatalog, createRegisteredCombosFromBlader } from './utils/comboUtils';
 
@@ -746,6 +750,41 @@ export default function App() {
     }
   };
 
+  const handleGeneratePlayoffs = () => {
+    soundManager.playVictory();
+    const updatedConfig: TournamentConfig = {
+      ...config,
+      tournamentPhase: 'playoffs'
+    };
+    setConfig(updatedConfig);
+    syncTournamentFormatToSupabase({
+      type: updatedConfig.type,
+      battleScale: updatedConfig.battleScale,
+      victoryConditions: updatedConfig.victoryConditions,
+      maxParticipants: updatedConfig.maxParticipants,
+      arenaStatus: updatedConfig.arenaStatus,
+      isStarted: updatedConfig.isStarted,
+      regularPhaseMatchesPerBlader: updatedConfig.regularPhaseMatchesPerBlader,
+      playoffCutoffType: updatedConfig.playoffCutoffType,
+      playoffCutoffCount: updatedConfig.playoffCutoffCount,
+      minPointsToQualify: updatedConfig.minPointsToQualify,
+      tournamentPhase: 'playoffs'
+    });
+
+    const playoffMatches = generatePlayoffBracketFromRankings(bladers, updatedConfig);
+    if (playoffMatches.length === 0) {
+      alert('No hay suficientes bladers clasificados para generar la fase eliminatoria.');
+      return;
+    }
+
+    setMatches(playoffMatches);
+    playoffMatches.forEach((m) => syncMatchToSupabase(m));
+
+    const firstLive = playoffMatches.find((m) => m.status === 'live') || playoffMatches[0];
+    setCurrentMatch(firstLive);
+    setActiveScreen('bracket');
+  };
+
   const handleSelectMatchForConsole = (match: Match) => {
     const latest = matches.find((m) => m.id === match.id) || match;
     setCurrentMatch(latest);
@@ -1219,6 +1258,7 @@ export default function App() {
             onNavigateToBladers={() => setActiveScreen('bladers')}
             onNavigateToBracket={() => setActiveScreen('bracket')}
             onSelectMatchForConsole={handleSelectMatchForConsole}
+            onGeneratePlayoffs={handleGeneratePlayoffs}
           />
         )}
 
@@ -1264,9 +1304,11 @@ export default function App() {
           <BracketScreen
             bladers={bladers}
             matches={matches}
+            config={config}
             onSelectMatchForConsole={handleSelectMatchForConsole}
             onSetMatchWinner={handleSetMatchWinner}
             onGenerateBracket={handleGenerateBracket}
+            onGeneratePlayoffs={handleGeneratePlayoffs}
           />
         )}
 

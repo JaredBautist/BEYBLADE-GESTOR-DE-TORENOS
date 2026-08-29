@@ -26,7 +26,12 @@ export const INITIAL_CONFIG: TournamentConfig = {
   },
   maxParticipants: 32,
   arenaStatus: 'Xtreme Stadium A',
-  isStarted: false
+  isStarted: false,
+  regularPhaseMatchesPerBlader: 2,
+  playoffCutoffType: 'top_n',
+  playoffCutoffCount: 4,
+  minPointsToQualify: 4,
+  tournamentPhase: 'regular'
 };
 
 // Zero mock matches - clean tournament state

@@ -18,6 +18,7 @@ interface DashboardScreenProps {
   onNavigateToBracket?: () => void;
   onSelectMatchForConsole?: (match: Match) => void;
   onQuickStartMatch: (nameA: string, nameB: string, targetScore: number) => void;
+  onGeneratePlayoffs?: () => void;
 }
 
 export const DashboardScreen: React.FC<DashboardScreenProps> = ({
@@ -34,7 +35,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   onNavigateToBladers,
   onNavigateToBracket,
   onSelectMatchForConsole,
-  onQuickStartMatch
+  onQuickStartMatch,
+  onGeneratePlayoffs
 }) => {
   const [selectedComboSlotA, setSelectedComboSlotA] = useState<number>(1);
   const [selectedComboSlotB, setSelectedComboSlotB] = useState<number>(1);
@@ -335,6 +337,12 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const onDeckB = remainingBladers[1];
 
   const isMatchFinished = currentMatch.status === 'finished';
+  const isRegularPhase = config.type !== 'elimination' && config.tournamentPhase !== 'playoffs';
+  const areAllRegularMatchesFinished =
+    isRegularPhase &&
+    matches.length > 0 &&
+    matches.every((m) => m.stage !== 'regular' || m.status === 'finished');
+
   const totalRounds = matches && matches.length > 0 ? Math.max(...matches.map((m) => m.roundNumber || 1)) : 1;
   const isTournamentFinal = isMatchFinished && (
     !currentMatch.nextMatchId ||
@@ -366,6 +374,12 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             <span className="font-label-caps text-xs text-[#04A8FC] uppercase tracking-widest font-bold">
               {isMatchFinished ? 'COMBATE CULMINADO' : 'ENGAGEMENT ACTIVO'} • {currentMatch.roundName || 'Ronda de Batalla'}
             </span>
+            {isRegularPhase && (
+              <span className="text-[10px] font-label-caps uppercase px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 font-black border border-blue-500/30 flex items-center gap-1">
+                <span className="material-symbols-outlined text-xs">repeat</span>
+                <span>FASE REGULAR (ACUMULACIÓN)</span>
+              </span>
+            )}
             {config.type === 'series' && (
               <span className="text-[10px] font-label-caps uppercase px-2 py-0.5 rounded-full bg-[#FF5500]/20 text-[#FF5500] font-black border border-[#FF5500]/30 flex items-center gap-1">
                 <span className="material-symbols-outlined text-xs">tv</span>
@@ -431,23 +445,19 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           <p className="text-xs sm:text-sm font-label-caps uppercase text-slate-600 dark:text-slate-300 max-w-xl mx-auto">
             {isTournamentFinal
               ? 'El torneo ha concluido oficialmente. El cuadro de honor, podio y ceremonia de premiación están listos en el Bracket.'
-              : 'El resultado oficial ha sido registrado en la base de datos y el ganador avanzó a la siguiente ronda.'}
+              : 'El resultado oficial ha sido registrado en la base de datos y el ganador sumó puntos para la clasificación.'}
           </p>
           <div className="flex flex-wrap items-center justify-center gap-2.5 pt-2">
-            {onNavigateToBracket && (
+            {areAllRegularMatchesFinished && onGeneratePlayoffs && (
               <button
                 onClick={() => {
-                  soundManager.playClick();
-                  onNavigateToBracket();
+                  soundManager.playVictory();
+                  onGeneratePlayoffs();
                 }}
-                className={`px-6 py-3 rounded-xl font-headline font-black text-xs uppercase shadow-lg transition-all flex items-center gap-2 hover:scale-105 ${
-                  isTournamentFinal
-                    ? 'bg-amber-500 hover:bg-amber-400 text-black shadow-amber-500/30'
-                    : 'bg-[#04A8FC] hover:bg-[#008fe0] text-white shadow-[#04A8FC]/20'
-                }`}
+                className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black px-6 py-3 rounded-xl font-headline font-black text-xs uppercase shadow-xl shadow-amber-500/30 transition-all flex items-center gap-2 hover:scale-105 animate-pulse"
               >
-                <span className="material-symbols-outlined text-base">account_tree</span>
-                <span>{isTournamentFinal ? 'Ver Podio Oficial y Bracket' : 'Ver Árbol Bracket'}</span>
+                <span className="material-symbols-outlined text-base">rocket_launch</span>
+                <span>Fase Regular Lista • Clasificar a Playoffs (Top Cut)</span>
               </button>
             )}
 
@@ -461,6 +471,23 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               >
                 <span>Cargar Siguiente Duelo ({nextPlayableBracketMatch.roundName})</span>
                 <span className="material-symbols-outlined text-base">arrow_forward</span>
+              </button>
+            )}
+
+            {onNavigateToBracket && (
+              <button
+                onClick={() => {
+                  soundManager.playClick();
+                  onNavigateToBracket();
+                }}
+                className={`px-6 py-3 rounded-xl font-headline font-black text-xs uppercase shadow-lg transition-all flex items-center gap-2 hover:scale-105 ${
+                  isTournamentFinal
+                    ? 'bg-amber-500 hover:bg-amber-400 text-black shadow-amber-500/30'
+                    : 'bg-[#04A8FC] hover:bg-[#008fe0] text-white shadow-[#04A8FC]/20'
+                }`}
+              >
+                <span className="material-symbols-outlined text-base">account_tree</span>
+                <span>{isTournamentFinal ? 'Ver Podio Oficial y Bracket' : isRegularPhase ? 'Ver Tabla de Posiciones' : 'Ver Árbol Bracket'}</span>
               </button>
             )}
 

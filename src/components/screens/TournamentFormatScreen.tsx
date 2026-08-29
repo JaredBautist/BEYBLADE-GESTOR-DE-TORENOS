@@ -33,7 +33,12 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
       victoryConditions: updated.victoryConditions,
       maxParticipants: updated.maxParticipants,
       arenaStatus: updated.arenaStatus,
-      isStarted: updated.isStarted
+      isStarted: updated.isStarted,
+      regularPhaseMatchesPerBlader: updated.regularPhaseMatchesPerBlader ?? 2,
+      playoffCutoffType: updated.playoffCutoffType ?? 'top_n',
+      playoffCutoffCount: updated.playoffCutoffCount ?? 4,
+      minPointsToQualify: updated.minPointsToQualify ?? 4,
+      tournamentPhase: updated.tournamentPhase ?? 'regular'
     });
     syncConfigToSupabase({
       name: updated.name,
@@ -53,7 +58,43 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
     const updated: TournamentConfig = {
       ...formData,
       type,
-      ...(type === 'series' ? { battleScale: '1v1' } : {})
+      ...(type === 'series' ? { battleScale: '1v1' } : {}),
+      tournamentPhase: type === 'elimination' ? 'single_elimination' : 'regular'
+    };
+    triggerSave(updated);
+  };
+
+  const handleMatchesPerBladerChange = (count: number) => {
+    soundManager.playClick();
+    const updated: TournamentConfig = {
+      ...formData,
+      regularPhaseMatchesPerBlader: count
+    };
+    triggerSave(updated, `Límite de ${count} ${count === 1 ? 'batalla' : 'batallas'} por Blader establecido`);
+  };
+
+  const handlePlayoffCutoffTypeChange = (cutoffType: 'top_n' | 'min_points') => {
+    soundManager.playClick();
+    const updated: TournamentConfig = {
+      ...formData,
+      playoffCutoffType: cutoffType
+    };
+    triggerSave(updated);
+  };
+
+  const handlePlayoffCutoffCountChange = (count: 8 | 4 | 2) => {
+    soundManager.playClick();
+    const updated: TournamentConfig = {
+      ...formData,
+      playoffCutoffCount: count
+    };
+    triggerSave(updated, `Corte de clasificación establecido a Top ${count}`);
+  };
+
+  const handleMinPointsToQualifyChange = (pts: number) => {
+    const updated: TournamentConfig = {
+      ...formData,
+      minPointsToQualify: Math.max(1, pts)
     };
     triggerSave(updated);
   };
@@ -249,6 +290,183 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
                 </label>
               </div>
             </div>
+
+            {/* DELIMITACIÓN DE FASE REGULAR & CORTE A PLAYOFFS (LIGA / SERIE) */}
+            {formData.type !== 'elimination' ? (
+              <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/60 dark:bg-black/40 border-2 border-[#04A8FC]/40 shadow-lg space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-700/60 pb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[#04A8FC] text-xl">account_tree</span>
+                    <div>
+                      <h4 className="font-headline font-black text-sm sm:text-base uppercase text-white tracking-wide">
+                        Delimitación de Batallas & Corte a Playoffs
+                      </h4>
+                      <p className="text-[11px] font-label-caps text-slate-400 uppercase">
+                        Fase 1: Acumulación de Puntos • Fase 2: Cuartos / Semis / Gran Final
+                      </p>
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full bg-[#04A8FC]/20 text-[#04A8FC] border border-[#04A8FC]/30 text-[10px] font-label-caps font-black uppercase">
+                    2 Fases
+                  </span>
+                </div>
+
+                {/* 1. Cantidad de Batallas por Blader en Fase Regular */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="font-label-caps text-xs text-slate-300 uppercase font-bold flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-sm text-[#04A8FC]">repeat</span>
+                      <span>Batallas por Blader en Fase Regular:</span>
+                    </label>
+                    <span className="text-xs font-mono font-black text-[#04A8FC] bg-[#04A8FC]/10 px-2 py-0.5 rounded-md border border-[#04A8FC]/20">
+                      {formData.regularPhaseMatchesPerBlader || 2} {(formData.regularPhaseMatchesPerBlader || 2) === 1 ? 'Batalla' : 'Batallas'}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-5 gap-2">
+                    {[1, 2, 3, 4, 5].map((num) => {
+                      const isSelected = (formData.regularPhaseMatchesPerBlader || 2) === num;
+                      return (
+                        <button
+                          key={num}
+                          type="button"
+                          onClick={() => handleMatchesPerBladerChange(num)}
+                          className={`py-2 rounded-xl text-xs font-headline font-bold uppercase transition-all flex flex-col items-center justify-center ${
+                            isSelected
+                              ? 'bg-[#04A8FC] text-white shadow-md shadow-[#04A8FC]/30 font-black'
+                              : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white border border-white/5'
+                          }`}
+                        >
+                          <span className="text-sm font-black">{num}</span>
+                          <span className="text-[9px] font-label-caps uppercase">{num === 1 ? 'Duelo' : 'Duelos'}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-[10px] text-slate-400 italic">
+                    Cada Blader disputará exactamente esta cantidad de combates en la tabla de clasificación antes de definir el corte.
+                  </p>
+                </div>
+
+                {/* 2. Criterio de Corte Clasificatorio */}
+                <div className="space-y-2 pt-2 border-t border-slate-800">
+                  <label className="font-label-caps text-xs text-slate-300 uppercase font-bold flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-sm text-amber-400">filter_alt</span>
+                    <span>Corte Clasificatorio a Fase Final (Playoffs):</span>
+                  </label>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                    {/* Top 8 */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handlePlayoffCutoffTypeChange('top_n');
+                        handlePlayoffCutoffCountChange(8);
+                      }}
+                      className={`p-3 rounded-xl border text-left transition-all space-y-1 ${
+                        formData.playoffCutoffType === 'top_n' && (formData.playoffCutoffCount || 4) === 8
+                          ? 'bg-amber-500/20 border-amber-400 text-white shadow-md'
+                          : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-headline font-black text-xs uppercase text-amber-400">Top 8</span>
+                        <span className="text-[9px] font-label-caps font-bold text-slate-400">Cuartos</span>
+                      </div>
+                      <p className="text-[10px] text-slate-300 leading-tight">
+                        Los 8 mejores pasan a Cuartos de Final (1º vs 8º, 2º vs 7º...). Los demás quedan eliminados.
+                      </p>
+                    </button>
+
+                    {/* Top 4 */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handlePlayoffCutoffTypeChange('top_n');
+                        handlePlayoffCutoffCountChange(4);
+                      }}
+                      className={`p-3 rounded-xl border text-left transition-all space-y-1 ${
+                        formData.playoffCutoffType === 'top_n' && (formData.playoffCutoffCount || 4) === 4
+                          ? 'bg-[#04A8FC]/20 border-[#04A8FC] text-white shadow-md'
+                          : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-headline font-black text-xs uppercase text-[#04A8FC]">Top 4</span>
+                        <span className="text-[9px] font-label-caps font-bold text-slate-400">Semifinales</span>
+                      </div>
+                      <p className="text-[10px] text-slate-300 leading-tight">
+                        Los 4 mejores pasan a Semifinales (1º vs 4º, 2º vs 3º). Los demás quedan eliminados.
+                      </p>
+                    </button>
+
+                    {/* Top 2 */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handlePlayoffCutoffTypeChange('top_n');
+                        handlePlayoffCutoffCountChange(2);
+                      }}
+                      className={`p-3 rounded-xl border text-left transition-all space-y-1 ${
+                        formData.playoffCutoffType === 'top_n' && (formData.playoffCutoffCount || 4) === 2
+                          ? 'bg-emerald-500/20 border-emerald-400 text-white shadow-md'
+                          : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-headline font-black text-xs uppercase text-emerald-400">Top 2</span>
+                        <span className="text-[9px] font-label-caps font-bold text-slate-400">Gran Final</span>
+                      </div>
+                      <p className="text-[10px] text-slate-300 leading-tight">
+                        Los 2 mejores avanzan directo a la Gran Final. Los demás quedan descartados.
+                      </p>
+                    </button>
+
+                    {/* Min Points */}
+                    <button
+                      type="button"
+                      onClick={() => handlePlayoffCutoffTypeChange('min_points')}
+                      className={`p-3 rounded-xl border text-left transition-all space-y-1 ${
+                        formData.playoffCutoffType === 'min_points'
+                          ? 'bg-purple-500/20 border-purple-400 text-white shadow-md'
+                          : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-headline font-black text-xs uppercase text-purple-400">Por Puntos</span>
+                        <span className="text-[9px] font-label-caps font-bold text-slate-400">Umbral</span>
+                      </div>
+                      <p className="text-[10px] text-slate-300 leading-tight">
+                        Clasifican todos los que alcancen el puntaje mínimo establecido.
+                      </p>
+                    </button>
+                  </div>
+
+                  {formData.playoffCutoffType === 'min_points' && (
+                    <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-between gap-3 animate-fade-in">
+                      <span className="text-xs text-purple-200 font-bold">
+                        Puntos mínimos acumulados requeridos para clasificar a Playoffs:
+                      </span>
+                      <input
+                        type="number"
+                        min="1"
+                        max="20"
+                        value={formData.minPointsToQualify || 4}
+                        onChange={(e) => handleMinPointsToQualifyChange(parseInt(e.target.value) || 1)}
+                        className="w-16 bg-black/40 border border-purple-500/50 rounded-lg px-2.5 py-1 text-center font-headline font-black text-purple-300 text-sm focus:outline-none"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center gap-3">
+                <span className="material-symbols-outlined text-amber-500 text-2xl flex-shrink-0">military_tech</span>
+                <div className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                  <strong className="text-amber-500 uppercase block font-headline font-black">Eliminación Directa (Knockout)</strong>
+                  Cada ronda es definitiva: el ganador avanza a la siguiente fase del bracket y el perdedor queda automáticamente eliminado.
+                </div>
+              </div>
+            )}
 
             {/* Battle Scale */}
             <div>
