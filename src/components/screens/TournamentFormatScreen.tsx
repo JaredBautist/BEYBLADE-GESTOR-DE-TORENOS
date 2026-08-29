@@ -556,7 +556,6 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
                     <input
                       type="number"
                       min="1"
-                      max="10"
                       value={formData.victoryConditions.pointsToWin}
                       onChange={(e) => handlePointsChange('pointsToWin', parseInt(e.target.value) || 1)}
                       className="w-full bg-transparent border-b-2 border-[#04A8FC] text-center text-[#04A8FC] font-headline font-black text-2xl focus:outline-none p-1"
