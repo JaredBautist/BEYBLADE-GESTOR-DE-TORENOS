@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS combos (
   bit TEXT NOT NULL,
   type TEXT NOT NULL,
   weight TEXT,
+  image TEXT,
   notes TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );

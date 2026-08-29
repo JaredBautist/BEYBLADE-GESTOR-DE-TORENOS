@@ -51,9 +51,12 @@ export const BladersScreen: React.FC<BladersScreenProps> = ({
   const [comboSlotsCount, setComboSlotsCount] = useState<1 | 2 | 3>(1);
 
   // Combos state for new blader (independent slots)
-  const [combo1, setCombo1] = useState<string>('');
+  const [combo1, setCombo1] = useState<string>('Dransword 3-60F');
+  const [combo1Image, setCombo1Image] = useState<string>('');
   const [combo2, setCombo2] = useState<string>('');
+  const [combo2Image, setCombo2Image] = useState<string>('');
   const [combo3, setCombo3] = useState<string>('');
+  const [combo3Image, setCombo3Image] = useState<string>('');
 
   // Edit Blader Modal State
   const [editingBlader, setEditingBlader] = useState<Blader | null>(null);
@@ -63,9 +66,23 @@ export const BladersScreen: React.FC<BladersScreenProps> = ({
   const [editTeam, setEditTeam] = useState<string>('');
   const [editAvatar, setEditAvatar] = useState<string>('');
   const [editCombo1, setEditCombo1] = useState<string>('');
+  const [editCombo1Image, setEditCombo1Image] = useState<string>('');
   const [editCombo2, setEditCombo2] = useState<string>('');
+  const [editCombo2Image, setEditCombo2Image] = useState<string>('');
   const [editCombo3, setEditCombo3] = useState<string>('');
+  const [editCombo3Image, setEditCombo3Image] = useState<string>('');
   const [isCompressing, setIsCompressing] = useState<boolean>(false);
+
+  // Lightbox modal for zooming combo / avatar photos
+  const [previewImageModal, setPreviewImageModal] = useState<{
+    isOpen: boolean;
+    url: string;
+    title: string;
+  }>({
+    isOpen: false,
+    url: '',
+    title: ''
+  });
 
   const showToast = (message: string, isError = false) => {
     setSyncFeedback({ message, isError });
@@ -101,8 +118,11 @@ export const BladersScreen: React.FC<BladersScreenProps> = ({
     setSelectedBadgeIds(['badge-official-member']);
     setComboSlotsCount(1);
     setCombo1('Dransword 3-60F');
+    setCombo1Image('');
     setCombo2('');
+    setCombo2Image('');
     setCombo3('');
+    setCombo3Image('');
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, isEditMode = false) => {
@@ -125,6 +145,33 @@ export const BladersScreen: React.FC<BladersScreenProps> = ({
     }
   };
 
+  const handleComboFileUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    slot: 1 | 2 | 3,
+    isEditMode = false
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsCompressing(true);
+      const compressedDataUrl = await compressImage(file, 400, 400, 0.85);
+      if (isEditMode) {
+        if (slot === 1) setEditCombo1Image(compressedDataUrl);
+        if (slot === 2) setEditCombo2Image(compressedDataUrl);
+        if (slot === 3) setEditCombo3Image(compressedDataUrl);
+      } else {
+        if (slot === 1) setCombo1Image(compressedDataUrl);
+        if (slot === 2) setCombo2Image(compressedDataUrl);
+        if (slot === 3) setCombo3Image(compressedDataUrl);
+      }
+    } catch (err) {
+      console.error('Error processing combo photo:', err);
+    } finally {
+      setIsCompressing(false);
+    }
+  };
+
   const toggleInitialBadge = (badgeId: string) => {
     soundManager.playClick();
     setSelectedBadgeIds((prev) =>
@@ -140,9 +187,9 @@ export const BladersScreen: React.FC<BladersScreenProps> = ({
 
     // Collect ONLY the combos that were configured / filled
     const rawCombos = [
-      { text: combo1, slot: 1 },
-      { text: comboSlotsCount >= 2 ? combo2 : '', slot: 2 },
-      { text: comboSlotsCount >= 3 ? combo3 : '', slot: 3 }
+      { text: combo1, slot: 1, image: combo1Image },
+      { text: comboSlotsCount >= 2 ? combo2 : '', slot: 2, image: comboSlotsCount >= 2 ? combo2Image : '' },
+      { text: comboSlotsCount >= 3 ? combo3 : '', slot: 3, image: comboSlotsCount >= 3 ? combo3Image : '' }
     ];
 
     const combos: BladerCombo[] = rawCombos
@@ -155,7 +202,8 @@ export const BladersScreen: React.FC<BladersScreenProps> = ({
           blade: blade || 'Dransword',
           ratchet: ratchet || '',
           bit: bit || '',
-          name: trimmed
+          name: trimmed,
+          imageUrl: c.image || undefined
         };
       });
 
@@ -202,14 +250,19 @@ export const BladersScreen: React.FC<BladersScreenProps> = ({
       blader.combos?.[0]?.name ||
       (blader.combos?.[0] ? `${blader.combos[0].blade} ${blader.combos[0].ratchet}${blader.combos[0].bit}`.trim() : '')
     );
+    setEditCombo1Image(blader.combos?.[0]?.imageUrl || '');
+
     setEditCombo2(
       blader.combos?.[1]?.name ||
       (blader.combos?.[1] ? `${blader.combos[1].blade} ${blader.combos[1].ratchet}${blader.combos[1].bit}`.trim() : '')
     );
+    setEditCombo2Image(blader.combos?.[1]?.imageUrl || '');
+
     setEditCombo3(
       blader.combos?.[2]?.name ||
       (blader.combos?.[2] ? `${blader.combos[2].blade} ${blader.combos[2].ratchet}${blader.combos[2].bit}`.trim() : '')
     );
+    setEditCombo3Image(blader.combos?.[2]?.imageUrl || '');
   };
 
   // Save changes to existing blader and sync to database
@@ -218,9 +271,9 @@ export const BladersScreen: React.FC<BladersScreenProps> = ({
 
     // Collect only the active & non-empty combos
     const rawEditCombos = [
-      { text: editCombo1, slot: 1 },
-      { text: editSlotsCount >= 2 ? editCombo2 : '', slot: 2 },
-      { text: editSlotsCount >= 3 ? editCombo3 : '', slot: 3 }
+      { text: editCombo1, slot: 1, image: editCombo1Image },
+      { text: editSlotsCount >= 2 ? editCombo2 : '', slot: 2, image: editSlotsCount >= 2 ? editCombo2Image : '' },
+      { text: editSlotsCount >= 3 ? editCombo3 : '', slot: 3, image: editSlotsCount >= 3 ? editCombo3Image : '' }
     ];
 
     const updatedCombos: BladerCombo[] = rawEditCombos
@@ -233,7 +286,8 @@ export const BladersScreen: React.FC<BladersScreenProps> = ({
           blade: blade || 'Dransword',
           ratchet: ratchet || '',
           bit: bit || '',
-          name: trimmed
+          name: trimmed,
+          imageUrl: c.image || undefined
         };
       });
 
@@ -504,47 +558,170 @@ export const BladersScreen: React.FC<BladersScreenProps> = ({
                   </div>
                 </div>
 
-                <div className={`grid grid-cols-1 ${comboSlotsCount === 1 ? 'sm:grid-cols-1' : comboSlotsCount === 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-3'} gap-3`}>
-                  <div className="space-y-1">
-                    <label className="block text-[11px] font-label-caps uppercase text-slate-600 dark:text-slate-400 font-bold">
-                      Combo Slot #1
-                    </label>
+                <div className={`grid grid-cols-1 ${comboSlotsCount === 1 ? 'sm:grid-cols-1' : comboSlotsCount === 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-3'} gap-3.5`}>
+                  {/* Slot 1 */}
+                  <div className="p-3 bg-slate-50 dark:bg-[#1a1a24] rounded-2xl border border-slate-200 dark:border-white/10 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-[11px] font-label-caps uppercase text-[#04A8FC] font-black">
+                        Combo Slot #1
+                      </label>
+                      <span className="text-[9px] font-mono text-slate-400">Principal</span>
+                    </div>
                     <input
                       type="text"
                       value={combo1}
                       onChange={(e) => setCombo1(e.target.value)}
                       placeholder="Ej. Dransword 3-60F"
-                      className="w-full bg-slate-50 dark:bg-[#1a1a24] border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs font-headline uppercase text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#04A8FC] shadow-sm"
+                      className="w-full bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-1.5 text-xs font-headline uppercase text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#04A8FC] shadow-sm"
                     />
+
+                    {/* Photo Uploader Slot 1 */}
+                    <div className="pt-1 flex items-center justify-between gap-2">
+                      <input
+                        type="file"
+                        id="combo-1-upload"
+                        accept="image/*"
+                        onChange={(e) => handleComboFileUpload(e, 1, false)}
+                        className="hidden"
+                      />
+                      {combo1Image ? (
+                        <div className="flex items-center gap-2">
+                          <img
+                            src={combo1Image}
+                            alt="Combo Slot 1"
+                            onClick={() => setPreviewImageModal({ isOpen: true, url: combo1Image, title: `Foto Combo Slot #1 (${combo1 || 'Dransword'})` })}
+                            className="w-9 h-9 rounded-lg object-cover border border-[#04A8FC] cursor-pointer shadow-sm hover:scale-105 transition-transform"
+                            title="Clic para ver foto"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setCombo1Image('')}
+                            className="text-[10px] text-red-500 hover:text-red-700 font-bold uppercase"
+                          >
+                            Quitar
+                          </button>
+                        </div>
+                      ) : (
+                        <label
+                          htmlFor="combo-1-upload"
+                          className="cursor-pointer inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white dark:bg-white/5 hover:bg-[#04A8FC]/10 hover:text-[#04A8FC] text-slate-500 dark:text-slate-400 text-[10px] font-label-caps uppercase font-bold border border-slate-200 dark:border-white/10 transition-colors shadow-2xs"
+                        >
+                          <span className="material-symbols-outlined text-xs">add_a_photo</span>
+                          <span>Foto Combo</span>
+                        </label>
+                      )}
+                    </div>
                   </div>
 
+                  {/* Slot 2 */}
                   {comboSlotsCount >= 2 && (
-                    <div className="space-y-1">
-                      <label className="block text-[11px] font-label-caps uppercase text-slate-600 dark:text-slate-400 font-bold">
-                        Combo Slot #2
-                      </label>
+                    <div className="p-3 bg-slate-50 dark:bg-[#1a1a24] rounded-2xl border border-slate-200 dark:border-white/10 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-[11px] font-label-caps uppercase text-[#04A8FC] font-black">
+                          Combo Slot #2
+                        </label>
+                        <span className="text-[9px] font-mono text-slate-400">Secundario</span>
+                      </div>
                       <input
                         type="text"
                         value={combo2}
                         onChange={(e) => setCombo2(e.target.value)}
                         placeholder="Ej. Hellscythe 4-60T"
-                        className="w-full bg-slate-50 dark:bg-[#1a1a24] border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs font-headline uppercase text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#04A8FC] shadow-sm"
+                        className="w-full bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-1.5 text-xs font-headline uppercase text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#04A8FC] shadow-sm"
                       />
+
+                      {/* Photo Uploader Slot 2 */}
+                      <div className="pt-1 flex items-center justify-between gap-2">
+                        <input
+                          type="file"
+                          id="combo-2-upload"
+                          accept="image/*"
+                          onChange={(e) => handleComboFileUpload(e, 2, false)}
+                          className="hidden"
+                        />
+                        {combo2Image ? (
+                          <div className="flex items-center gap-2">
+                            <img
+                              src={combo2Image}
+                              alt="Combo Slot 2"
+                              onClick={() => setPreviewImageModal({ isOpen: true, url: combo2Image, title: `Foto Combo Slot #2 (${combo2 || 'Hellscythe'})` })}
+                              className="w-9 h-9 rounded-lg object-cover border border-[#04A8FC] cursor-pointer shadow-sm hover:scale-105 transition-transform"
+                              title="Clic para ver foto"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setCombo2Image('')}
+                              className="text-[10px] text-red-500 hover:text-red-700 font-bold uppercase"
+                            >
+                              Quitar
+                            </button>
+                          </div>
+                        ) : (
+                          <label
+                            htmlFor="combo-2-upload"
+                            className="cursor-pointer inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white dark:bg-white/5 hover:bg-[#04A8FC]/10 hover:text-[#04A8FC] text-slate-500 dark:text-slate-400 text-[10px] font-label-caps uppercase font-bold border border-slate-200 dark:border-white/10 transition-colors shadow-2xs"
+                          >
+                            <span className="material-symbols-outlined text-xs">add_a_photo</span>
+                            <span>Foto Combo</span>
+                          </label>
+                        )}
+                      </div>
                     </div>
                   )}
 
+                  {/* Slot 3 */}
                   {comboSlotsCount >= 3 && (
-                    <div className="space-y-1">
-                      <label className="block text-[11px] font-label-caps uppercase text-slate-600 dark:text-slate-400 font-bold">
-                        Combo Slot #3
-                      </label>
+                    <div className="p-3 bg-slate-50 dark:bg-[#1a1a24] rounded-2xl border border-slate-200 dark:border-white/10 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-[11px] font-label-caps uppercase text-[#04A8FC] font-black">
+                          Combo Slot #3
+                        </label>
+                        <span className="text-[9px] font-mono text-slate-400">Deck 3on3</span>
+                      </div>
                       <input
                         type="text"
                         value={combo3}
                         onChange={(e) => setCombo3(e.target.value)}
                         placeholder="Ej. Wizardarrow 4-80B"
-                        className="w-full bg-slate-50 dark:bg-[#1a1a24] border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs font-headline uppercase text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#04A8FC] shadow-sm"
+                        className="w-full bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-1.5 text-xs font-headline uppercase text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#04A8FC] shadow-sm"
                       />
+
+                      {/* Photo Uploader Slot 3 */}
+                      <div className="pt-1 flex items-center justify-between gap-2">
+                        <input
+                          type="file"
+                          id="combo-3-upload"
+                          accept="image/*"
+                          onChange={(e) => handleComboFileUpload(e, 3, false)}
+                          className="hidden"
+                        />
+                        {combo3Image ? (
+                          <div className="flex items-center gap-2">
+                            <img
+                              src={combo3Image}
+                              alt="Combo Slot 3"
+                              onClick={() => setPreviewImageModal({ isOpen: true, url: combo3Image, title: `Foto Combo Slot #3 (${combo3 || 'Wizardarrow'})` })}
+                              className="w-9 h-9 rounded-lg object-cover border border-[#04A8FC] cursor-pointer shadow-sm hover:scale-105 transition-transform"
+                              title="Clic para ver foto"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setCombo3Image('')}
+                              className="text-[10px] text-red-500 hover:text-red-700 font-bold uppercase"
+                            >
+                              Quitar
+                            </button>
+                          </div>
+                        ) : (
+                          <label
+                            htmlFor="combo-3-upload"
+                            className="cursor-pointer inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white dark:bg-white/5 hover:bg-[#04A8FC]/10 hover:text-[#04A8FC] text-slate-500 dark:text-slate-400 text-[10px] font-label-caps uppercase font-bold border border-slate-200 dark:border-white/10 transition-colors shadow-2xs"
+                          >
+                            <span className="material-symbols-outlined text-xs">add_a_photo</span>
+                            <span>Foto Combo</span>
+                          </label>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -668,20 +845,77 @@ export const BladersScreen: React.FC<BladersScreenProps> = ({
                   </span>
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   {selectedBlader.combos && selectedBlader.combos.length > 0 ? (
                     selectedBlader.combos.map((c, i) => (
                       <div
                         key={i}
-                        className="p-2 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 flex items-center justify-between text-xs font-mono"
+                        className="p-2.5 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 flex items-center gap-3 transition-all hover:border-[#04A8FC]/40"
                       >
-                        <span className="font-headline font-bold uppercase text-slate-900 dark:text-white">
-                          #{c.slot} {c.name || `${c.blade} ${c.ratchet}${c.bit}`}
-                        </span>
+                        {/* Combo Photo / Icon */}
+                        <div
+                          onClick={() => {
+                            if (c.imageUrl) {
+                              soundManager.playClick();
+                              setPreviewImageModal({
+                                isOpen: true,
+                                url: c.imageUrl,
+                                title: `Combo #${c.slot}: ${c.name || `${c.blade} ${c.ratchet}${c.bit}`} (${selectedBlader.name})`
+                              });
+                            }
+                          }}
+                          className={`w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center border ${
+                            c.imageUrl
+                              ? 'border-[#04A8FC]/50 cursor-pointer shadow-sm hover:scale-105 transition-transform'
+                              : 'border-slate-200 dark:border-white/10 bg-slate-200/60 dark:bg-white/10 text-slate-400'
+                          }`}
+                          title={c.imageUrl ? 'Clic para ver foto ampliada' : 'Sin foto de combo'}
+                        >
+                          {c.imageUrl ? (
+                            <img src={c.imageUrl} alt={c.blade} className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="material-symbols-outlined text-xl">cyclone</span>
+                          )}
+                        </div>
+
+                        {/* Combo Details */}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="px-1.5 py-0.5 rounded bg-[#04A8FC]/10 text-[#04A8FC] font-label-caps text-[9px] font-black uppercase">
+                              Slot #{c.slot}
+                            </span>
+                            <span className="font-headline font-bold uppercase text-xs text-slate-900 dark:text-white truncate">
+                              {c.name || `${c.blade} ${c.ratchet}${c.bit}`}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-[10px] font-mono text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                            <span>B: {c.blade}</span>
+                            {c.ratchet && <span>• R: {c.ratchet}</span>}
+                            {c.bit && <span>• Bit: {c.bit}</span>}
+                          </div>
+                        </div>
+
+                        {c.imageUrl && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              soundManager.playClick();
+                              setPreviewImageModal({
+                                isOpen: true,
+                                url: c.imageUrl!,
+                                title: `Combo #${c.slot}: ${c.name || `${c.blade} ${c.ratchet}${c.bit}`} (${selectedBlader.name})`
+                              });
+                            }}
+                            className="p-1.5 rounded-lg bg-[#04A8FC]/10 text-[#04A8FC] hover:bg-[#04A8FC]/20 transition-colors"
+                            title="Ver foto"
+                          >
+                            <span className="material-symbols-outlined text-sm">zoom_in</span>
+                          </button>
+                        )}
                       </div>
                     ))
                   ) : (
-                    <div className="p-2 text-xs text-slate-400 text-center italic">
+                    <div className="p-3 text-xs text-slate-400 text-center italic bg-slate-50 dark:bg-white/5 rounded-xl">
                       Sin combos registrados en el deck
                     </div>
                   )}
@@ -759,9 +993,25 @@ export const BladersScreen: React.FC<BladersScreenProps> = ({
                           </span>
                         )}
                       </div>
-                      <p className="text-[10px] font-label-caps text-slate-500 truncate uppercase">
-                        {b.team} • {b.badges?.length || 0} Insignias
-                      </p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <p className="text-[10px] font-label-caps text-slate-500 truncate uppercase">
+                          {b.team} • {b.combos?.length || 0} Combos
+                        </p>
+                        {/* Mini combo photo thumbnails if any */}
+                        {b.combos && b.combos.some((c) => !!c.imageUrl) && (
+                          <div className="flex items-center -space-x-1">
+                            {b.combos.filter((c) => !!c.imageUrl).map((c, ci) => (
+                              <img
+                                key={ci}
+                                src={c.imageUrl}
+                                alt={c.blade}
+                                className="w-4 h-4 rounded-full object-cover border border-white dark:border-[#15151c] shadow-2xs"
+                                title={`Combo #${c.slot}: ${c.name || c.blade}`}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div className="text-right flex items-center gap-2">
                       <div>
@@ -948,41 +1198,158 @@ export const BladersScreen: React.FC<BladersScreenProps> = ({
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <div className="space-y-0.5">
-                    <span className="text-[10px] font-label-caps text-slate-400 uppercase font-bold">Slot 1</span>
+                <div className="space-y-3">
+                  {/* Slot 1 Edit */}
+                  <div className="p-3 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-label-caps text-[#04A8FC] uppercase font-black">Slot #1</span>
+                      <span className="text-[9px] font-mono text-slate-400">Principal</span>
+                    </div>
                     <input
                       type="text"
                       value={editCombo1}
                       onChange={(e) => setEditCombo1(e.target.value)}
                       placeholder="Slot 1 (Ej. Dransword 3-60F)"
-                      className="w-full bg-slate-50 dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-1.5 text-xs font-headline uppercase"
+                      className="w-full bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-1.5 text-xs font-headline uppercase"
                     />
+                    <div className="pt-1 flex items-center justify-between gap-2">
+                      <input
+                        type="file"
+                        id="edit-combo-1-upload"
+                        accept="image/*"
+                        onChange={(e) => handleComboFileUpload(e, 1, true)}
+                        className="hidden"
+                      />
+                      {editCombo1Image ? (
+                        <div className="flex items-center gap-2">
+                          <img
+                            src={editCombo1Image}
+                            alt="Edit Combo Slot 1"
+                            onClick={() => setPreviewImageModal({ isOpen: true, url: editCombo1Image, title: `Foto Combo Slot #1 (${editCombo1 || 'Dransword'})` })}
+                            className="w-9 h-9 rounded-lg object-cover border border-[#04A8FC] cursor-pointer shadow-sm hover:scale-105 transition-transform"
+                            title="Clic para ver foto"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setEditCombo1Image('')}
+                            className="text-[10px] text-red-500 hover:text-red-700 font-bold uppercase"
+                          >
+                            Quitar Foto
+                          </button>
+                        </div>
+                      ) : (
+                        <label
+                          htmlFor="edit-combo-1-upload"
+                          className="cursor-pointer inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white dark:bg-white/5 hover:bg-[#04A8FC]/10 hover:text-[#04A8FC] text-slate-500 dark:text-slate-400 text-[10px] font-label-caps uppercase font-bold border border-slate-200 dark:border-white/10 transition-colors shadow-2xs"
+                        >
+                          <span className="material-symbols-outlined text-xs">add_a_photo</span>
+                          <span>Subir Foto Combo</span>
+                        </label>
+                      )}
+                    </div>
                   </div>
 
+                  {/* Slot 2 Edit */}
                   {editSlotsCount >= 2 && (
-                    <div className="space-y-0.5">
-                      <span className="text-[10px] font-label-caps text-slate-400 uppercase font-bold">Slot 2</span>
+                    <div className="p-3 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-label-caps text-[#04A8FC] uppercase font-black">Slot #2</span>
+                        <span className="text-[9px] font-mono text-slate-400">Secundario</span>
+                      </div>
                       <input
                         type="text"
                         value={editCombo2}
                         onChange={(e) => setEditCombo2(e.target.value)}
                         placeholder="Slot 2 (Ej. Hellscythe 4-60T)"
-                        className="w-full bg-slate-50 dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-1.5 text-xs font-headline uppercase"
+                        className="w-full bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-1.5 text-xs font-headline uppercase"
                       />
+                      <div className="pt-1 flex items-center justify-between gap-2">
+                        <input
+                          type="file"
+                          id="edit-combo-2-upload"
+                          accept="image/*"
+                          onChange={(e) => handleComboFileUpload(e, 2, true)}
+                          className="hidden"
+                        />
+                        {editCombo2Image ? (
+                          <div className="flex items-center gap-2">
+                            <img
+                              src={editCombo2Image}
+                              alt="Edit Combo Slot 2"
+                              onClick={() => setPreviewImageModal({ isOpen: true, url: editCombo2Image, title: `Foto Combo Slot #2 (${editCombo2 || 'Hellscythe'})` })}
+                              className="w-9 h-9 rounded-lg object-cover border border-[#04A8FC] cursor-pointer shadow-sm hover:scale-105 transition-transform"
+                              title="Clic para ver foto"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setEditCombo2Image('')}
+                              className="text-[10px] text-red-500 hover:text-red-700 font-bold uppercase"
+                            >
+                              Quitar Foto
+                            </button>
+                          </div>
+                        ) : (
+                          <label
+                            htmlFor="edit-combo-2-upload"
+                            className="cursor-pointer inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white dark:bg-white/5 hover:bg-[#04A8FC]/10 hover:text-[#04A8FC] text-slate-500 dark:text-slate-400 text-[10px] font-label-caps uppercase font-bold border border-slate-200 dark:border-white/10 transition-colors shadow-2xs"
+                          >
+                            <span className="material-symbols-outlined text-xs">add_a_photo</span>
+                            <span>Subir Foto Combo</span>
+                          </label>
+                        )}
+                      </div>
                     </div>
                   )}
 
+                  {/* Slot 3 Edit */}
                   {editSlotsCount >= 3 && (
-                    <div className="space-y-0.5">
-                      <span className="text-[10px] font-label-caps text-slate-400 uppercase font-bold">Slot 3</span>
+                    <div className="p-3 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-label-caps text-[#04A8FC] uppercase font-black">Slot #3</span>
+                        <span className="text-[9px] font-mono text-slate-400">Deck 3on3</span>
+                      </div>
                       <input
                         type="text"
                         value={editCombo3}
                         onChange={(e) => setEditCombo3(e.target.value)}
                         placeholder="Slot 3 (Ej. Wizardarrow 4-80B)"
-                        className="w-full bg-slate-50 dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-1.5 text-xs font-headline uppercase"
+                        className="w-full bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-1.5 text-xs font-headline uppercase"
                       />
+                      <div className="pt-1 flex items-center justify-between gap-2">
+                        <input
+                          type="file"
+                          id="edit-combo-3-upload"
+                          accept="image/*"
+                          onChange={(e) => handleComboFileUpload(e, 3, true)}
+                          className="hidden"
+                        />
+                        {editCombo3Image ? (
+                          <div className="flex items-center gap-2">
+                            <img
+                              src={editCombo3Image}
+                              alt="Edit Combo Slot 3"
+                              onClick={() => setPreviewImageModal({ isOpen: true, url: editCombo3Image, title: `Foto Combo Slot #3 (${editCombo3 || 'Wizardarrow'})` })}
+                              className="w-9 h-9 rounded-lg object-cover border border-[#04A8FC] cursor-pointer shadow-sm hover:scale-105 transition-transform"
+                              title="Clic para ver foto"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setEditCombo3Image('')}
+                              className="text-[10px] text-red-500 hover:text-red-700 font-bold uppercase"
+                            >
+                              Quitar Foto
+                            </button>
+                          </div>
+                        ) : (
+                          <label
+                            htmlFor="edit-combo-3-upload"
+                            className="cursor-pointer inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white dark:bg-white/5 hover:bg-[#04A8FC]/10 hover:text-[#04A8FC] text-slate-500 dark:text-slate-400 text-[10px] font-label-caps uppercase font-bold border border-slate-200 dark:border-white/10 transition-colors shadow-2xs"
+                          >
+                            <span className="material-symbols-outlined text-xs">add_a_photo</span>
+                            <span>Subir Foto Combo</span>
+                          </label>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1005,6 +1372,44 @@ export const BladersScreen: React.FC<BladersScreenProps> = ({
                 Guardar y Sincronizar
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox Modal for zooming combo/avatar photos */}
+      {previewImageModal.isOpen && (
+        <div
+          onClick={() => setPreviewImageModal({ isOpen: false, url: '', title: '' })}
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white dark:bg-[#15151c] border border-slate-200 dark:border-white/10 rounded-3xl overflow-hidden max-w-lg w-full p-4 sm:p-6 shadow-2xl space-y-4 text-center"
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-2">
+              <h4 className="font-headline font-black text-sm uppercase text-slate-900 dark:text-white truncate">
+                {previewImageModal.title}
+              </h4>
+              <button
+                onClick={() => setPreviewImageModal({ isOpen: false, url: '', title: '' })}
+                className="w-7 h-7 rounded-full bg-slate-100 dark:bg-white/10 text-slate-500 hover:text-black dark:hover:text-white flex items-center justify-center"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="w-full max-h-[70vh] rounded-2xl overflow-hidden bg-black/40 flex items-center justify-center">
+              <img
+                src={previewImageModal.url}
+                alt={previewImageModal.title}
+                className="max-h-[65vh] w-auto object-contain rounded-xl shadow-lg"
+              />
+            </div>
+            <button
+              onClick={() => setPreviewImageModal({ isOpen: false, url: '', title: '' })}
+              className="bg-[#04A8FC] hover:bg-[#008fe0] text-white px-5 py-2 rounded-xl text-xs font-headline font-black uppercase"
+            >
+              Cerrar
+            </button>
           </div>
         </div>
       )}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { BeybladePart, Blader, RegisteredCombo } from '../../types';
 import { soundManager } from '../../utils/audio';
+import { compressImage } from '../../utils/imageUtils';
 import { BladerAvatar } from '../BladerAvatar';
 
 interface EquipmentScreenProps {
@@ -35,6 +36,43 @@ export const EquipmentScreen: React.FC<EquipmentScreenProps> = ({
     url: '',
     title: ''
   });
+
+  const handleComboPhotoUpload = async (combo: RegisteredCombo, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      soundManager.playScore();
+      const compressedDataUrl = await compressImage(file, 400, 400, 0.85);
+      const updatedCombo: RegisteredCombo = {
+        ...combo,
+        image: compressedDataUrl
+      };
+      onAddCombo(updatedCombo);
+
+      // If attached to a blader, update blader's combo imageUrl
+      if (combo.bladerId && onUpdateBlader) {
+        const blader = bladers.find((b) => b.id === combo.bladerId);
+        if (blader && blader.combos) {
+          const updatedBladerCombos = blader.combos.map((bc) => {
+            if (
+              bc.blade.toLowerCase() === combo.blade.toLowerCase() ||
+              combo.id.endsWith(`slot-${bc.slot}`)
+            ) {
+              return { ...bc, imageUrl: compressedDataUrl };
+            }
+            return bc;
+          });
+          onUpdateBlader({
+            ...blader,
+            combos: updatedBladerCombos
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Error uploading combo photo:', err);
+    }
+  };
 
   const filteredParts = parts.filter((p) => {
     if (selectedCategory === 'All') return true;
@@ -205,34 +243,68 @@ export const EquipmentScreen: React.FC<EquipmentScreenProps> = ({
 
                       {/* Combo Photo / Gallery Banner */}
                       {combo.image ? (
-                        <div
-                          onClick={() => {
-                            soundManager.playClick();
-                            setPreviewImageModal({
-                              isOpen: true,
-                              url: combo.image!,
-                              title: `${combo.blade} ${combo.ratchet}${combo.bit} • ${combo.bladerName}`
-                            });
-                          }}
-                          className="relative w-full h-44 rounded-2xl overflow-hidden bg-slate-900/10 dark:bg-black/40 border border-slate-200 dark:border-white/10 cursor-pointer group/photo shadow-inner"
-                        >
-                          <img
-                            src={combo.image}
-                            alt={`${combo.blade} ${combo.ratchet}${combo.bit}`}
-                            className="w-full h-full object-cover group-hover/photo:scale-105 transition-transform duration-300"
-                          />
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/photo:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-headline font-black uppercase gap-1.5 backdrop-blur-xs">
-                            <span className="material-symbols-outlined text-base">zoom_in</span>
-                            <span>Ver Foto</span>
+                        <div className="space-y-1.5">
+                          <div
+                            onClick={() => {
+                              soundManager.playClick();
+                              setPreviewImageModal({
+                                isOpen: true,
+                                url: combo.image!,
+                                title: `${combo.blade} ${combo.ratchet}${combo.bit} • ${combo.bladerName}`
+                              });
+                            }}
+                            className="relative w-full h-44 rounded-2xl overflow-hidden bg-slate-900/10 dark:bg-black/40 border border-slate-200 dark:border-white/10 cursor-pointer group/photo shadow-inner"
+                          >
+                            <img
+                              src={combo.image}
+                              alt={`${combo.blade} ${combo.ratchet}${combo.bit}`}
+                              className="w-full h-full object-cover group-hover/photo:scale-105 transition-transform duration-300"
+                            />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/photo:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-headline font-black uppercase gap-1.5 backdrop-blur-xs">
+                              <span className="material-symbols-outlined text-base">zoom_in</span>
+                              <span>Ver Foto Ampliada</span>
+                            </div>
+                            <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-black/75 text-white text-[9px] font-label-caps uppercase font-bold backdrop-blur-sm shadow">
+                              📸 Foto Oficial
+                            </div>
                           </div>
-                          <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-black/75 text-white text-[9px] font-label-caps uppercase font-bold backdrop-blur-sm shadow">
-                            📸 Foto Oficial
+                          <div className="flex items-center justify-end">
+                            <input
+                              type="file"
+                              id={`combo-photo-change-${combo.id}`}
+                              accept="image/*"
+                              onChange={(e) => handleComboPhotoUpload(combo, e)}
+                              className="hidden"
+                            />
+                            <label
+                              htmlFor={`combo-photo-change-${combo.id}`}
+                              className="cursor-pointer inline-flex items-center gap-1 text-[10px] font-label-caps uppercase font-bold text-slate-500 hover:text-[#04A8FC] transition-colors"
+                            >
+                              <span className="material-symbols-outlined text-xs">add_a_photo</span>
+                              <span>Cambiar Foto</span>
+                            </label>
                           </div>
                         </div>
                       ) : (
-                        <div className="w-full h-24 rounded-2xl bg-gradient-to-r from-slate-100 to-slate-200 dark:from-white/5 dark:to-white/10 border border-slate-200/50 dark:border-white/5 flex items-center justify-center text-slate-400 gap-2 font-label-caps text-xs uppercase font-bold">
-                          <span className="material-symbols-outlined text-xl">cyclone</span>
-                          <span>{combo.type} Beyblade</span>
+                        <div className="w-full p-4 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200/70 dark:from-white/5 dark:to-white/10 border border-slate-200/50 dark:border-white/5 flex flex-col items-center justify-center text-center gap-2">
+                          <span className="material-symbols-outlined text-2xl text-slate-400">cyclone</span>
+                          <span className="font-label-caps text-[11px] uppercase font-bold text-slate-500 dark:text-slate-400">
+                            Sin Foto Registrada
+                          </span>
+                          <input
+                            type="file"
+                            id={`combo-photo-upload-${combo.id}`}
+                            accept="image/*"
+                            onChange={(e) => handleComboPhotoUpload(combo, e)}
+                            className="hidden"
+                          />
+                          <label
+                            htmlFor={`combo-photo-upload-${combo.id}`}
+                            className="cursor-pointer inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white dark:bg-white/10 hover:bg-[#04A8FC] hover:text-white text-[#04A8FC] text-xs font-headline font-bold uppercase transition-all shadow-xs border border-[#04A8FC]/30"
+                          >
+                            <span className="material-symbols-outlined text-sm">add_a_photo</span>
+                            <span>Subir Foto del Combo</span>
+                          </label>
                         </div>
                       )}
 

@@ -193,7 +193,7 @@ export function createRegisteredCombosFromBlader(
       ratchet: ratchet || '3-60',
       bit: bit || 'F',
       type: inferredType,
-      image: existing?.image,
+      image: c.imageUrl || existing?.image || undefined,
       weight: existing?.weight,
       notes: existing?.notes || `Combo Deck Slot #${slotNum} de ${blader.name} (${blader.team || 'Comunidad Cúcuta'})`,
       createdAt: existing?.createdAt || new Date().toISOString()
