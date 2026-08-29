@@ -18,11 +18,134 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
   const [activeTab, setActiveTab] = useState<'hall_of_fame' | 'tournaments'>('hall_of_fame');
   const [selectedTournamentRecap, setSelectedTournamentRecap] = useState<TournamentRecord | null>(null);
 
-  const activeBladers = bladers.filter((b) => (b.stats?.matchesPlayed || 0) > 0 || (b.stats?.pointsScored || 0) > 0 || (b.stats?.wins || 0) > 0);
-  const sortedByWins = [...activeBladers].sort((a, b) => (b.stats?.wins || 0) - (a.stats?.wins || 0));
-  const sortedByXtreme = [...activeBladers].sort((a, b) => (b.stats?.xtremeFinishes || 0) - (a.stats?.xtremeFinishes || 0));
-  const sortedByBurst = [...activeBladers].sort((a, b) => (b.stats?.burstFinishes || 0) - (a.stats?.burstFinishes || 0));
-  const sortedByPoints = [...activeBladers].sort((a, b) => (b.stats?.pointsScored || 0) - (a.stats?.pointsScored || 0));
+  // Aggregate stats across ALL archived tournaments in history + current bladers
+  const bladerStatsMap = new Map<
+    string,
+    {
+      name: string;
+      tournamentsWon: number;
+      runnerUps: number;
+      matchesWon: number;
+      pointsScored: number;
+      xtremeFinishes: number;
+      burstFinishes: number;
+    }
+  >();
+
+  // 1. Initialize from current bladers
+  bladers.forEach((b) => {
+    const key = b.name.trim().toLowerCase();
+    bladerStatsMap.set(key, {
+      name: b.name.trim(),
+      tournamentsWon: 0,
+      runnerUps: 0,
+      matchesWon: b.stats?.wins || 0,
+      pointsScored: b.stats?.pointsScored || 0,
+      xtremeFinishes: b.stats?.xtremeFinishes || 0,
+      burstFinishes: b.stats?.burstFinishes || 0
+    });
+  });
+
+  // 2. Aggregate from all completed tournaments in history
+  history.forEach((t) => {
+    // Winner (Champion)
+    if (t.winnerName) {
+      const key = t.winnerName.trim().toLowerCase();
+      const existing = bladerStatsMap.get(key) || {
+        name: t.winnerName.trim(),
+        tournamentsWon: 0,
+        runnerUps: 0,
+        matchesWon: 0,
+        pointsScored: 0,
+        xtremeFinishes: 0,
+        burstFinishes: 0
+      };
+      existing.tournamentsWon += 1;
+      bladerStatsMap.set(key, existing);
+    }
+
+    // Runner Up
+    if (t.runnerUpName) {
+      const key = t.runnerUpName.trim().toLowerCase();
+      const existing = bladerStatsMap.get(key) || {
+        name: t.runnerUpName.trim(),
+        tournamentsWon: 0,
+        runnerUps: 0,
+        matchesWon: 0,
+        pointsScored: 0,
+        xtremeFinishes: 0,
+        burstFinishes: 0
+      };
+      existing.runnerUps += 1;
+      bladerStatsMap.set(key, existing);
+    }
+
+    // Matches in history summary
+    if (t.matchesSummary && Array.isArray(t.matchesSummary)) {
+      t.matchesSummary.forEach((m) => {
+        if (m.winner) {
+          const wKey = m.winner.trim().toLowerCase();
+          const existingW = bladerStatsMap.get(wKey) || {
+            name: m.winner.trim(),
+            tournamentsWon: 0,
+            runnerUps: 0,
+            matchesWon: 0,
+            pointsScored: 0,
+            xtremeFinishes: 0,
+            burstFinishes: 0
+          };
+          existingW.matchesWon += 1;
+          bladerStatsMap.set(wKey, existingW);
+        }
+        if (m.bladerA && typeof m.scoreA === 'number') {
+          const aKey = m.bladerA.trim().toLowerCase();
+          const existingA = bladerStatsMap.get(aKey) || {
+            name: m.bladerA.trim(),
+            tournamentsWon: 0,
+            runnerUps: 0,
+            matchesWon: 0,
+            pointsScored: 0,
+            xtremeFinishes: 0,
+            burstFinishes: 0
+          };
+          existingA.pointsScored += m.scoreA;
+          bladerStatsMap.set(aKey, existingA);
+        }
+        if (m.bladerB && typeof m.scoreB === 'number') {
+          const bKey = m.bladerB.trim().toLowerCase();
+          const existingB = bladerStatsMap.get(bKey) || {
+            name: m.bladerB.trim(),
+            tournamentsWon: 0,
+            runnerUps: 0,
+            matchesWon: 0,
+            pointsScored: 0,
+            xtremeFinishes: 0,
+            burstFinishes: 0
+          };
+          existingB.pointsScored += m.scoreB;
+          bladerStatsMap.set(bKey, existingB);
+        }
+      });
+    }
+  });
+
+  const allActiveBladers = Array.from(bladerStatsMap.values()).filter(
+    (b) =>
+      b.tournamentsWon > 0 ||
+      b.matchesWon > 0 ||
+      b.pointsScored > 0 ||
+      b.xtremeFinishes > 0 ||
+      b.burstFinishes > 0
+  );
+
+  const sortedByTitles = [...allActiveBladers].sort(
+    (a, b) => b.tournamentsWon - a.tournamentsWon || b.matchesWon - a.matchesWon
+  );
+  const sortedByWins = [...allActiveBladers].sort(
+    (a, b) => b.matchesWon - a.matchesWon || b.tournamentsWon - a.tournamentsWon
+  );
+  const sortedByPoints = [...allActiveBladers].sort((a, b) => b.pointsScored - a.pointsScored);
+  const sortedByXtreme = [...allActiveBladers].sort((a, b) => b.xtremeFinishes - a.xtremeFinishes);
 
   const officialTournaments = history;
 
@@ -81,7 +204,7 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
 
       {/* TAB 1: HALL OF FAME */}
       {activeTab === 'hall_of_fame' && (
-        activeBladers.length === 0 ? (
+        allActiveBladers.length === 0 ? (
           <div className="glass-panel p-12 rounded-3xl border border-dashed border-slate-300 dark:border-white/10 text-center space-y-3 bg-white dark:bg-[#15151c]">
             <div className="w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mx-auto shadow-sm">
               <span className="material-symbols-outlined text-3xl">military_tech</span>
@@ -90,42 +213,74 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
               Salón de la Fama en Espera
             </h4>
             <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
-              Aún no hay estadísticas acumuladas de combate. Los líderes en victorias, X-Dash, Bursts y puntuación total aparecerán automáticamente aquí conforme se disputen los duelos reales.
+              Aún no hay estadísticas acumuladas de combate. Los líderes en victorias, campeonatos, X-Dash y puntuación total aparecerán automáticamente aquí conforme se disputen los duelos reales.
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Most Wins */}
-          <div className="glass-panel p-5 rounded-3xl border border-amber-500/40 bg-gradient-to-b from-amber-500/10 to-transparent shadow-sm space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-amber-500 text-black flex items-center justify-center font-bold shadow-md">
-                <span className="material-symbols-outlined">military_tech</span>
-              </div>
-              <div>
-                <h4 className="font-headline font-black text-sm uppercase text-slate-900 dark:text-white">
-                  Récord de Victorias
-                </h4>
-                <p className="text-[10px] font-label-caps text-slate-500 uppercase">
-                  Líderes en duelos ganados
-                </p>
-              </div>
-            </div>
-            <div className="space-y-2">
-              {sortedByWins.slice(0, 5).map((b, i) => (
-                <div
-                  key={b.id}
-                  className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-white/70 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 text-xs font-label-caps uppercase min-w-0"
-                >
-                  <span className="font-bold text-slate-900 dark:text-white truncate min-w-0 flex-1">
-                    #{i + 1} {b.name}
-                  </span>
-                  <span className="font-headline font-black text-amber-500 flex-shrink-0">
-                    {b.stats.wins} Wins
-                  </span>
+            {/* Títulos de Campeón Oficiales */}
+            <div className="glass-panel p-5 rounded-3xl border border-amber-500/40 bg-gradient-to-b from-amber-500/10 to-transparent shadow-sm space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500 text-black flex items-center justify-center font-bold shadow-md">
+                  <span className="material-symbols-outlined">military_tech</span>
                 </div>
-              ))}
+                <div>
+                  <h4 className="font-headline font-black text-sm uppercase text-slate-900 dark:text-white">
+                    Títulos de Campeón
+                  </h4>
+                  <p className="text-[10px] font-label-caps text-slate-500 uppercase">
+                    Trofeos de Torneo Ganados
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {sortedByTitles.slice(0, 5).map((b, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-white/70 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 text-xs font-label-caps uppercase min-w-0"
+                  >
+                    <span className="font-bold text-slate-900 dark:text-white truncate min-w-0 flex-1">
+                      #{i + 1} {b.name}
+                    </span>
+                    <span className="font-headline font-black text-amber-500 flex-shrink-0">
+                      {b.tournamentsWon} 🏆
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+
+            {/* Most Wins */}
+            <div className="glass-panel p-5 rounded-3xl border border-[#04A8FC]/40 bg-gradient-to-b from-[#04A8FC]/10 to-transparent shadow-sm space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-[#04A8FC] text-white flex items-center justify-center font-bold shadow-md">
+                  <span className="material-symbols-outlined">swords</span>
+                </div>
+                <div>
+                  <h4 className="font-headline font-black text-sm uppercase text-slate-900 dark:text-white">
+                    Récord de Victorias
+                  </h4>
+                  <p className="text-[10px] font-label-caps text-slate-500 uppercase">
+                    Líderes en duelos ganados
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {sortedByWins.slice(0, 5).map((b, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-white/70 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 text-xs font-label-caps uppercase min-w-0"
+                  >
+                    <span className="font-bold text-slate-900 dark:text-white truncate min-w-0 flex-1">
+                      #{i + 1} {b.name}
+                    </span>
+                    <span className="font-headline font-black text-[#04A8FC] flex-shrink-0">
+                      {b.matchesWon} Wins
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
 
           {/* Most Xtreme Finishes */}
           <div className="glass-panel p-4 sm:p-5 rounded-3xl border border-[#04A8FC]/40 bg-gradient-to-b from-[#04A8FC]/10 to-transparent shadow-sm space-y-4">
@@ -145,46 +300,14 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
             <div className="space-y-2">
               {sortedByXtreme.slice(0, 5).map((b, i) => (
                 <div
-                  key={b.id}
+                  key={i}
                   className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-white/70 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 text-xs font-label-caps uppercase min-w-0"
                 >
                   <span className="font-bold text-slate-900 dark:text-white truncate min-w-0 flex-1">
                     #{i + 1} {b.name}
                   </span>
                   <span className="font-headline font-black text-[#04A8FC] flex-shrink-0">
-                    {b.stats.xtremeFinishes} X-Finishes
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Most Burst Finishes */}
-          <div className="glass-panel p-4 sm:p-5 rounded-3xl border border-[#DC2626]/40 bg-gradient-to-b from-[#DC2626]/10 to-transparent shadow-sm space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-[#DC2626] text-white flex items-center justify-center font-bold shadow-md flex-shrink-0">
-                <span className="material-symbols-outlined">explosion</span>
-              </div>
-              <div className="min-w-0 flex-1">
-                <h4 className="font-headline font-black text-sm uppercase text-slate-900 dark:text-white truncate">
-                  Burst Masters (+2)
-                </h4>
-                <p className="text-[10px] font-label-caps text-slate-500 uppercase truncate">
-                  Desarmadores de Ratchet rival
-                </p>
-              </div>
-            </div>
-            <div className="space-y-2">
-              {sortedByBurst.slice(0, 5).map((b, i) => (
-                <div
-                  key={b.id}
-                  className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-white/70 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 text-xs font-label-caps uppercase min-w-0"
-                >
-                  <span className="font-bold text-slate-900 dark:text-white truncate min-w-0 flex-1">
-                    #{i + 1} {b.name}
-                  </span>
-                  <span className="font-headline font-black text-[#DC2626] flex-shrink-0">
-                    {b.stats.burstFinishes} Bursts
+                    {b.xtremeFinishes} X-Finishes
                   </span>
                 </div>
               ))}
@@ -209,14 +332,14 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
             <div className="space-y-2">
               {sortedByPoints.slice(0, 5).map((b, i) => (
                 <div
-                  key={b.id}
+                  key={i}
                   className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-white/70 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 text-xs font-label-caps uppercase min-w-0"
                 >
                   <span className="font-bold text-slate-900 dark:text-white truncate min-w-0 flex-1">
                     #{i + 1} {b.name}
                   </span>
                   <span className="font-headline font-black text-purple-500 flex-shrink-0">
-                    {b.stats.pointsScored} Pts
+                    {b.pointsScored} Pts
                   </span>
                 </div>
               ))}

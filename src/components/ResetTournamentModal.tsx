@@ -19,7 +19,7 @@ export const ResetTournamentModal: React.FC<ResetTournamentModalProps> = ({
   matches,
   config
 }) => {
-  const [selectedMode, setSelectedMode] = useState<'matches_only' | 'archive_and_reset' | 'factory_reset'>('matches_only');
+  const [selectedMode, setSelectedMode] = useState<'matches_only' | 'archive_and_reset' | 'factory_reset'>('archive_and_reset');
 
   if (!isOpen) return null;
 
@@ -77,25 +77,27 @@ export const ResetTournamentModal: React.FC<ResetTournamentModalProps> = ({
         {/* Options */}
         <div className="space-y-3">
           {/* Option 1: Archive & Reset */}
-          <label
+          <div
             onClick={() => {
               soundManager.playClick();
               setSelectedMode('archive_and_reset');
             }}
             className={`flex items-start gap-3.5 p-4 rounded-2xl border cursor-pointer transition-all ${
               selectedMode === 'archive_and_reset'
-                ? 'border-[#04A8FC] bg-[#04A8FC]/10 ring-2 ring-[#04A8FC]/30'
+                ? 'border-[#04A8FC] bg-[#04A8FC]/10 ring-2 ring-[#04A8FC]/30 shadow-sm'
                 : 'border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5'
             }`}
           >
-            <input
-              type="radio"
-              name="reset_mode"
-              checked={selectedMode === 'archive_and_reset'}
-              onChange={() => setSelectedMode('archive_and_reset')}
-              className="mt-1 text-[#04A8FC] focus:ring-[#04A8FC]"
-            />
-            <div className="space-y-1">
+            <div className="mt-0.5">
+              <input
+                type="radio"
+                name="reset_mode"
+                checked={selectedMode === 'archive_and_reset'}
+                onChange={() => setSelectedMode('archive_and_reset')}
+                className="w-4 h-4 text-[#04A8FC] focus:ring-[#04A8FC] cursor-pointer"
+              />
+            </div>
+            <div className="space-y-1 select-none flex-1">
               <div className="flex items-center gap-2">
                 <span className="font-headline font-bold text-sm text-slate-900 dark:text-white uppercase">
                   Archivar en Historial y Nuevo Torneo
@@ -108,28 +110,30 @@ export const ResetTournamentModal: React.FC<ResetTournamentModalProps> = ({
                 Guarda los resultados actuales en la base de datos de <strong>Historial & Hall of Fame</strong> y restablece marcadores a 0 conservando los Bladers registrados.
               </p>
             </div>
-          </label>
+          </div>
 
           {/* Option 2: Matches only */}
-          <label
+          <div
             onClick={() => {
               soundManager.playClick();
               setSelectedMode('matches_only');
             }}
             className={`flex items-start gap-3.5 p-4 rounded-2xl border cursor-pointer transition-all ${
               selectedMode === 'matches_only'
-                ? 'border-[#04A8FC] bg-[#04A8FC]/10 ring-2 ring-[#04A8FC]/30'
+                ? 'border-[#04A8FC] bg-[#04A8FC]/10 ring-2 ring-[#04A8FC]/30 shadow-sm'
                 : 'border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5'
             }`}
           >
-            <input
-              type="radio"
-              name="reset_mode"
-              checked={selectedMode === 'matches_only'}
-              onChange={() => setSelectedMode('matches_only')}
-              className="mt-1 text-[#04A8FC] focus:ring-[#04A8FC]"
-            />
-            <div className="space-y-1">
+            <div className="mt-0.5">
+              <input
+                type="radio"
+                name="reset_mode"
+                checked={selectedMode === 'matches_only'}
+                onChange={() => setSelectedMode('matches_only')}
+                className="w-4 h-4 text-[#04A8FC] focus:ring-[#04A8FC] cursor-pointer"
+              />
+            </div>
+            <div className="space-y-1 select-none flex-1">
               <span className="font-headline font-bold text-sm text-slate-900 dark:text-white uppercase">
                 Reiniciar Marcadores y Cruces
               </span>
@@ -137,28 +141,30 @@ export const ResetTournamentModal: React.FC<ResetTournamentModalProps> = ({
                 Pone los marcadores a 0 y limpia los combates para empezar una nueva ronda. <strong>Mantiene la lista de Bladers y sus combos intactos.</strong>
               </p>
             </div>
-          </label>
+          </div>
 
           {/* Option 3: Factory Reset */}
-          <label
+          <div
             onClick={() => {
               soundManager.playClick();
               setSelectedMode('factory_reset');
             }}
             className={`flex items-start gap-3.5 p-4 rounded-2xl border cursor-pointer transition-all ${
               selectedMode === 'factory_reset'
-                ? 'border-red-500 bg-red-500/10 ring-2 ring-red-500/30'
+                ? 'border-red-500 bg-red-500/10 ring-2 ring-red-500/30 shadow-sm'
                 : 'border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5'
             }`}
           >
-            <input
-              type="radio"
-              name="reset_mode"
-              checked={selectedMode === 'factory_reset'}
-              onChange={() => setSelectedMode('factory_reset')}
-              className="mt-1 text-red-500 focus:ring-red-500"
-            />
-            <div className="space-y-1">
+            <div className="mt-0.5">
+              <input
+                type="radio"
+                name="reset_mode"
+                checked={selectedMode === 'factory_reset'}
+                onChange={() => setSelectedMode('factory_reset')}
+                className="w-4 h-4 text-red-500 focus:ring-red-500 cursor-pointer"
+              />
+            </div>
+            <div className="space-y-1 select-none flex-1">
               <span className="font-headline font-bold text-sm text-red-600 dark:text-red-400 uppercase">
                 Reinicio Completo de Fábrica (Limpiar Todo)
               </span>
@@ -166,7 +172,7 @@ export const ResetTournamentModal: React.FC<ResetTournamentModalProps> = ({
                 Elimina todos los Bladers, combates activos y configuraciones para empezar desde cero absoluto.
               </p>
             </div>
-          </label>
+          </div>
         </div>
 
         {/* Action Buttons */}

@@ -809,11 +809,31 @@ export default function App() {
     setShowResetModal(false);
 
     if (mode === 'archive_and_reset') {
-      // Archive current tournament results to history
-      const sortedByWins = [...bladers].sort((a, b) => b.stats.wins - a.stats.wins);
-      const champion = sortedByWins[0]?.name || 'Campeón de Liga';
-      const runnerUp = sortedByWins[1]?.name || undefined;
-      const totalPoints = bladers.reduce((acc, b) => acc + (b.stats.pointsScored || 0), 0);
+      // 1. Detect champion accurately from Gran Final match or sorted wins
+      const finalMatch = matches.find(
+        (m) =>
+          m.roundName?.toLowerCase().includes('final') ||
+          m.roundNumber === Math.max(...matches.map((x) => x.roundNumber || 1))
+      );
+      const sortedByWins = [...bladers].sort((a, b) => (b.stats?.wins || 0) - (a.stats?.wins || 0));
+
+      const champion =
+        finalMatch?.winnerName ||
+        (finalMatch?.status === 'finished' &&
+          (finalMatch.scoreA > finalMatch.scoreB ? finalMatch.bladerA?.name : finalMatch.bladerB?.name)) ||
+        sortedByWins[0]?.name ||
+        'Campeón de Torneo';
+
+      const runnerUp =
+        finalMatch && (finalMatch.winnerName || finalMatch.status === 'finished')
+          ? (champion === finalMatch.bladerA?.name ? finalMatch.bladerB?.name : finalMatch.bladerA?.name)
+          : sortedByWins[1]?.name || undefined;
+
+      const championBlader = bladers.find(
+        (b) => b.name.toLowerCase() === champion.toLowerCase()
+      );
+      const totalPoints = bladers.reduce((acc, b) => acc + (b.stats?.pointsScored || 0), 0);
+      const finishedMatchesList = matches.filter((m) => m.status === 'finished');
 
       const newRecord: TournamentRecord = {
         id: `tourney-record-${Date.now()}`,
@@ -823,12 +843,13 @@ export default function App() {
           month: 'short',
           day: 'numeric'
         }),
-        season: config.season,
+        season: config.season || 'Temporada Oficial',
         type: 'tournament',
         format: config.type,
         winnerName: champion,
         runnerUpName: runnerUp,
-        totalMatches: matches.filter((m) => m.status === 'finished').length || matches.length,
+        winnerAvatar: championBlader?.avatarUrl || undefined,
+        totalMatches: finishedMatchesList.length || matches.length,
         totalBladers: bladers.length,
         totalPoints: totalPoints || 12,
         matchesSummary: matches.map((m) => ({
@@ -840,38 +861,72 @@ export default function App() {
         }))
       };
 
+      // Save to history & Supabase
       handleAddHistoryRecord(newRecord);
 
-      // Reset match states
-      const resetMatches = matches.map((m, idx) => ({
-        ...m,
-        scoreA: 0,
-        scoreB: 0,
-        status: (idx === 0 ? 'live' : 'upcoming') as 'live' | 'upcoming',
-        winnerId: null,
-        winnerName: undefined,
-        events: []
+      // 2. Reset bladers' tournament stats to 0 for the fresh new tournament
+      const resetBladers: Blader[] = bladers.map((b) => ({
+        ...b,
+        stats: {
+          matchesPlayed: 0,
+          wins: 0,
+          losses: 0,
+          pointsScored: 0,
+          xtremeFinishes: 0,
+          burstFinishes: 0,
+          overFinishes: 0,
+          spinFinishes: 0
+        }
       }));
+      setBladers(resetBladers);
+      syncAllBladersToSupabase(resetBladers);
 
-      setMatches(resetMatches);
-      setCurrentMatch(resetMatches[0] || null);
+      // 3. Generate a clean, fresh bracket for the new tournament
+      if (resetBladers.length >= 2) {
+        const freshMatches = generateTournamentBracket(resetBladers, config);
+        setMatches(freshMatches);
+        freshMatches.forEach((m) => syncMatchToSupabase(m));
+        const firstLive = freshMatches.find((m) => m.status === 'live') || freshMatches[0];
+        setCurrentMatch(firstLive || null);
+      } else {
+        setMatches([]);
+        setCurrentMatch(null);
+      }
+
+      soundManager.playVictory();
       setActiveScreen('history');
       return;
     }
 
     if (mode === 'matches_only') {
-      const resetMatches = matches.map((m, idx) => ({
-        ...m,
-        scoreA: 0,
-        scoreB: 0,
-        status: (idx === 0 ? 'live' : 'upcoming') as 'live' | 'upcoming',
-        winnerId: null,
-        winnerName: undefined,
-        events: []
+      const resetBladers: Blader[] = bladers.map((b) => ({
+        ...b,
+        stats: {
+          matchesPlayed: 0,
+          wins: 0,
+          losses: 0,
+          pointsScored: 0,
+          xtremeFinishes: 0,
+          burstFinishes: 0,
+          overFinishes: 0,
+          spinFinishes: 0
+        }
       }));
+      setBladers(resetBladers);
+      syncAllBladersToSupabase(resetBladers);
 
-      setMatches(resetMatches);
-      setCurrentMatch(resetMatches[0] || null);
+      if (resetBladers.length >= 2) {
+        const freshMatches = generateTournamentBracket(resetBladers, config);
+        setMatches(freshMatches);
+        freshMatches.forEach((m) => syncMatchToSupabase(m));
+        const firstLive = freshMatches.find((m) => m.status === 'live') || freshMatches[0];
+        setCurrentMatch(firstLive || null);
+      } else {
+        setMatches([]);
+        setCurrentMatch(null);
+      }
+
+      soundManager.playScore();
       setActiveScreen('dashboard');
       return;
     }
