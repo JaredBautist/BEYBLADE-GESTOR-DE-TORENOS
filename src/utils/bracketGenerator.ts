@@ -91,7 +91,6 @@ export function generateSingleEliminationBracket(
     match.bladerA = bA;
     match.bladerB = bB;
 
-    // If only one blader in match (BYE / pase directo)
     if (bA && !bB) {
       match.status = 'finished';
       match.winnerId = bA.id;
@@ -104,11 +103,6 @@ export function generateSingleEliminationBracket(
           else nextM.bladerB = bA;
         }
       }
-    } else if (bA && bB) {
-      // First match with two bladers is live
-      if (m === 0) {
-        match.status = 'live';
-      }
     }
   }
 
@@ -116,6 +110,13 @@ export function generateSingleEliminationBracket(
   const allMatches: Match[] = [];
   for (let r = 1; r <= totalRounds; r++) {
     allMatches.push(...roundMatchesMap[r]);
+  }
+
+  // Ensure first playable match is marked as live
+  const firstPlayable = allMatches.find(m => m.status !== 'finished' && m.bladerA && m.bladerB);
+  if (firstPlayable) {
+    allMatches.forEach(m => { if (m.status === 'live') m.status = 'upcoming'; });
+    firstPlayable.status = 'live';
   }
 
   return allMatches;
@@ -480,6 +481,14 @@ export function generatePlayoffBracketFromRankings(
       }
     }
   });
+
+  // Ensure first playable match is marked as live
+  const firstPlayable = matches.find(m => m.status !== 'finished' && m.bladerA && m.bladerB);
+  if (firstPlayable) {
+    // Reset all to upcoming first to ensure only one live match
+    matches.forEach(m => { if (m.status === 'live') m.status = 'upcoming'; });
+    firstPlayable.status = 'live';
+  }
 
   return matches;
 }
