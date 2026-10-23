@@ -47,6 +47,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const [selectedBladerAId, setSelectedBladerAId] = useState<string>(allBladers[0]?.id || '');
   const [selectedBladerBId, setSelectedBladerBId] = useState<string>(allBladers[1]?.id || allBladers[0]?.id || '');
 
+  // State for on-deck preview candidates
+  const [customOnDeckAId, setCustomOnDeckAId] = useState<string | null>(null);
+  const [customOnDeckBId, setCustomOnDeckBId] = useState<string | null>(null);
+
   // Keep selection updated if allBladers changes
   React.useEffect(() => {
     if (allBladers.length > 0) {
@@ -58,6 +62,24 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       }
     }
   }, [allBladers]);
+
+  const handleRandomizeStandby = () => {
+    if (allBladers.length < 2) return;
+    const shuffled = [...allBladers].sort(() => 0.5 - Math.random());
+    setSelectedBladerAId(shuffled[0].id);
+    setSelectedBladerBId(shuffled[1].id);
+    soundManager.playClick();
+  };
+
+  const handleLaunchRandomBattle = () => {
+    if (allBladers.length < 2) {
+      alert('Se requieren al menos 2 bladers inscritos para iniciar una batalla.');
+      return;
+    }
+    const shuffled = [...allBladers].sort(() => 0.5 - Math.random());
+    soundManager.playClick();
+    onSelectOnDeckMatch(shuffled[0].id, shuffled[1].id);
+  };
 
   const handleLaunchBattle = (e: React.FormEvent) => {
     e.preventDefault();
@@ -183,11 +205,21 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   )}
                 </div>
 
-                {/* VS Badge (Col 1) */}
-                <div className="md:col-span-1 flex justify-center items-center py-2 md:py-0">
+                {/* VS Badge & Random Shuffle (Col 1) */}
+                <div className="md:col-span-1 flex flex-col justify-center items-center py-2 md:py-0 gap-2">
                   <div className="w-12 h-12 rounded-2xl bg-white dark:bg-[#1a1a24] border-2 border-[#04A8FC] shadow flex items-center justify-center font-headline font-black text-lg text-slate-900 dark:text-white italic">
                     VS
                   </div>
+                  {allBladers.length >= 2 && (
+                    <button
+                      type="button"
+                      onClick={handleRandomizeStandby}
+                      title="Emparejar Bladers al Azar"
+                      className="p-2 rounded-xl bg-white dark:bg-white/10 border border-slate-300 dark:border-white/10 hover:border-[#04A8FC] text-[#04A8FC] hover:bg-[#04A8FC]/10 transition-all shadow-sm flex items-center justify-center hover:scale-110 active:scale-95"
+                    >
+                      <span className="material-symbols-outlined text-base">casino</span>
+                    </button>
+                  )}
                 </div>
 
                 {/* Blue Corner Selector (Col 5) */}
@@ -229,14 +261,26 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
               {/* Registered Bladers Quick Assignment Roster */}
               <div className="p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                   <h3 className="font-headline font-black text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
                     <span className="material-symbols-outlined text-base text-[#04A8FC]">groups</span>
                     <span>Padrón de Bladers Inscritos ({allBladers.length})</span>
                   </h3>
-                  <span className="text-[10px] font-label-caps text-slate-400 uppercase">
-                    Haz clic para asignar a una esquina
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-label-caps text-slate-400 uppercase hidden sm:inline">
+                      Haz clic para asignar
+                    </span>
+                    {allBladers.length >= 2 && (
+                      <button
+                        type="button"
+                        onClick={handleRandomizeStandby}
+                        className="bg-white dark:bg-white/10 border border-[#04A8FC] text-[#04A8FC] dark:text-white px-3 py-1 rounded-xl text-xs font-label-caps uppercase tracking-wider hover:bg-[#04A8FC]/10 flex items-center gap-1.5 transition-all shadow-sm font-bold"
+                      >
+                        <span className="material-symbols-outlined text-sm">casino</span>
+                        <span>Sortear 2 al Azar</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-56 overflow-y-auto pr-1">
@@ -305,15 +349,23 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 </div>
               </div>
 
-              {/* Main CTA Button */}
-              <div className="pt-2">
+              {/* Main CTA Buttons */}
+              <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={handleLaunchRandomBattle}
+                  className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white py-4 px-6 rounded-2xl font-headline font-black text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-purple-600/20 hover:scale-[1.01] active:scale-[0.99] transition-all border-b-4 border-indigo-800"
+                >
+                  <span className="material-symbols-outlined text-lg sm:text-xl">casino</span>
+                  <span>DUELO RANDOM AL AZAR</span>
+                </button>
                 <button
                   id="btn-launch-battle-console"
                   type="submit"
-                  className="w-full bg-[#04A8FC] hover:bg-[#008fe0] text-white py-4 px-6 rounded-2xl font-headline font-black text-sm md:text-base uppercase tracking-wider flex items-center justify-center gap-2.5 shadow-xl shadow-[#04A8FC]/30 hover:scale-[1.01] active:scale-[0.99] transition-all border-b-4 border-[#0066a3]"
+                  className="w-full bg-[#04A8FC] hover:bg-[#008fe0] text-white py-4 px-6 rounded-2xl font-headline font-black text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-xl shadow-[#04A8FC]/30 hover:scale-[1.01] active:scale-[0.99] transition-all border-b-4 border-[#0066a3]"
                 >
-                  <span className="material-symbols-outlined text-xl">play_arrow</span>
-                  <span>LANZAR COMBATE A LA CONSOLA</span>
+                  <span className="material-symbols-outlined text-lg sm:text-xl">play_arrow</span>
+                  <span>LANZAR COMBATE ELEGIDO</span>
                 </button>
               </div>
             </form>
@@ -333,8 +385,24 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const remainingBladers = allBladers.filter(
     (b) => b.id !== bladerA?.id && b.id !== bladerB?.id
   );
-  const onDeckA = remainingBladers[0];
-  const onDeckB = remainingBladers[1];
+  const onDeckA =
+    (customOnDeckAId && remainingBladers.find((b) => b.id === customOnDeckAId)) ||
+    remainingBladers[0] ||
+    null;
+  const onDeckB =
+    (customOnDeckBId && remainingBladers.find((b) => b.id === customOnDeckBId && b.id !== onDeckA?.id)) ||
+    remainingBladers.find((b) => b.id !== onDeckA?.id) ||
+    remainingBladers[1] ||
+    null;
+
+  const handleRandomizeOnDeckLocal = () => {
+    const pool = remainingBladers.length >= 2 ? remainingBladers : allBladers;
+    if (pool.length < 2) return;
+    const shuffled = [...pool].sort(() => 0.5 - Math.random());
+    setCustomOnDeckAId(shuffled[0].id);
+    setCustomOnDeckBId(shuffled[1].id);
+    soundManager.playClick();
+  };
 
   const isMatchFinished = currentMatch.status === 'finished';
   const isRegularPhase = (config.type === 'league' || config.type === 'series') && config.tournamentPhase !== 'playoffs';
@@ -971,10 +1039,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             <div className="flex items-center gap-2">
               <button
                 id="btn-randomize-on-deck"
-                onClick={() => {
-                  soundManager.playClick();
-                  onRandomizeOnDeck();
-                }}
+                onClick={handleRandomizeOnDeckLocal}
                 className="bg-white dark:bg-white/10 border border-[#04A8FC] text-[#04A8FC] dark:text-white px-3.5 py-1.5 rounded-xl font-label-caps text-xs uppercase tracking-wider hover:bg-[#04A8FC]/10 flex items-center gap-1.5 transition-all shadow-sm"
               >
                 <span className="material-symbols-outlined text-sm">casino</span>

@@ -621,7 +621,7 @@ export default function App() {
 
   const handleRandomizeOnDeck = () => {
     const shuffled = [...bladers].sort(() => 0.5 - Math.random());
-    if (shuffled.length >= 2) {
+    if (shuffled.length >= 2 && !currentMatch) {
       handleSelectOnDeckMatch(shuffled[0].id, shuffled[1].id);
     }
   };

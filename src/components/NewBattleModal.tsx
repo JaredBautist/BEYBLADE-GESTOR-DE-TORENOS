@@ -53,9 +53,27 @@ export const NewBattleModal: React.FC<NewBattleModalProps> = ({
               Iniciar Nueva Batalla
             </h3>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-black dark:hover:text-white text-lg">
-            ✕
-          </button>
+          <div className="flex items-center gap-2">
+            {hasRegisteredBladers && bladers.length >= 2 && (
+              <button
+                type="button"
+                onClick={() => {
+                  const shuffled = [...bladers].sort(() => 0.5 - Math.random());
+                  setBladerAId(shuffled[0].id);
+                  setBladerBId(shuffled[1].id);
+                  soundManager.playClick();
+                }}
+                className="bg-white dark:bg-white/10 border border-[#04A8FC] text-[#04A8FC] dark:text-white px-2.5 py-1 rounded-xl text-xs font-label-caps uppercase tracking-wider hover:bg-[#04A8FC]/10 flex items-center gap-1 transition-all shadow-sm font-bold"
+                title="Emparejar Bladers al Azar"
+              >
+                <span className="material-symbols-outlined text-sm">casino</span>
+                <span className="hidden sm:inline">Al Azar</span>
+              </button>
+            )}
+            <button onClick={onClose} className="text-gray-400 hover:text-black dark:hover:text-white text-lg">
+              ✕
+            </button>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -140,20 +158,39 @@ export const NewBattleModal: React.FC<NewBattleModalProps> = ({
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-[#bec7d3]/30 dark:border-white/10">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 font-label-caps text-xs uppercase text-gray-500 hover:text-black dark:hover:text-white"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className="bg-[#04A8FC] hover:bg-[#008fe0] text-white px-6 py-2.5 font-headline font-bold text-xs uppercase rounded-xl shadow-md shadow-[#04A8FC]/20"
-            >
-              Iniciar en Battle Console
-            </button>
+          <div className="flex flex-col-reverse sm:flex-row justify-between items-stretch sm:items-center gap-3 pt-4 border-t border-[#bec7d3]/30 dark:border-white/10">
+            <div>
+              {hasRegisteredBladers && bladers.length >= 2 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const shuffled = [...bladers].sort(() => 0.5 - Math.random());
+                    soundManager.playClick();
+                    onStartCustomBattle(shuffled[0].id, shuffled[1].id, targetScore);
+                    onClose();
+                  }}
+                  className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-4 py-2.5 font-headline font-bold text-xs uppercase rounded-xl shadow-md shadow-purple-600/20 flex items-center justify-center gap-1.5 transition-all"
+                >
+                  <span className="material-symbols-outlined text-sm">casino</span>
+                  <span>Duelo Random Directo</span>
+                </button>
+              )}
+            </div>
+            <div className="flex gap-2 sm:gap-3 justify-end">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-3 sm:px-4 py-2 font-label-caps text-xs uppercase text-gray-500 hover:text-black dark:hover:text-white"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="bg-[#04A8FC] hover:bg-[#008fe0] text-white px-4 sm:px-6 py-2.5 font-headline font-bold text-xs uppercase rounded-xl shadow-md shadow-[#04A8FC]/20"
+              >
+                Iniciar en Battle Console
+              </button>
+            </div>
           </div>
         </form>
       </div>
