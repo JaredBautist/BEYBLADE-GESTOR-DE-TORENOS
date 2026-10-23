@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Blader, Match, TournamentConfig } from '../../types';
 import { soundManager } from '../../utils/audio';
 import { BladerAvatar } from '../BladerAvatar';
@@ -25,7 +25,9 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
 }) => {
   const [copiedLink, setCopiedLink] = useState(false);
   const [zoomLevel, setZoomLevel] = useState<number>(1);
+  const [selectedJornada, setSelectedJornada] = useState<'all' | number>('all');
   const isRegularPhase = config.type !== 'elimination' && config.tournamentPhase !== 'playoffs';
+  const isLeagueOrSeries = config.type === 'league' || config.type === 'series';
   const [viewMode, setViewMode] = useState<'standings' | 'tree' | 'rounds'>(
     isRegularPhase ? 'standings' : 'tree'
   );
@@ -52,6 +54,20 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
     .sort((a, b) => a - b);
 
   const totalRounds = roundNumbers.length > 0 ? Math.max(...roundNumbers) : 1;
+
+  const regularMatches = useMemo(() => matches.filter((m) => m.stage === 'regular'), [matches]);
+  const finishedRegularMatches = useMemo(() => regularMatches.filter((m) => m.status === 'finished'), [regularMatches]);
+  const regularProgressPct = regularMatches.length > 0
+    ? Math.round((finishedRegularMatches.length / regularMatches.length) * 100)
+    : 0;
+
+  const activeJornadaNum = useMemo(() => {
+    const liveMatch = regularMatches.find((m) => m.status === 'live');
+    if (liveMatch?.roundNumber) return liveMatch.roundNumber;
+    const firstUnfinished = regularMatches.find((m) => m.status !== 'finished');
+    if (firstUnfinished?.roundNumber) return firstUnfinished.roundNumber;
+    return roundNumbers[0] || 1;
+  }, [regularMatches, roundNumbers]);
 
   // Identify final match & champion (only when final match is concluded/finished)
   const finalMatch = matches.find((m) => m.roundNumber === totalRounds) || matches.find((m) => m.roundName?.toLowerCase().includes('final'));
@@ -206,13 +222,13 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           {/* View mode switcher */}
           <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-headline font-bold uppercase">
-            {(config.type === 'league' || config.type === 'series') && (
+            {isLeagueOrSeries && (
               <button
                 onClick={() => {
                   soundManager.playClick();
                   setViewMode('standings');
                 }}
-                className={`px-3 py-1.5 rounded-lg flex items-center gap-1 transition-all ${
+                className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
                   viewMode === 'standings'
                     ? 'bg-[#04A8FC] text-white shadow-sm font-black'
                     : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
@@ -226,31 +242,33 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
             <button
               onClick={() => {
                 soundManager.playClick();
-                setViewMode('tree');
+                setViewMode('rounds');
               }}
-              className={`px-3 py-1.5 rounded-lg flex items-center gap-1 transition-all ${
-                viewMode === 'tree'
-                  ? 'bg-white dark:bg-[#1a1a24] text-[#0284c7] dark:text-[#04A8FC] shadow-sm font-black'
+              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+                viewMode === 'rounds'
+                  ? 'bg-[#04A8FC] text-white shadow-sm font-black'
                   : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
               }`}
             >
-              <span className="material-symbols-outlined text-sm">account_tree</span>
-              <span>Árbol</span>
+              <span className="material-symbols-outlined text-sm">
+                {isLeagueOrSeries ? 'calendar_month' : 'view_agenda'}
+              </span>
+              <span>{isLeagueOrSeries ? `Jornadas (${roundNumbers.length})` : 'Duelos'}</span>
             </button>
 
             <button
               onClick={() => {
                 soundManager.playClick();
-                setViewMode('rounds');
+                setViewMode('tree');
               }}
-              className={`px-3 py-1.5 rounded-lg flex items-center gap-1 transition-all ${
-                viewMode === 'rounds'
-                  ? 'bg-white dark:bg-[#1a1a24] text-[#0284c7] dark:text-[#04A8FC] shadow-sm font-black'
+              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+                viewMode === 'tree'
+                  ? 'bg-[#04A8FC] text-white shadow-sm font-black'
                   : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
               }`}
             >
-              <span className="material-symbols-outlined text-sm">view_agenda</span>
-              <span>Duelos</span>
+              <span className="material-symbols-outlined text-sm">account_tree</span>
+              <span>{isLeagueOrSeries ? 'Playoffs' : 'Árbol'}</span>
             </button>
           </div>
 
@@ -480,6 +498,41 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
                     </table>
                   </div>
                 </div>
+
+                {/* Embedded Current Jornada Highlights */}
+                {roundsMap[activeJornadaNum] && roundsMap[activeJornadaNum].length > 0 && (
+                  <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#15151c] border border-slate-200 dark:border-white/10 space-y-3.5 shadow-sm">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-white/5 pb-3">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#04A8FC] animate-pulse"></span>
+                        <h4 className="font-headline font-black text-sm uppercase text-slate-900 dark:text-white">
+                          Jornada en Curso • Jornada {activeJornadaNum}
+                        </h4>
+                        <span className="text-[10px] font-label-caps px-2 py-0.5 rounded-full bg-[#04A8FC]/10 text-[#04A8FC] border border-[#04A8FC]/20 font-bold">
+                          {roundsMap[activeJornadaNum].filter(m => m.status === 'finished').length} de {roundsMap[activeJornadaNum].length} Duelos Concluidos
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          soundManager.playClick();
+                          setSelectedJornada(activeJornadaNum);
+                          setViewMode('rounds');
+                        }}
+                        className="text-xs font-headline font-bold text-[#04A8FC] hover:underline inline-flex items-center gap-1 uppercase"
+                      >
+                        <span>Ver Calendario Completo de Jornadas ({roundNumbers.length})</span>
+                        <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                      {roundsMap[activeJornadaNum].map(m => (
+                        <div key={m.id} className="relative">
+                          {renderMatchCard(m, true)}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })()}
@@ -515,26 +568,193 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
               )}
             </div>
           ) : viewMode === 'rounds' ? (
-            /* Rounds List View */
-            <div className="space-y-6">
-              {roundNumbers.map((rNum) => {
-                const rMatches = roundsMap[rNum] || [];
-                const rTitle = rMatches[0]?.roundName?.split(' - ')[0] || `Ronda ${rNum}`;
-
-                return (
-                  <div key={rNum} className="space-y-3">
-                    <div className="flex items-center gap-2 border-b border-slate-200 dark:border-white/10 pb-2">
-                      <span className="w-2 h-2 rounded-full bg-[#04A8FC]"></span>
-                      <h3 className="font-headline font-black text-sm uppercase text-slate-900 dark:text-white">
-                        {rTitle} ({rMatches.length} {rMatches.length === 1 ? 'Combate' : 'Combates'})
-                      </h3>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                      {rMatches.map((m) => renderMatchCard(m))}
-                    </div>
+            /* Dedicated Jornadas & Fixture View */
+            <div className="space-y-6 animate-fade-in">
+              {/* Jornadas Overview Header */}
+              <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-transparent border border-blue-500/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[#04A8FC] text-2xl">
+                      {isLeagueOrSeries ? 'calendar_month' : 'view_agenda'}
+                    </span>
+                    <h3 className="font-headline font-black text-lg sm:text-xl uppercase text-slate-900 dark:text-white">
+                      {isLeagueOrSeries ? 'Calendario Oficial de Jornadas' : 'Listado de Rondas y Combates'}
+                    </h3>
                   </div>
-                );
-              })}
+                  <p className="text-xs text-slate-600 dark:text-slate-300 font-label-caps uppercase">
+                    {isLeagueOrSeries
+                      ? `${roundNumbers.length} Jornadas programadas • ${regularMatches.length} combates de todos contra todos`
+                      : `${roundNumbers.length} Rondas eliminatorias • ${matches.length} combates programados`}
+                  </p>
+                </div>
+
+                {/* Progress bar pill */}
+                <div className="w-full md:w-64 space-y-1.5 p-3 rounded-2xl bg-white/70 dark:bg-white/5 border border-slate-200 dark:border-white/10 shadow-sm">
+                  <div className="flex items-center justify-between text-[10px] font-label-caps uppercase font-bold text-slate-600 dark:text-slate-300">
+                    <span>Progreso del Torneo</span>
+                    <span className="text-[#04A8FC] font-black">{regularProgressPct}%</span>
+                  </div>
+                  <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-[#04A8FC] to-emerald-500 rounded-full transition-all duration-300"
+                      style={{ width: `${regularProgressPct}%` }}
+                    />
+                  </div>
+                  <div className="text-[9px] font-label-caps text-slate-400 text-right uppercase">
+                    {finishedRegularMatches.length} de {regularMatches.length} duelos concluidos
+                  </div>
+                </div>
+              </div>
+
+              {/* Segmented Jornadas Filter Chips */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-label-caps uppercase font-bold text-slate-500 flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-sm text-[#04A8FC]">filter_list</span>
+                    <span>Filtrar por Jornada:</span>
+                  </span>
+                  {selectedJornada !== 'all' && (
+                    <button
+                      onClick={() => {
+                        soundManager.playClick();
+                        setSelectedJornada('all');
+                      }}
+                      className="text-[11px] font-label-caps uppercase text-[#04A8FC] hover:underline font-bold"
+                    >
+                      Ver Todas
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
+                  <button
+                    onClick={() => {
+                      soundManager.playClick();
+                      setSelectedJornada('all');
+                    }}
+                    className={`px-4 py-2 rounded-xl text-xs font-headline font-black uppercase transition-all whitespace-nowrap shadow-sm flex items-center gap-1.5 ${
+                      selectedJornada === 'all'
+                        ? 'bg-[#04A8FC] text-white shadow-[#04A8FC]/20'
+                        : 'bg-white dark:bg-[#1a1a24] border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:border-[#04A8FC]'
+                    }`}
+                  >
+                    <span>Todas las Jornadas ({roundNumbers.length})</span>
+                  </button>
+
+                  {roundNumbers.map((rNum) => {
+                    const rMatches = roundsMap[rNum] || [];
+                    const isFinished = rMatches.length > 0 && rMatches.every((m) => m.status === 'finished');
+                    const hasLive = rMatches.some((m) => m.status === 'live');
+                    const isSelected = selectedJornada === rNum;
+
+                    return (
+                      <button
+                        key={rNum}
+                        onClick={() => {
+                          soundManager.playClick();
+                          setSelectedJornada(rNum);
+                        }}
+                        className={`px-3.5 py-2 rounded-xl text-xs font-headline font-black uppercase transition-all whitespace-nowrap shadow-sm flex items-center gap-2 border ${
+                          isSelected
+                            ? 'bg-[#04A8FC] border-[#04A8FC] text-white shadow-[#04A8FC]/20'
+                            : 'bg-white dark:bg-[#1a1a24] border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:border-[#04A8FC]'
+                        }`}
+                      >
+                        <span>{isLeagueOrSeries ? `Jornada ${rNum}` : `Ronda ${rNum}`}</span>
+                        {isFinished ? (
+                          <span className={`w-2 h-2 rounded-full ${isSelected ? 'bg-white' : 'bg-emerald-500'}`} title="Jornada Concluida"></span>
+                        ) : hasLive ? (
+                          <span className={`w-2 h-2 rounded-full animate-ping ${isSelected ? 'bg-black' : 'bg-amber-400'}`} title="Duelo en Vivo"></span>
+                        ) : (
+                          <span className="text-[10px] font-mono opacity-60">({rMatches.length})</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Single Jornada Quick Navigator (if a specific Jornada is selected) */}
+              {selectedJornada !== 'all' && (
+                <div className="flex items-center justify-between p-3 rounded-2xl bg-white dark:bg-[#15151c] border border-slate-200 dark:border-white/10 text-xs font-headline font-bold uppercase shadow-sm">
+                  <button
+                    disabled={selectedJornada <= 1}
+                    onClick={() => {
+                      soundManager.playClick();
+                      setSelectedJornada((prev) => (typeof prev === 'number' && prev > 1 ? prev - 1 : prev));
+                    }}
+                    className="px-3.5 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 hover:border-[#04A8FC] flex items-center gap-1.5 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  >
+                    <span className="material-symbols-outlined text-sm">arrow_back</span>
+                    <span>Anterior</span>
+                  </button>
+
+                  <div className="text-center">
+                    <span className="text-slate-900 dark:text-white font-black text-sm">
+                      {isLeagueOrSeries ? `Jornada ${selectedJornada}` : `Ronda ${selectedJornada}`} de {roundNumbers.length}
+                    </span>
+                  </div>
+
+                  <button
+                    disabled={selectedJornada >= roundNumbers.length}
+                    onClick={() => {
+                      soundManager.playClick();
+                      setSelectedJornada((prev) => (typeof prev === 'number' && prev < roundNumbers.length ? prev + 1 : prev));
+                    }}
+                    className="px-3.5 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 hover:border-[#04A8FC] flex items-center gap-1.5 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  >
+                    <span>Siguiente</span>
+                    <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Rounds & Matches Content */}
+              <div className="space-y-6">
+                {(selectedJornada === 'all' ? roundNumbers : [selectedJornada]).map((rNum) => {
+                  const rMatches = roundsMap[rNum] || [];
+                  const isFinished = rMatches.length > 0 && rMatches.every((m) => m.status === 'finished');
+                  const hasLive = rMatches.some((m) => m.status === 'live');
+                  const finishedCount = rMatches.filter((m) => m.status === 'finished').length;
+                  const rTitle = rMatches[0]?.roundName?.split(' - ')[0] || (isLeagueOrSeries ? `Jornada ${rNum}` : `Ronda ${rNum}`);
+
+                  return (
+                    <div key={rNum} className="space-y-3.5 glass-panel p-4 sm:p-6 rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#15151c] shadow-sm">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-white/5 pb-3">
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                          <span className={`w-3 h-3 rounded-full ${isFinished ? 'bg-emerald-500' : hasLive ? 'bg-amber-400 animate-pulse' : 'bg-[#04A8FC]'}`}></span>
+                          <h4 className="font-headline font-black text-base uppercase text-slate-900 dark:text-white">
+                            {rTitle}
+                          </h4>
+                          <span className="text-[10px] font-label-caps px-2 py-0.5 rounded-full bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 font-bold uppercase">
+                            {rMatches.length} {rMatches.length === 1 ? 'Combate' : 'Combates'}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[10px] font-label-caps font-black px-2.5 py-1 rounded-full uppercase ${
+                            isFinished
+                              ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                              : hasLive
+                              ? 'bg-amber-500/15 text-amber-500 border border-amber-500/30'
+                              : 'bg-slate-100 dark:bg-white/10 text-slate-500 border border-slate-200 dark:border-white/10'
+                          }`}>
+                            {isFinished ? '✓ Jornada Completada' : hasLive ? '⚡ En Combate' : `${finishedCount}/${rMatches.length} Finalizados`}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        {rMatches.map((m) => (
+                          <div key={m.id} className="relative">
+                            {renderMatchCard(m)}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           ) : (
             /* Interactive Multi-Column Tree Bracket Canvas */
