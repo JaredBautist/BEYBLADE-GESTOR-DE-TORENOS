@@ -3,6 +3,8 @@ import { Blader, TournamentRecord } from '../../types';
 import { soundManager } from '../../utils/audio';
 import { BladerAvatar } from '../BladerAvatar';
 import { getBitCategory } from '../../data/bitCatalog';
+import { VideoPlayerModal } from '../VideoPlayerModal';
+import { AttachVideoModal } from '../AttachVideoModal';
 
 interface HistoryScreenProps {
   bladers: Blader[];
@@ -10,17 +12,30 @@ interface HistoryScreenProps {
   onAddHistoryRecord?: (record: TournamentRecord) => void;
   onDeleteHistoryRecord?: (id: string) => void;
   onClearAllHistory?: () => void;
+  onUpdateHistoryMatchVideo?: (tournamentId: string, matchIndex: number, videoUrl: string) => void;
 }
 
 export const HistoryScreen: React.FC<HistoryScreenProps> = ({
   bladers,
   history,
   onDeleteHistoryRecord,
-  onClearAllHistory
+  onClearAllHistory,
+  onUpdateHistoryMatchVideo
 }) => {
   const [activeTab, setActiveTab] = useState<'hall_of_fame' | 'tournaments'>('hall_of_fame');
   const [selectedTournamentRecap, setSelectedTournamentRecap] = useState<TournamentRecord | null>(null);
   const [recapViewMode, setRecapViewMode] = useState<'bracket' | 'combos' | 'summary'>('bracket');
+  const [selectedHistoryVideo, setSelectedHistoryVideo] = useState<{
+    url: string;
+    title: string;
+    subtitle?: string;
+  } | null>(null);
+  const [editingHistoryVideo, setEditingHistoryVideo] = useState<{
+    tournamentId: string;
+    matchIndex: number;
+    initialUrl?: string;
+    matchTitle: string;
+  } | null>(null);
 
   // Aggregate stats across ALL archived tournaments in history + current bladers
   const bladerStatsMap = new Map<
@@ -499,9 +514,30 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
                                 </span>
                               </div>
                             </div>
-                            <div className="flex items-center gap-1 text-[9px] font-headline font-black uppercase text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded-md flex-shrink-0">
-                              <span className="material-symbols-outlined text-[10px]">crown</span>
-                              <span className="max-w-[65px] truncate">{m.winner}</span>
+                            <div className="flex items-center gap-1.5 flex-shrink-0">
+                              {m.videoUrl && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    soundManager.playClick();
+                                    setSelectedHistoryVideo({
+                                      url: m.videoUrl!,
+                                      title: `${m.bladerA} vs ${m.bladerB}`,
+                                      subtitle: `${t.title} • ${m.roundName || 'Duelo'}`
+                                    });
+                                  }}
+                                  className="px-2 py-0.5 rounded-lg bg-red-600 hover:bg-red-500 text-white text-[9px] font-headline font-black uppercase flex items-center gap-1 shadow-sm transition-all active:scale-[0.97]"
+                                  title="Ver video del combate"
+                                >
+                                  <span className="material-symbols-outlined text-[11px]">play_circle</span>
+                                  <span>Video</span>
+                                </button>
+                              )}
+                              <div className="flex items-center gap-1 text-[9px] font-headline font-black uppercase text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded-md">
+                                <span className="material-symbols-outlined text-[10px]">crown</span>
+                                <span className="max-w-[65px] truncate">{m.winner}</span>
+                              </div>
                             </div>
                           </div>
                         ))}
@@ -727,6 +763,69 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
                                       <span className="font-mono text-sm">{match.scoreB}</span>
                                     </div>
                                   </div>
+
+                                  {/* Video action in bracket card */}
+                                  {(match.videoUrl || onUpdateHistoryMatchVideo) && (
+                                    <div className="pt-1 flex items-center justify-between gap-1 border-t border-slate-800/80">
+                                      {match.videoUrl ? (
+                                        <div className="flex items-center gap-1 w-full">
+                                          <button
+                                            onClick={() => {
+                                              soundManager.playClick();
+                                              setSelectedHistoryVideo({
+                                                url: match.videoUrl!,
+                                                title: `${match.bladerA} vs ${match.bladerB}`,
+                                                subtitle: `${selectedTournamentRecap.title} • ${match.roundName || 'Duelo'}`
+                                              });
+                                            }}
+                                            className="flex-1 py-1 px-2 rounded-lg bg-red-600 hover:bg-red-500 text-white font-headline font-black text-[9px] uppercase tracking-wider flex items-center justify-center gap-1 shadow-sm transition-all active:scale-[0.97]"
+                                          >
+                                            <span className="material-symbols-outlined text-xs">play_circle</span>
+                                            <span>Ver Video</span>
+                                          </button>
+                                          {onUpdateHistoryMatchVideo && (
+                                            <button
+                                              onClick={() => {
+                                                soundManager.playClick();
+                                                const globalMatchIdx = selectedTournamentRecap.matchesSummary?.indexOf(match) ?? -1;
+                                                if (globalMatchIdx !== -1) {
+                                                  setEditingHistoryVideo({
+                                                    tournamentId: selectedTournamentRecap.id,
+                                                    matchIndex: globalMatchIdx,
+                                                    initialUrl: match.videoUrl || '',
+                                                    matchTitle: `${match.bladerA} vs ${match.bladerB} (${match.roundName || 'Duelo'})`
+                                                  });
+                                                }
+                                              }}
+                                              className="p-1 rounded-lg border border-slate-700 text-slate-400 hover:text-white transition-all text-xs"
+                                              title="Editar video"
+                                            >
+                                              <span className="material-symbols-outlined text-xs">edit</span>
+                                            </button>
+                                          )}
+                                        </div>
+                                      ) : onUpdateHistoryMatchVideo ? (
+                                        <button
+                                          onClick={() => {
+                                            soundManager.playClick();
+                                            const globalMatchIdx = selectedTournamentRecap.matchesSummary?.indexOf(match) ?? -1;
+                                            if (globalMatchIdx !== -1) {
+                                              setEditingHistoryVideo({
+                                                tournamentId: selectedTournamentRecap.id,
+                                                matchIndex: globalMatchIdx,
+                                                initialUrl: '',
+                                                matchTitle: `${match.bladerA} vs ${match.bladerB} (${match.roundName || 'Duelo'})`
+                                              });
+                                            }
+                                          }}
+                                          className="w-full py-1 px-2 rounded-lg border border-slate-700/80 hover:border-red-500 text-slate-400 hover:text-red-400 font-headline font-bold text-[9px] uppercase tracking-wider flex items-center justify-center gap-1 transition-all active:scale-[0.97]"
+                                        >
+                                          <span className="material-symbols-outlined text-xs text-red-500">video_camera_front</span>
+                                          <span>+ Vincular Video</span>
+                                        </button>
+                                      ) : null}
+                                    </div>
+                                  )}
                                 </div>
                               ))}
                             </div>
@@ -1021,9 +1120,30 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-1 text-[9px] sm:text-[10px] font-headline font-black uppercase text-amber-500 bg-amber-500/10 px-2 py-1 rounded-lg flex-shrink-0">
-                            <span className="material-symbols-outlined text-xs">crown</span>
-                            <span className="max-w-[75px] truncate">{m.winner}</span>
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            {m.videoUrl && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  soundManager.playClick();
+                                  setSelectedHistoryVideo({
+                                    url: m.videoUrl!,
+                                    title: `${m.bladerA} vs ${m.bladerB}`,
+                                    subtitle: `${selectedTournamentRecap.title} • ${m.roundName || 'Duelo'}`
+                                  });
+                                }}
+                                className="px-2 py-1 rounded-lg bg-red-600 hover:bg-red-500 text-white text-[9px] font-headline font-black uppercase flex items-center gap-1 shadow-sm transition-all active:scale-[0.97]"
+                                title="Ver video del combate"
+                              >
+                                <span className="material-symbols-outlined text-xs">play_circle</span>
+                                <span>Ver Video</span>
+                              </button>
+                            )}
+
+                            <div className="flex items-center gap-1 text-[9px] sm:text-[10px] font-headline font-black uppercase text-amber-500 bg-amber-500/10 px-2 py-1 rounded-lg">
+                              <span className="material-symbols-outlined text-xs">crown</span>
+                              <span className="max-w-[75px] truncate">{m.winner}</span>
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -1052,6 +1172,61 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Video Player Modal */}
+      {selectedHistoryVideo && (
+        <VideoPlayerModal
+          isOpen={!!selectedHistoryVideo}
+          videoUrl={selectedHistoryVideo.url}
+          title={selectedHistoryVideo.title}
+          subtitle={selectedHistoryVideo.subtitle}
+          onClose={() => setSelectedHistoryVideo(null)}
+        />
+      )}
+
+      {/* Attach/Edit Video Modal for History */}
+      {editingHistoryVideo && (
+        <AttachVideoModal
+          isOpen={!!editingHistoryVideo}
+          initialUrl={editingHistoryVideo.initialUrl}
+          matchTitle={editingHistoryVideo.matchTitle}
+          onSave={(newUrl) => {
+            if (onUpdateHistoryMatchVideo) {
+              onUpdateHistoryMatchVideo(
+                editingHistoryVideo.tournamentId,
+                editingHistoryVideo.matchIndex,
+                newUrl
+              );
+              setSelectedTournamentRecap((prev) => {
+                if (!prev || prev.id !== editingHistoryVideo.tournamentId) return prev;
+                const updatedMatches = (prev.matchesSummary || []).map((m, idx) => {
+                  if (idx !== editingHistoryVideo.matchIndex) return m;
+                  return { ...m, videoUrl: newUrl || undefined };
+                });
+                return { ...prev, matchesSummary: updatedMatches };
+              });
+            }
+          }}
+          onDelete={() => {
+            if (onUpdateHistoryMatchVideo) {
+              onUpdateHistoryMatchVideo(
+                editingHistoryVideo.tournamentId,
+                editingHistoryVideo.matchIndex,
+                ''
+              );
+              setSelectedTournamentRecap((prev) => {
+                if (!prev || prev.id !== editingHistoryVideo.tournamentId) return prev;
+                const updatedMatches = (prev.matchesSummary || []).map((m, idx) => {
+                  if (idx !== editingHistoryVideo.matchIndex) return m;
+                  return { ...m, videoUrl: undefined };
+                });
+                return { ...prev, matchesSummary: updatedMatches };
+              });
+            }
+          }}
+          onClose={() => setEditingHistoryVideo(null)}
+        />
       )}
     </div>
   );

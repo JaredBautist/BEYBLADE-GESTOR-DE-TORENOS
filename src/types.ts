@@ -91,6 +91,7 @@ export interface TournamentRecord {
     scoreA: number;
     scoreB: number;
     winner: string;
+    videoUrl?: string;
   }[];
 }
 
@@ -181,6 +182,7 @@ export interface Match {
   stage?: 'regular' | 'playoff';
   nextMatchId?: string;
   nextMatchSlot?: 'A' | 'B';
+  videoUrl?: string;
 }
 
 export type ActiveScreen = 

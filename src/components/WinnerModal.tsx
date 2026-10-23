@@ -12,6 +12,7 @@ interface WinnerModalProps {
   onClose: () => void;
   onGoToBracket: () => void;
   onNextMatch?: () => void;
+  onSaveVideoUrl?: (matchId: string, videoUrl: string) => void;
 }
 
 export const WinnerModal: React.FC<WinnerModalProps> = ({
@@ -21,8 +22,12 @@ export const WinnerModal: React.FC<WinnerModalProps> = ({
   nextMatch = null,
   onClose,
   onGoToBracket,
-  onNextMatch
+  onNextMatch,
+  onSaveVideoUrl
 }) => {
+  const [videoUrlInput, setVideoUrlInput] = useState(match.videoUrl || '');
+  const [savedVideoMsg, setSavedVideoMsg] = useState(false);
+  const [showVideoInput, setShowVideoInput] = useState(Boolean(match.videoUrl));
   useEffect(() => {
     soundManager.playVictory();
 
@@ -105,6 +110,63 @@ export const WinnerModal: React.FC<WinnerModalProps> = ({
             </span>
           </div>
         </div>
+
+        {/* Video Attachment Section */}
+        {onSaveVideoUrl && (
+          <div className="p-3 rounded-2xl bg-slate-100/80 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-left space-y-2">
+            {!showVideoInput && !match.videoUrl ? (
+              <button
+                type="button"
+                onClick={() => {
+                  soundManager.playClick();
+                  setShowVideoInput(true);
+                }}
+                className="w-full py-2 px-3 rounded-xl border border-dashed border-slate-300 dark:border-white/20 hover:border-red-500 hover:text-red-500 dark:hover:border-red-400 text-slate-600 dark:text-slate-300 text-xs font-headline font-bold uppercase flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
+              >
+                <span className="material-symbols-outlined text-base text-red-500">video_camera_front</span>
+                <span>¿Deseas vincular el video de esta batalla?</span>
+              </button>
+            ) : (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-label-caps uppercase font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                    <span className="material-symbols-outlined text-xs text-red-500">movie</span>
+                    <span>Video de la Batalla (YouTube / Drive / MP4)</span>
+                  </span>
+                  {savedVideoMsg && (
+                    <span className="text-[10px] font-headline font-bold text-emerald-500 uppercase flex items-center gap-0.5">
+                      <span className="material-symbols-outlined text-xs">check</span>
+                      ¡Guardado!
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="url"
+                    value={videoUrlInput}
+                    onChange={(e) => setVideoUrlInput(e.target.value)}
+                    placeholder="https://youtu.be/... o drive.google.com/..."
+                    className="flex-1 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-black/30 text-slate-900 dark:text-white placeholder-slate-400 text-xs font-mono focus:outline-none focus:border-[#04A8FC]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      soundManager.playClick();
+                      onSaveVideoUrl(match.id, videoUrlInput.trim());
+                      setSavedVideoMsg(true);
+                      setTimeout(() => setSavedVideoMsg(false), 2500);
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-headline font-bold uppercase transition-all flex items-center gap-1 active:scale-[0.97]"
+                  >
+                    <span className="material-symbols-outlined text-sm">save</span>
+                    <span>Guardar</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">

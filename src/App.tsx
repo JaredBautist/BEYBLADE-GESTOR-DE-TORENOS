@@ -876,6 +876,57 @@ export default function App() {
     }
   };
 
+  const handleUpdateMatchVideoUrl = (matchId: string, videoUrl: string) => {
+    const cleanUrl = videoUrl.trim() || undefined;
+    setMatches((prev) => {
+      const updated = prev.map((m) => (m.id === matchId ? { ...m, videoUrl: cleanUrl } : m));
+      try {
+        localStorage.setItem('bbx_matches', JSON.stringify(updated));
+      } catch (e) {
+        console.error(e);
+      }
+      return updated;
+    });
+
+    if (currentMatch && currentMatch.id === matchId) {
+      setCurrentMatch((prev) => (prev ? { ...prev, videoUrl: cleanUrl } : null));
+    }
+
+    if (winnerModalData.isOpen && winnerModalData.match?.id === matchId) {
+      setWinnerModalData((prev) => (prev.match ? {
+        ...prev,
+        match: { ...prev.match, videoUrl: cleanUrl }
+      } : prev));
+    }
+
+    const targetMatch = matches.find((m) => m.id === matchId);
+    if (targetMatch) {
+      syncMatchToSupabase({ ...targetMatch, videoUrl: cleanUrl });
+    }
+  };
+
+  const handleUpdateHistoryMatchVideo = (tournamentId: string, matchIndex: number, videoUrl: string) => {
+    const cleanUrl = videoUrl.trim() || undefined;
+    setTournamentHistory((prev) => {
+      const updated = prev.map((t) => {
+        if (t.id !== tournamentId) return t;
+        const updatedMatches = (t.matchesSummary || []).map((m, idx) => {
+          if (idx !== matchIndex) return m;
+          return { ...m, videoUrl: cleanUrl };
+        });
+        const updatedTournament = { ...t, matchesSummary: updatedMatches };
+        syncTournamentRecordToSupabase(updatedTournament);
+        return updatedTournament;
+      });
+      try {
+        localStorage.setItem('bbx_history', JSON.stringify(updated));
+      } catch (e) {
+        console.error(e);
+      }
+      return updated;
+    });
+  };
+
   // Bladers handlers
   const handleAddBlader = (newBlader: Blader) => {
     setBladers((prev) => [newBlader, ...prev]);
@@ -1079,7 +1130,8 @@ export default function App() {
           bladerB: m.bladerB?.name || 'Blader B',
           scoreA: m.scoreA,
           scoreB: m.scoreB,
-          winner: m.winnerName || (m.scoreA > m.scoreB ? m.bladerA?.name || '' : m.bladerB?.name || '')
+          winner: m.winnerName || (m.scoreA > m.scoreB ? m.bladerA?.name || '' : m.bladerB?.name || ''),
+          videoUrl: m.videoUrl || undefined
         }))
       };
     };
@@ -1330,6 +1382,7 @@ export default function App() {
             onNavigateToBracket={() => setActiveScreen('bracket')}
             onSelectMatchForConsole={handleSelectMatchForConsole}
             onGeneratePlayoffs={handleGeneratePlayoffs}
+            onUpdateMatchVideoUrl={handleUpdateMatchVideoUrl}
           />
         )}
 
@@ -1381,6 +1434,7 @@ export default function App() {
             onSetMatchWinner={handleSetMatchWinner}
             onGenerateBracket={handleGenerateBracket}
             onGeneratePlayoffs={handleGeneratePlayoffs}
+            onUpdateMatchVideoUrl={handleUpdateMatchVideoUrl}
           />
         )}
 
@@ -1411,6 +1465,7 @@ export default function App() {
             onAddHistoryRecord={handleAddHistoryRecord}
             onDeleteHistoryRecord={handleDeleteHistoryRecord}
             onClearAllHistory={handleClearAllHistory}
+            onUpdateHistoryMatchVideo={handleUpdateHistoryMatchVideo}
           />
         )}
       </main>
@@ -1468,6 +1523,7 @@ export default function App() {
           isTournamentFinal={winnerModalData.isTournamentFinal}
           nextMatch={winnerModalData.nextMatch}
           onClose={() => setWinnerModalData({ isOpen: false, winner: null, match: null, isTournamentFinal: false, nextMatch: null })}
+          onSaveVideoUrl={handleUpdateMatchVideoUrl}
           onGoToBracket={() => {
             setWinnerModalData({ isOpen: false, winner: null, match: null, isTournamentFinal: false, nextMatch: null });
             setActiveScreen('bracket');

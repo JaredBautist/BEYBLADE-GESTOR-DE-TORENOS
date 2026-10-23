@@ -88,6 +88,7 @@ CREATE TABLE IF NOT EXISTS matches (
   corner_a TEXT DEFAULT 'Red',
   corner_b TEXT DEFAULT 'Blue',
   events JSONB DEFAULT '[]'::jsonb,
+  video_url TEXT,
   is_casual BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -762,7 +763,8 @@ export async function syncMatchToSupabase(match: Match): Promise<{ success: bool
       winner_name: match.winnerName,
       corner_a: match.cornerA,
       corner_b: match.cornerB,
-      events: match.events || []
+      events: match.events || [],
+      video_url: match.videoUrl || null
     });
     if (error) {
       console.error('Supabase sync match error:', error);
@@ -797,7 +799,8 @@ export async function fetchMatchesFromSupabase(): Promise<Match[]> {
       winnerName: row.winner_name,
       cornerA: row.corner_a || 'Red',
       cornerB: row.corner_b || 'Blue',
-      events: row.events || []
+      events: row.events || [],
+      videoUrl: row.video_url || undefined
     }));
   } catch (e) {
     console.warn('Supabase fetch matches error:', e);

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Blader, Match, TournamentConfig } from '../../types';
 import { soundManager } from '../../utils/audio';
 import { BladerAvatar } from '../BladerAvatar';
+import { VideoPlayerModal } from '../VideoPlayerModal';
+import { AttachVideoModal } from '../AttachVideoModal';
 
 interface DashboardScreenProps {
   currentMatch: Match | null;
@@ -19,6 +21,7 @@ interface DashboardScreenProps {
   onSelectMatchForConsole?: (match: Match) => void;
   onQuickStartMatch: (nameA: string, nameB: string, targetScore: number) => void;
   onGeneratePlayoffs?: () => void;
+  onUpdateMatchVideoUrl?: (matchId: string, videoUrl: string) => void;
 }
 
 export const DashboardScreen: React.FC<DashboardScreenProps> = ({
@@ -36,12 +39,15 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   onNavigateToBracket,
   onSelectMatchForConsole,
   onQuickStartMatch,
-  onGeneratePlayoffs
+  onGeneratePlayoffs,
+  onUpdateMatchVideoUrl
 }) => {
   const [selectedComboSlotA, setSelectedComboSlotA] = useState<number>(1);
   const [selectedComboSlotB, setSelectedComboSlotB] = useState<number>(1);
   const [showEventLog, setShowEventLog] = useState<boolean>(true);
   const [mobileCornerFilter, setMobileCornerFilter] = useState<'both' | 'A' | 'B'>('both');
+  const [showAttachVideoModal, setShowAttachVideoModal] = useState<boolean>(false);
+  const [showVideoPlayerModal, setShowVideoPlayerModal] = useState<boolean>(false);
 
   // State for selecting bladers when console is in standby
   const [selectedBladerAId, setSelectedBladerAId] = useState<string>(allBladers[0]?.id || '');
@@ -495,6 +501,49 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             <span className="material-symbols-outlined text-sm">add</span>
             <span className="hidden sm:inline">Nuevo Duelo</span>
           </button>
+
+          {/* Video of Match Action Button */}
+          {currentMatch.videoUrl ? (
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => {
+                  soundManager.playClick();
+                  setShowVideoPlayerModal(true);
+                }}
+                className="bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded-lg text-xs font-label-caps uppercase font-black flex items-center gap-1.5 shadow-sm shadow-red-600/30 transition-all active:scale-[0.97]"
+                title="Ver video grabado del combate"
+              >
+                <span className="material-symbols-outlined text-sm">play_circle</span>
+                <span>Ver Video</span>
+              </button>
+              {onUpdateMatchVideoUrl && (
+                <button
+                  onClick={() => {
+                    soundManager.playClick();
+                    setShowAttachVideoModal(true);
+                  }}
+                  className="p-1.5 rounded-lg border border-slate-200 dark:border-white/10 hover:border-[#04A8FC] text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all text-xs"
+                  title="Cambiar video del combate"
+                >
+                  <span className="material-symbols-outlined text-sm">edit</span>
+                </button>
+              )}
+            </div>
+          ) : (
+            onUpdateMatchVideoUrl && (
+              <button
+                onClick={() => {
+                  soundManager.playClick();
+                  setShowAttachVideoModal(true);
+                }}
+                className="glass-panel px-3 py-1.5 rounded-lg text-xs font-label-caps uppercase flex items-center gap-1.5 hover:border-red-500 text-gray-700 dark:text-gray-300 hover:text-red-500 transition-all active:scale-[0.97]"
+                title="Vincular video del combate (YouTube, Drive, etc.)"
+              >
+                <span className="material-symbols-outlined text-sm text-red-500">video_camera_front</span>
+                <span className="hidden sm:inline">Vincular Video</span>
+              </button>
+            )
+          )}
         </div>
       </div>
 
@@ -562,6 +611,32 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 <span className="material-symbols-outlined text-base">account_tree</span>
                 <span>{isTournamentFinal ? 'Ver Podio Oficial y Bracket' : isRegularPhase ? 'Ver Tabla de Posiciones' : 'Ver Árbol Bracket'}</span>
               </button>
+            )}
+
+            {currentMatch.videoUrl ? (
+              <button
+                onClick={() => {
+                  soundManager.playClick();
+                  setShowVideoPlayerModal(true);
+                }}
+                className="bg-red-600 hover:bg-red-500 text-white px-5 py-3 rounded-xl font-headline font-black text-xs uppercase shadow-lg shadow-red-600/30 transition-all flex items-center gap-2 hover:scale-105 active:scale-[0.97]"
+              >
+                <span className="material-symbols-outlined text-base">play_circle</span>
+                <span>Ver Video del Combate</span>
+              </button>
+            ) : (
+              onUpdateMatchVideoUrl && (
+                <button
+                  onClick={() => {
+                    soundManager.playClick();
+                    setShowAttachVideoModal(true);
+                  }}
+                  className="bg-slate-800 hover:bg-slate-700 dark:bg-white/10 dark:hover:bg-white/20 text-white px-5 py-3 rounded-xl font-headline font-bold text-xs uppercase transition-all flex items-center gap-1.5 active:scale-[0.97]"
+                >
+                  <span className="material-symbols-outlined text-base text-red-500">video_camera_front</span>
+                  <span>Vincular Video</span>
+                </button>
+              )
             )}
 
             <button
@@ -1101,6 +1176,40 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Video Modals */}
+      {currentMatch && (
+        <>
+          <VideoPlayerModal
+            isOpen={showVideoPlayerModal}
+            videoUrl={currentMatch.videoUrl}
+            title={`${currentMatch.bladerA?.name || 'Rojo'} vs ${currentMatch.bladerB?.name || 'Azul'}`}
+            subtitle={currentMatch.roundName || `Marcador: ${currentMatch.scoreA} - ${currentMatch.scoreB}`}
+            onClose={() => setShowVideoPlayerModal(false)}
+            onEditVideoUrl={() => {
+              setShowVideoPlayerModal(false);
+              setShowAttachVideoModal(true);
+            }}
+          />
+
+          <AttachVideoModal
+            isOpen={showAttachVideoModal}
+            initialUrl={currentMatch.videoUrl}
+            matchTitle={`${currentMatch.bladerA?.name || 'Rojo'} vs ${currentMatch.bladerB?.name || 'Azul'} (${currentMatch.roundName || 'Duelo'})`}
+            onSave={(newUrl) => {
+              if (onUpdateMatchVideoUrl) {
+                onUpdateMatchVideoUrl(currentMatch.id, newUrl);
+              }
+            }}
+            onDelete={() => {
+              if (onUpdateMatchVideoUrl) {
+                onUpdateMatchVideoUrl(currentMatch.id, '');
+              }
+            }}
+            onClose={() => setShowAttachVideoModal(false)}
+          />
+        </>
       )}
     </div>
   );

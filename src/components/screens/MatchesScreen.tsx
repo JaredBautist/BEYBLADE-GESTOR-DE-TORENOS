@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Match, Blader } from '../../types';
 import { soundManager } from '../../utils/audio';
 import { BladerAvatar } from '../BladerAvatar';
+import { VideoPlayerModal } from '../VideoPlayerModal';
 
 interface MatchesScreenProps {
   matches: Match[];
@@ -20,6 +21,7 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
 }) => {
   const [filter, setFilter] = useState<'all' | 'live' | 'upcoming' | 'finished'>('all');
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
+  const [selectedVideoMatch, setSelectedVideoMatch] = useState<Match | null>(null);
   const [newBladerA, setNewBladerA] = useState<string>(allBladers[0]?.id || '');
   const [newBladerB, setNewBladerB] = useState<string>(allBladers[1]?.id || '');
   const [customNameA, setCustomNameA] = useState<string>('');
@@ -213,16 +215,31 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
                 )}
 
                 {/* Action */}
-                <button
-                  onClick={() => {
-                    soundManager.playClick();
-                    onSelectMatchForConsole(match);
-                  }}
-                  className="w-full py-2.5 px-4 bg-[#04A8FC] hover:bg-[#008fe0] text-white rounded-xl font-headline font-bold text-xs uppercase flex items-center justify-center gap-2 shadow-sm transition-all hover:scale-[1.01]"
-                >
-                  <span className="material-symbols-outlined text-base">sports_kabaddi</span>
-                  <span>{isLive ? 'Abrir Consola en Vivo' : 'Cargar en Battle Console'}</span>
-                </button>
+                <div className="space-y-1.5">
+                  <button
+                    onClick={() => {
+                      soundManager.playClick();
+                      onSelectMatchForConsole(match);
+                    }}
+                    className="w-full py-2.5 px-4 bg-[#04A8FC] hover:bg-[#008fe0] text-white rounded-xl font-headline font-bold text-xs uppercase flex items-center justify-center gap-2 shadow-sm transition-all hover:scale-[1.01] active:scale-[0.98]"
+                  >
+                    <span className="material-symbols-outlined text-base">sports_kabaddi</span>
+                    <span>{isLive ? 'Abrir Consola en Vivo' : 'Cargar en Battle Console'}</span>
+                  </button>
+
+                  {match.videoUrl && (
+                    <button
+                      onClick={() => {
+                        soundManager.playClick();
+                        setSelectedVideoMatch(match);
+                      }}
+                      className="w-full py-2 px-4 bg-red-600 hover:bg-red-500 text-white rounded-xl font-headline font-black text-xs uppercase flex items-center justify-center gap-2 shadow-sm shadow-red-500/20 transition-all active:scale-[0.98]"
+                    >
+                      <span className="material-symbols-outlined text-base">play_circle</span>
+                      <span>Ver Video de la Batalla</span>
+                    </button>
+                  )}
+                </div>
               </div>
             );
           })}
@@ -343,6 +360,17 @@ export const MatchesScreen: React.FC<MatchesScreenProps> = ({
             </form>
           </div>
         </div>
+      )}
+
+      {/* Video Player Modal */}
+      {selectedVideoMatch && (
+        <VideoPlayerModal
+          isOpen={!!selectedVideoMatch}
+          videoUrl={selectedVideoMatch.videoUrl}
+          title={`${selectedVideoMatch.bladerA?.name || 'Rojo'} vs ${selectedVideoMatch.bladerB?.name || 'Azul'}`}
+          subtitle={`${selectedVideoMatch.roundName || 'Duelo'} • Marcador: ${selectedVideoMatch.scoreA} - ${selectedVideoMatch.scoreB}`}
+          onClose={() => setSelectedVideoMatch(null)}
+        />
       )}
     </div>
   );

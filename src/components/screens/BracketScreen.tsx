@@ -3,6 +3,8 @@ import { Blader, Match, TournamentConfig } from '../../types';
 import { soundManager } from '../../utils/audio';
 import { BladerAvatar } from '../BladerAvatar';
 import { getRankedBladers } from '../../utils/bracketGenerator';
+import { VideoPlayerModal } from '../VideoPlayerModal';
+import { AttachVideoModal } from '../AttachVideoModal';
 
 interface BracketScreenProps {
   bladers: Blader[];
@@ -12,6 +14,7 @@ interface BracketScreenProps {
   onSetMatchWinner: (matchId: string, winnerId: string) => void;
   onGenerateBracket: () => void;
   onGeneratePlayoffs?: () => void;
+  onUpdateMatchVideoUrl?: (matchId: string, videoUrl: string) => void;
 }
 
 export const BracketScreen: React.FC<BracketScreenProps> = ({
@@ -21,11 +24,14 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
   onSelectMatchForConsole,
   onSetMatchWinner,
   onGenerateBracket,
-  onGeneratePlayoffs
+  onGeneratePlayoffs,
+  onUpdateMatchVideoUrl
 }) => {
   const [copiedLink, setCopiedLink] = useState(false);
   const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [selectedJornada, setSelectedJornada] = useState<'all' | number>('all');
+  const [selectedVideoMatch, setSelectedVideoMatch] = useState<Match | null>(null);
+  const [editingVideoMatch, setEditingVideoMatch] = useState<Match | null>(null);
   const isRegularPhase = config.type !== 'elimination' && config.tournamentPhase !== 'playoffs';
   const isLeagueOrSeries = config.type === 'league' || config.type === 'series';
   const [viewMode, setViewMode] = useState<'standings' | 'tree' | 'rounds'>(
@@ -178,19 +184,61 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
           </div>
         </div>
 
-        {/* Action Button */}
-        {isPlayable && !isFinished && (
-          <button
-            onClick={() => {
-              soundManager.playClick();
-              onSelectMatchForConsole(match);
-            }}
-            className="w-full mt-2.5 py-1.5 bg-[#04A8FC] hover:bg-[#008fe0] text-white rounded-lg font-headline font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1 shadow-sm transition-all"
-          >
-            <span className="material-symbols-outlined text-xs">sports_kabaddi</span>
-            <span>Cargar en Consola</span>
-          </button>
-        )}
+        {/* Match Footer Actions: Console Load & Video Controls */}
+        <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
+          {isPlayable && !isFinished && (
+            <button
+              onClick={() => {
+                soundManager.playClick();
+                onSelectMatchForConsole(match);
+              }}
+              className="flex-1 py-1.5 bg-[#04A8FC] hover:bg-[#008fe0] text-white rounded-lg font-headline font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1 shadow-sm transition-all active:scale-[0.97]"
+            >
+              <span className="material-symbols-outlined text-xs">sports_kabaddi</span>
+              <span>Cargar en Consola</span>
+            </button>
+          )}
+
+          {match.videoUrl ? (
+            <div className="flex items-center gap-1 flex-1">
+              <button
+                onClick={() => {
+                  soundManager.playClick();
+                  setSelectedVideoMatch(match);
+                }}
+                className="flex-1 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-lg font-headline font-black text-[10px] uppercase tracking-wider flex items-center justify-center gap-1 shadow-sm shadow-red-500/20 transition-all active:scale-[0.97]"
+                title="Ver video del combate"
+              >
+                <span className="material-symbols-outlined text-xs">play_circle</span>
+                <span>Ver Video</span>
+              </button>
+              {onUpdateMatchVideoUrl && (
+                <button
+                  onClick={() => {
+                    soundManager.playClick();
+                    setEditingVideoMatch(match);
+                  }}
+                  className="p-1.5 rounded-lg border border-slate-200 dark:border-white/10 hover:border-[#04A8FC] text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all text-xs"
+                  title="Editar enlace del video"
+                >
+                  <span className="material-symbols-outlined text-xs">edit</span>
+                </button>
+              )}
+            </div>
+          ) : isFinished && onUpdateMatchVideoUrl ? (
+            <button
+              onClick={() => {
+                soundManager.playClick();
+                setEditingVideoMatch(match);
+              }}
+              className="py-1 px-2 rounded-lg border border-slate-200 dark:border-white/10 hover:border-red-500 text-slate-500 hover:text-red-500 text-[10px] font-headline font-bold uppercase transition-all flex items-center gap-1 active:scale-[0.97]"
+              title="Vincular video del combate"
+            >
+              <span className="material-symbols-outlined text-xs text-red-500">video_camera_front</span>
+              <span>+ Video</span>
+            </button>
+          ) : null}
+        </div>
       </div>
     );
   };
@@ -871,6 +919,42 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
             </div>
           )}
         </>
+      )}
+
+      {/* Video Player Modal */}
+      {selectedVideoMatch && (
+        <VideoPlayerModal
+          isOpen={!!selectedVideoMatch}
+          videoUrl={selectedVideoMatch.videoUrl}
+          title={`${selectedVideoMatch.bladerA?.name || 'Rojo'} vs ${selectedVideoMatch.bladerB?.name || 'Azul'}`}
+          subtitle={`${selectedVideoMatch.roundName || 'Duelo'} • Marcador: ${selectedVideoMatch.scoreA} - ${selectedVideoMatch.scoreB}`}
+          onClose={() => setSelectedVideoMatch(null)}
+          onEditVideoUrl={() => {
+            const m = selectedVideoMatch;
+            setSelectedVideoMatch(null);
+            setEditingVideoMatch(m);
+          }}
+        />
+      )}
+
+      {/* Attach/Edit Video Modal */}
+      {editingVideoMatch && (
+        <AttachVideoModal
+          isOpen={!!editingVideoMatch}
+          initialUrl={editingVideoMatch.videoUrl}
+          matchTitle={`${editingVideoMatch.bladerA?.name || 'Rojo'} vs ${editingVideoMatch.bladerB?.name || 'Azul'} (${editingVideoMatch.roundName || 'Duelo'})`}
+          onSave={(newUrl) => {
+            if (onUpdateMatchVideoUrl) {
+              onUpdateMatchVideoUrl(editingVideoMatch.id, newUrl);
+            }
+          }}
+          onDelete={() => {
+            if (onUpdateMatchVideoUrl) {
+              onUpdateMatchVideoUrl(editingVideoMatch.id, '');
+            }
+          }}
+          onClose={() => setEditingVideoMatch(null)}
+        />
       )}
     </div>
   );
