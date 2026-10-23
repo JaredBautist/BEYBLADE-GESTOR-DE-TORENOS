@@ -202,7 +202,7 @@ export const ResetTournamentModal: React.FC<ResetTournamentModalProps> = ({
                 Reinicio Completo de Fábrica (Borrar Todo)
               </span>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Elimina todos los Bladers, combates activos y piezas para restaurar la base de datos limpia.
+                Elimina absolutamente todos los Bladers, combates, piezas y el <strong>Historial de torneos / Hall of Fame</strong> para restaurar la base de datos 100% limpia de fábrica.
               </p>
             </div>
           </div>

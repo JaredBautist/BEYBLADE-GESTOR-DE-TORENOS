@@ -44,12 +44,14 @@ import {
   syncTournamentRecordToSupabase,
   fetchHistoryFromSupabase,
   deleteHistoryRecordFromSupabase,
+  deleteAllHistoryFromSupabase,
   syncConfigToSupabase,
   fetchConfigFromSupabase,
   syncMatchToSupabase,
   fetchMatchesFromSupabase,
   deleteMatchFromSupabase,
   deleteAllMatchesFromSupabase,
+  deleteAllPartsFromSupabase,
   subscribeToDatabaseChanges
 } from './lib/supabase';
 import {
@@ -972,9 +974,38 @@ export default function App() {
     syncTournamentRecordToSupabase(record);
   };
 
-  const handleDeleteHistoryRecord = (id: string) => {
-    setTournamentHistory((prev) => prev.filter((h) => h.id !== id));
-    deleteHistoryRecordFromSupabase(id);
+  const handleDeleteHistoryRecord = async (id: string) => {
+    setTournamentHistory((prev) => {
+      const updated = prev.filter((h) => h.id !== id);
+      try {
+        localStorage.setItem('bbx_history', JSON.stringify(updated));
+      } catch (e) {
+        console.error(e);
+      }
+      return updated;
+    });
+    const res = await deleteHistoryRecordFromSupabase(id);
+    if (res && !res.success && res.error) {
+      alert('Error al eliminar de la base de datos: ' + res.error);
+    }
+  };
+
+  const handleClearAllHistory = async () => {
+    if (!window.confirm('¿Estás seguro de que deseas eliminar TODOS los torneos archivados y el Hall of Fame? Esta acción no se puede deshacer.')) {
+      return;
+    }
+    const res = await deleteAllHistoryFromSupabase();
+    if (res && !res.success && res.error) {
+      alert('Error al vaciar historial en la base de datos: ' + res.error);
+      return;
+    }
+    setTournamentHistory([]);
+    try {
+      localStorage.removeItem('bbx_history');
+    } catch (e) {
+      console.error(e);
+    }
+    soundManager.playVictory();
   };
 
   // COMPLETE & ROBUST RESET TOURNAMENT HANDLER
@@ -1178,24 +1209,31 @@ export default function App() {
       return;
     }
 
-    // MODE 4: COMPLETE FACTORY RESET
+    // MODE 4: COMPLETE FACTORY RESET (WIPE EVERYTHING CLEAN)
     if (mode === 'factory_reset') {
       await deleteAllMatchesFromSupabase();
       await deleteAllBladersFromSupabase();
       await deleteAllCombosFromSupabase();
+      await deleteAllHistoryFromSupabase();
+      await deleteAllPartsFromSupabase();
 
       setBladers([]);
       setMatches([]);
       setRegisteredCombos([]);
+      setTournamentHistory([]);
+      setParts([]);
       setCurrentMatch(null);
 
       try {
         localStorage.removeItem('bbx_bladers');
         localStorage.removeItem('bbx_matches');
         localStorage.removeItem('bbx_combos');
+        localStorage.removeItem('bbx_history');
+        localStorage.removeItem('bbx_parts');
       } catch (e) {
         console.error(e);
       }
+      soundManager.playVictory();
       setActiveScreen('tournament_format');
     }
   };
@@ -1372,6 +1410,7 @@ export default function App() {
             history={tournamentHistory}
             onAddHistoryRecord={handleAddHistoryRecord}
             onDeleteHistoryRecord={handleDeleteHistoryRecord}
+            onClearAllHistory={handleClearAllHistory}
           />
         )}
       </main>

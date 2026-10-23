@@ -9,12 +9,14 @@ interface HistoryScreenProps {
   history: TournamentRecord[];
   onAddHistoryRecord?: (record: TournamentRecord) => void;
   onDeleteHistoryRecord?: (id: string) => void;
+  onClearAllHistory?: () => void;
 }
 
 export const HistoryScreen: React.FC<HistoryScreenProps> = ({
   bladers,
   history,
-  onDeleteHistoryRecord
+  onDeleteHistoryRecord,
+  onClearAllHistory
 }) => {
   const [activeTab, setActiveTab] = useState<'hall_of_fame' | 'tournaments'>('hall_of_fame');
   const [selectedTournamentRecap, setSelectedTournamentRecap] = useState<TournamentRecord | null>(null);
@@ -171,37 +173,53 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
         </div>
       </div>
 
-      {/* Tabs Navigation (Responsive scroll/wrap) */}
-      <div className="flex items-center gap-1.5 p-1.5 bg-slate-200/80 dark:bg-white/5 rounded-2xl w-full sm:w-fit overflow-x-auto max-w-full no-scrollbar">
-        <button
-          onClick={() => {
-            soundManager.playClick();
-            setActiveTab('hall_of_fame');
-          }}
-          className={`flex-1 sm:flex-initial px-4 sm:px-6 py-2.5 rounded-xl font-headline font-black text-xs uppercase flex items-center justify-center gap-2 transition-all whitespace-nowrap ${
-            activeTab === 'hall_of_fame'
-              ? 'bg-[#04A8FC] text-white shadow-md'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-          }`}
-        >
-          <span className="material-symbols-outlined text-sm">emoji_events</span>
-          <span>Hall of Fame & Récords</span>
-        </button>
+      {/* Tabs Navigation & Clean History Action */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-1.5 p-1.5 bg-slate-200/80 dark:bg-white/5 rounded-2xl w-full sm:w-fit overflow-x-auto max-w-full no-scrollbar">
+          <button
+            onClick={() => {
+              soundManager.playClick();
+              setActiveTab('hall_of_fame');
+            }}
+            className={`flex-1 sm:flex-initial px-4 sm:px-6 py-2.5 rounded-xl font-headline font-black text-xs uppercase flex items-center justify-center gap-2 transition-all whitespace-nowrap ${
+              activeTab === 'hall_of_fame'
+                ? 'bg-[#04A8FC] text-white shadow-md'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <span className="material-symbols-outlined text-sm">emoji_events</span>
+            <span>Hall of Fame & Récords</span>
+          </button>
 
-        <button
-          onClick={() => {
-            soundManager.playClick();
-            setActiveTab('tournaments');
-          }}
-          className={`flex-1 sm:flex-initial px-4 sm:px-6 py-2.5 rounded-xl font-headline font-black text-xs uppercase flex items-center justify-center gap-2 transition-all whitespace-nowrap ${
-            activeTab === 'tournaments'
-              ? 'bg-[#04A8FC] text-white shadow-md'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-          }`}
-        >
-          <span className="material-symbols-outlined text-sm">military_tech</span>
-          <span>Torneos Culminados ({officialTournaments.length})</span>
-        </button>
+          <button
+            onClick={() => {
+              soundManager.playClick();
+              setActiveTab('tournaments');
+            }}
+            className={`flex-1 sm:flex-initial px-4 sm:px-6 py-2.5 rounded-xl font-headline font-black text-xs uppercase flex items-center justify-center gap-2 transition-all whitespace-nowrap ${
+              activeTab === 'tournaments'
+                ? 'bg-[#04A8FC] text-white shadow-md'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <span className="material-symbols-outlined text-sm">military_tech</span>
+            <span>Torneos Culminados ({officialTournaments.length})</span>
+          </button>
+        </div>
+
+        {officialTournaments.length > 0 && onClearAllHistory && (
+          <button
+            onClick={() => {
+              soundManager.playClick();
+              onClearAllHistory();
+            }}
+            className="px-4 py-2.5 rounded-2xl border border-red-500/30 hover:border-red-500 bg-red-500/10 hover:bg-red-500/20 text-red-500 dark:text-red-400 font-headline font-bold text-xs uppercase flex items-center justify-center gap-1.5 transition-all shadow-sm"
+            title="Eliminar todos los torneos archivados y reiniciar el Hall of Fame"
+          >
+            <span className="material-symbols-outlined text-base">delete_sweep</span>
+            <span>Vaciar Historial Completo</span>
+          </button>
+        )}
       </div>
 
       {/* TAB 1: HALL OF FAME */}
@@ -385,13 +403,15 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
                     {onDeleteHistoryRecord && (
                       <button
                         onClick={() => {
-                          soundManager.playClick();
-                          onDeleteHistoryRecord(t.id);
+                          if (window.confirm(`¿Eliminar "${t.title}" (${t.date}) del historial?`)) {
+                            soundManager.playClick();
+                            onDeleteHistoryRecord(t.id);
+                          }
                         }}
-                        className="text-slate-400 hover:text-red-500 p-1 transition-opacity ml-2 flex-shrink-0"
-                        title="Eliminar registro"
+                        className="text-slate-400 hover:text-red-500 p-1.5 hover:bg-red-500/10 rounded-xl transition-all ml-2 flex-shrink-0"
+                        title="Eliminar este torneo del historial"
                       >
-                        <span className="material-symbols-outlined text-sm">delete</span>
+                        <span className="material-symbols-outlined text-base">delete</span>
                       </button>
                     )}
                   </div>

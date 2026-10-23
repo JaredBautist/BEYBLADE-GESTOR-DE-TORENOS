@@ -332,6 +332,20 @@ export async function deletePartFromSupabase(name: string) {
   }
 }
 
+export async function deleteAllPartsFromSupabase(): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { error } = await supabase.from('parts').delete().neq('name', '___force_delete_all_parts___');
+    if (error) {
+      console.error('Supabase deleteAllParts error:', error);
+      return { success: false, error: error.message };
+    }
+    return { success: true };
+  } catch (e: any) {
+    console.warn('Supabase deleteAllParts warning:', e);
+    return { success: false, error: e?.message };
+  }
+}
+
 // -------------------------------------------------------------
 // COMBOS API
 // -------------------------------------------------------------
@@ -463,11 +477,31 @@ export async function fetchHistoryFromSupabase(): Promise<TournamentRecord[] | n
   }
 }
 
-export async function deleteHistoryRecordFromSupabase(id: string) {
+export async function deleteHistoryRecordFromSupabase(id: string): Promise<{ success: boolean; error?: string }> {
   try {
-    await supabase.from('tournament_history').delete().eq('id', id);
-  } catch (e) {
+    const { error } = await supabase.from('tournament_history').delete().eq('id', id);
+    if (error) {
+      console.error('Supabase delete history error:', error);
+      return { success: false, error: error.message };
+    }
+    return { success: true };
+  } catch (e: any) {
     console.warn('Supabase delete history warning:', e);
+    return { success: false, error: e?.message };
+  }
+}
+
+export async function deleteAllHistoryFromSupabase(): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { error } = await supabase.from('tournament_history').delete().neq('id', '___force_delete_all_history___');
+    if (error) {
+      console.error('Supabase deleteAllHistory error:', error);
+      return { success: false, error: error.message };
+    }
+    return { success: true };
+  } catch (e: any) {
+    console.warn('Supabase deleteAllHistory warning:', e);
+    return { success: false, error: e?.message };
   }
 }
 
