@@ -40,8 +40,9 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
       isStarted: updated.isStarted,
       regularPhaseMatchesPerBlader: updated.regularPhaseMatchesPerBlader ?? 2,
       playoffCutoffType: updated.playoffCutoffType ?? 'top_n',
-      playoffCutoffCount: updated.playoffCutoffCount ?? 4,
-      minPointsToQualify: updated.minPointsToQualify ?? 4,
+      playoffCutoffCount: updated.playoffCutoffCount ?? 8,
+      minPointsToQualify: updated.minPointsToQualify ?? 0,
+      totalJornadas: updated.totalJornadas ?? 8,
       tournamentPhase: updated.tournamentPhase ?? 'regular'
     });
     syncConfigToSupabase(updated);
@@ -85,6 +86,16 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
       playoffCutoffCount: count
     };
     triggerSave(updated, `Corte de clasificación establecido a Top ${count}`);
+  };
+
+  const handleTotalJornadasChange = (jornadas: number) => {
+    soundManager.playClick();
+    const val = Math.max(1, Math.min(50, jornadas));
+    const updated: TournamentConfig = {
+      ...formData,
+      totalJornadas: val
+    };
+    triggerSave(updated, `Fase regular configurada a ${val} Jornadas`);
   };
 
   const handleMinPointsToQualifyChange = (pts: number) => {
@@ -302,23 +313,23 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
               </div>
             </div>
 
-            {/* DELIMITACIÓN POR PUNTOS & CORTE A FASE FINAL (ONLY FOR LIGA) */}
+            {/* FASE REGULAR POR JORNADAS & CORTE A PLAYOFFS (ONLY FOR LIGA) */}
             {formData.type === 'league' ? (
               <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/60 dark:bg-black/40 border-2 border-[#04A8FC]/40 shadow-lg space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-700/60 pb-3">
                   <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[#04A8FC] text-xl">score</span>
+                    <span className="material-symbols-outlined text-[#04A8FC] text-xl">calendar_month</span>
                     <div>
                       <h4 className="font-headline font-black text-sm sm:text-base uppercase text-white tracking-wide">
-                        Delimitación por Puntos & Corte a Fase Final (Playoffs)
+                        Fase Regular por Jornadas (Rondas) & Corte a Playoffs
                       </h4>
                       <p className="text-[11px] font-label-caps text-slate-400 uppercase">
-                        Fase 1: Acumulación de Puntos • Fase 2: Cuartos / Semis / Gran Final
+                        Fase 1: {formData.totalJornadas || 8} Jornadas Regulares • Fase 2: Cuartos / Semis / Gran Final
                       </p>
                     </div>
                   </div>
                   <span className="px-2.5 py-1 rounded-full bg-[#04A8FC]/20 text-[#04A8FC] border border-[#04A8FC]/30 text-[10px] font-label-caps font-black uppercase">
-                    Liga / Puntos
+                    Liga / Jornadas
                   </span>
                 </div>
 
@@ -338,17 +349,17 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
                         handlePlayoffCutoffCountChange(8);
                       }}
                       className={`p-3.5 rounded-xl border text-left transition-all space-y-1.5 ${
-                        (formData.playoffCutoffCount || 4) === 8
-                          ? 'bg-amber-500/20 border-amber-400 text-white shadow-md'
+                        (formData.playoffCutoffCount || 8) === 8
+                          ? 'bg-amber-500/20 border-amber-400 text-white shadow-md ring-1 ring-amber-400/50'
                           : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
                       }`}
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-headline font-black text-xs uppercase text-amber-400">Top 8</span>
-                        <span className="text-[9px] font-label-caps font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">Cuartos de Final</span>
+                        <span className="text-[9px] font-label-caps font-black px-1.5 py-0.5 rounded bg-amber-500/30 text-amber-300 border border-amber-400/40">Cuartos de Final</span>
                       </div>
                       <p className="text-[10px] text-slate-300 leading-tight">
-                        Los 8 Bladers con más puntos pasan a Cuartos de Final (1º vs 8º, 2º vs 7º, 3º vs 6º, 4º vs 5º).
+                        Los 8 mejores Bladers de la tabla clasifican a Cuartos de Final (1º vs 8º, 4º vs 5º, 2º vs 7º, 3º vs 6º).
                       </p>
                     </button>
 
@@ -360,8 +371,8 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
                         handlePlayoffCutoffCountChange(4);
                       }}
                       className={`p-3.5 rounded-xl border text-left transition-all space-y-1.5 ${
-                        (formData.playoffCutoffCount || 4) === 4
-                          ? 'bg-[#04A8FC]/20 border-[#04A8FC] text-white shadow-md'
+                        (formData.playoffCutoffCount || 8) === 4
+                          ? 'bg-[#04A8FC]/20 border-[#04A8FC] text-white shadow-md ring-1 ring-[#04A8FC]/50'
                           : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
                       }`}
                     >
@@ -370,7 +381,7 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
                         <span className="text-[9px] font-label-caps font-bold px-1.5 py-0.5 rounded bg-[#04A8FC]/20 text-[#04A8FC]">Semifinales</span>
                       </div>
                       <p className="text-[10px] text-slate-300 leading-tight">
-                        Los 4 Bladers con más puntos pasan a Semifinales (1º vs 4º, 2º vs 3º). Los ganadores van a la Gran Final.
+                        Los 4 mejores Bladers de la tabla clasifican a Semifinales (1º vs 4º, 2º vs 3º).
                       </p>
                     </button>
 
@@ -382,8 +393,8 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
                         handlePlayoffCutoffCountChange(2);
                       }}
                       className={`p-3.5 rounded-xl border text-left transition-all space-y-1.5 ${
-                        (formData.playoffCutoffCount || 4) === 2
-                          ? 'bg-emerald-500/20 border-emerald-400 text-white shadow-md'
+                        (formData.playoffCutoffCount || 8) === 2
+                          ? 'bg-emerald-500/20 border-emerald-400 text-white shadow-md ring-1 ring-emerald-400/50'
                           : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
                       }`}
                     >
@@ -392,31 +403,86 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
                         <span className="text-[9px] font-label-caps font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">Gran Final Directa</span>
                       </div>
                       <p className="text-[10px] text-slate-300 leading-tight">
-                        Los 2 Bladers con más puntos avanzan directamente a la Gran Final (1º vs 2º).
+                        Los 2 mejores Bladers avanzan directamente a disputar la Gran Final (1º vs 2º).
                       </p>
                     </button>
                   </div>
                   
-                  {/* Meta de Puntos (Condición de Clasificación) */}
-                  <div className="mt-4 pt-4 border-t border-slate-700/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
-                      <label className="font-label-caps text-xs text-slate-300 uppercase font-bold flex items-center gap-1.5">
-                        <span className="material-symbols-outlined text-sm text-amber-400">track_changes</span>
-                        <span>Meta de Puntos (Condición):</span>
-                      </label>
-                      <p className="text-[10px] text-slate-400 mt-1 max-w-sm">
-                        Cantidad mínima de puntos que un blader debe acumular antes del corte para poder clasificar a los Playoffs.
-                      </p>
+                  {/* Cantidad de Jornadas Regulares (Rondas) */}
+                  <div className="mt-4 pt-4 border-t border-slate-700/50 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <label className="font-label-caps text-xs text-slate-300 uppercase font-bold flex items-center gap-1.5">
+                          <span className="material-symbols-outlined text-sm text-[#04A8FC]">event_repeat</span>
+                          <span>Jornadas Regulares de Clasificación (Rondas):</span>
+                        </label>
+                        <p className="text-[10px] text-slate-400 mt-1 max-w-md">
+                          Total de jornadas/rondas a disputar en fase regular. La clasificación final (Victorias y Puntos) define el pase a Playoffs sin límite arbitrario de puntos.
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleTotalJornadasChange((formData.totalJornadas || 8) - 1)}
+                          className="w-9 h-9 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white flex items-center justify-center active:scale-95 transition-transform"
+                          title="Disminuir jornadas"
+                        >
+                          <span className="material-symbols-outlined text-base">remove</span>
+                        </button>
+                        <div className="bg-black/40 border border-[#04A8FC]/40 rounded-xl px-3 py-1.5 flex items-center min-w-[5.5rem] justify-center">
+                          <input
+                            id="input-total-jornadas"
+                            type="number"
+                            min="1"
+                            max="50"
+                            value={formData.totalJornadas || 8}
+                            onChange={(e) => handleTotalJornadasChange(parseInt(e.target.value) || 1)}
+                            className="w-12 bg-transparent text-center text-[#04A8FC] font-headline font-black text-xl focus:outline-none"
+                          />
+                          <span className="text-[10px] font-bold text-slate-400 uppercase">JRD</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleTotalJornadasChange((formData.totalJornadas || 8) + 1)}
+                          className="w-9 h-9 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white flex items-center justify-center active:scale-95 transition-transform"
+                          title="Aumentar jornadas"
+                        >
+                          <span className="material-symbols-outlined text-base">add</span>
+                        </button>
+                      </div>
                     </div>
-                    <div className="bg-black/20 border border-[#bec7d3]/20 dark:border-white/10 rounded-xl p-2 flex items-center w-full sm:w-32">
-                      <input
-                        type="number"
-                        min="1"
-                        value={formData.minPointsToQualify || 4}
-                        onChange={(e) => handleMinPointsToQualifyChange(parseInt(e.target.value) || 1)}
-                        className="w-full bg-transparent text-center text-[#04A8FC] font-headline font-black text-xl focus:outline-none"
-                      />
-                      <span className="text-xs font-bold text-slate-500 mr-2">PTS</span>
+
+                    {/* Presets de Jornadas */}
+                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                      <span className="text-[10px] font-label-caps uppercase text-slate-400 font-bold mr-1">Preajustes:</span>
+                      {[
+                        { count: 4, label: '4 Jornadas' },
+                        { count: 6, label: '6 Jornadas' },
+                        { count: 8, label: '8 Jornadas (Estándar Oficial)', badge: 'RECOMENDADO' },
+                        { count: 10, label: '10 Jornadas' }
+                      ].map((preset) => (
+                        <button
+                          key={preset.count}
+                          type="button"
+                          onClick={() => handleTotalJornadasChange(preset.count)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 ${
+                            (formData.totalJornadas || 8) === preset.count
+                              ? 'bg-[#04A8FC] text-black font-black shadow-md shadow-[#04A8FC]/25 ring-2 ring-[#04A8FC]'
+                              : 'bg-white/5 text-slate-300 hover:bg-white/10 border border-white/10'
+                          }`}
+                        >
+                          <span>{preset.label}</span>
+                          {preset.badge && (
+                            <span className={`text-[8px] px-1.5 py-0.5 rounded font-black tracking-wider ${
+                              (formData.totalJornadas || 8) === preset.count
+                                ? 'bg-black text-[#04A8FC]'
+                                : 'bg-amber-500/20 text-amber-300 border border-amber-400/30'
+                            }`}>
+                              ★
+                            </span>
+                          )}
+                        </button>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -425,18 +491,18 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
               <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/60 dark:bg-black/40 border-2 border-[#FF5500]/40 shadow-lg space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-700/60 pb-3">
                   <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[#FF5500] text-xl">tv</span>
+                    <span className="material-symbols-outlined text-[#FF5500] text-xl">calendar_month</span>
                     <div>
                       <h4 className="font-headline font-black text-sm sm:text-base uppercase text-white tracking-wide">
-                        Delimitación por Puntos & Corte a Fase Final (Playoffs)
+                        Fase Regular por Jornadas (Rondas) & Corte a Playoffs
                       </h4>
                       <p className="text-[11px] font-label-caps text-slate-400 uppercase">
-                        Fase 1: Acumulación de Puntos (1 Batalla Decisiva) • Fase 2: Cuartos / Semis / Gran Final
+                        Fase 1: {formData.totalJornadas || 8} Jornadas (1 Batalla Decisiva) • Fase 2: Cuartos / Semis / Gran Final
                       </p>
                     </div>
                   </div>
                   <span className="px-2.5 py-1 rounded-full bg-[#FF5500]/20 text-[#FF5500] border border-[#FF5500]/30 text-[10px] font-label-caps font-black uppercase">
-                    Serie / Puntos
+                    Serie / Jornadas
                   </span>
                 </div>
 
@@ -456,17 +522,17 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
                         handlePlayoffCutoffCountChange(8);
                       }}
                       className={`p-3.5 rounded-xl border text-left transition-all space-y-1.5 ${
-                        (formData.playoffCutoffCount || 4) === 8
-                          ? 'bg-amber-500/20 border-amber-400 text-white shadow-md'
+                        (formData.playoffCutoffCount || 8) === 8
+                          ? 'bg-amber-500/20 border-amber-400 text-white shadow-md ring-1 ring-amber-400/50'
                           : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
                       }`}
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-headline font-black text-xs uppercase text-amber-400">Top 8</span>
-                        <span className="text-[9px] font-label-caps font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">Cuartos de Final</span>
+                        <span className="text-[9px] font-label-caps font-black px-1.5 py-0.5 rounded bg-amber-500/30 text-amber-300 border border-amber-400/40">Cuartos de Final</span>
                       </div>
                       <p className="text-[10px] text-slate-300 leading-tight">
-                        Los 8 Bladers con más puntos pasan a Cuartos de Final (1º vs 8º, 2º vs 7º, 3º vs 6º, 4º vs 5º).
+                        Los 8 mejores Bladers de la tabla clasifican a Cuartos de Final (1º vs 8º, 4º vs 5º, 2º vs 7º, 3º vs 6º).
                       </p>
                     </button>
 
@@ -478,17 +544,17 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
                         handlePlayoffCutoffCountChange(4);
                       }}
                       className={`p-3.5 rounded-xl border text-left transition-all space-y-1.5 ${
-                        (formData.playoffCutoffCount || 4) === 4
-                          ? 'bg-[#04A8FC]/20 border-[#04A8FC] text-white shadow-md'
+                        (formData.playoffCutoffCount || 8) === 4
+                          ? 'bg-[#FF5500]/20 border-[#FF5500] text-white shadow-md ring-1 ring-[#FF5500]/50'
                           : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-headline font-black text-xs uppercase text-[#04A8FC]">Top 4</span>
-                        <span className="text-[9px] font-label-caps font-bold px-1.5 py-0.5 rounded bg-[#04A8FC]/20 text-[#04A8FC]">Semifinales</span>
+                        <span className="font-headline font-black text-xs uppercase text-[#FF5500]">Top 4</span>
+                        <span className="text-[9px] font-label-caps font-bold px-1.5 py-0.5 rounded bg-[#FF5500]/20 text-[#FF5500]">Semifinales</span>
                       </div>
                       <p className="text-[10px] text-slate-300 leading-tight">
-                        Los 4 Bladers con más puntos pasan a Semifinales (1º vs 4º, 2º vs 3º). Los ganadores van a la Gran Final.
+                        Los 4 mejores Bladers de la tabla clasifican a Semifinales (1º vs 4º, 2º vs 3º).
                       </p>
                     </button>
 
@@ -500,8 +566,8 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
                         handlePlayoffCutoffCountChange(2);
                       }}
                       className={`p-3.5 rounded-xl border text-left transition-all space-y-1.5 ${
-                        (formData.playoffCutoffCount || 4) === 2
-                          ? 'bg-emerald-500/20 border-emerald-400 text-white shadow-md'
+                        (formData.playoffCutoffCount || 8) === 2
+                          ? 'bg-emerald-500/20 border-emerald-400 text-white shadow-md ring-1 ring-emerald-400/50'
                           : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
                       }`}
                     >
@@ -510,31 +576,86 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
                         <span className="text-[9px] font-label-caps font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">Gran Final Directa</span>
                       </div>
                       <p className="text-[10px] text-slate-300 leading-tight">
-                        Los 2 Bladers con más puntos avanzan directamente a la Gran Final (1º vs 2º).
+                        Los 2 mejores Bladers avanzan directamente a disputar la Gran Final (1º vs 2º).
                       </p>
                     </button>
                   </div>
                   
-                  {/* Meta de Puntos (Condición de Clasificación) */}
-                  <div className="mt-4 pt-4 border-t border-slate-700/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
-                      <label className="font-label-caps text-xs text-slate-300 uppercase font-bold flex items-center gap-1.5">
-                        <span className="material-symbols-outlined text-sm text-amber-400">track_changes</span>
-                        <span>Meta de Puntos (Condición):</span>
-                      </label>
-                      <p className="text-[10px] text-slate-400 mt-1 max-w-sm">
-                        Cantidad mínima de puntos que un blader debe acumular antes del corte para poder clasificar a los Playoffs.
-                      </p>
+                  {/* Cantidad de Jornadas Regulares (Rondas) */}
+                  <div className="mt-4 pt-4 border-t border-slate-700/50 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <label className="font-label-caps text-xs text-slate-300 uppercase font-bold flex items-center gap-1.5">
+                          <span className="material-symbols-outlined text-sm text-[#FF5500]">event_repeat</span>
+                          <span>Jornadas Regulares de Clasificación (Rondas):</span>
+                        </label>
+                        <p className="text-[10px] text-slate-400 mt-1 max-w-md">
+                          Total de jornadas/rondas a disputar en fase regular. La clasificación final (Victorias y Puntos) define el pase a Playoffs sin límite arbitrario de puntos.
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleTotalJornadasChange((formData.totalJornadas || 8) - 1)}
+                          className="w-9 h-9 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white flex items-center justify-center active:scale-95 transition-transform"
+                          title="Disminuir jornadas"
+                        >
+                          <span className="material-symbols-outlined text-base">remove</span>
+                        </button>
+                        <div className="bg-black/40 border border-[#FF5500]/40 rounded-xl px-3 py-1.5 flex items-center min-w-[5.5rem] justify-center">
+                          <input
+                            id="input-total-jornadas-series"
+                            type="number"
+                            min="1"
+                            max="50"
+                            value={formData.totalJornadas || 8}
+                            onChange={(e) => handleTotalJornadasChange(parseInt(e.target.value) || 1)}
+                            className="w-12 bg-transparent text-center text-[#FF5500] font-headline font-black text-xl focus:outline-none"
+                          />
+                          <span className="text-[10px] font-bold text-slate-400 uppercase">JRD</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleTotalJornadasChange((formData.totalJornadas || 8) + 1)}
+                          className="w-9 h-9 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white flex items-center justify-center active:scale-95 transition-transform"
+                          title="Aumentar jornadas"
+                        >
+                          <span className="material-symbols-outlined text-base">add</span>
+                        </button>
+                      </div>
                     </div>
-                    <div className="bg-black/20 border border-[#bec7d3]/20 dark:border-white/10 rounded-xl p-2 flex items-center w-full sm:w-32">
-                      <input
-                        type="number"
-                        min="1"
-                        value={formData.minPointsToQualify || 4}
-                        onChange={(e) => handleMinPointsToQualifyChange(parseInt(e.target.value) || 1)}
-                        className="w-full bg-transparent text-center text-[#FF5500] font-headline font-black text-xl focus:outline-none"
-                      />
-                      <span className="text-xs font-bold text-slate-500 mr-2">PTS</span>
+
+                    {/* Presets de Jornadas */}
+                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                      <span className="text-[10px] font-label-caps uppercase text-slate-400 font-bold mr-1">Preajustes:</span>
+                      {[
+                        { count: 4, label: '4 Jornadas' },
+                        { count: 6, label: '6 Jornadas' },
+                        { count: 8, label: '8 Jornadas (Estándar Oficial)', badge: 'RECOMENDADO' },
+                        { count: 10, label: '10 Jornadas' }
+                      ].map((preset) => (
+                        <button
+                          key={preset.count}
+                          type="button"
+                          onClick={() => handleTotalJornadasChange(preset.count)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 ${
+                            (formData.totalJornadas || 8) === preset.count
+                              ? 'bg-[#FF5500] text-black font-black shadow-md shadow-[#FF5500]/25 ring-2 ring-[#FF5500]'
+                              : 'bg-white/5 text-slate-300 hover:bg-white/10 border border-white/10'
+                          }`}
+                        >
+                          <span>{preset.label}</span>
+                          {preset.badge && (
+                            <span className={`text-[8px] px-1.5 py-0.5 rounded font-black tracking-wider ${
+                              (formData.totalJornadas || 8) === preset.count
+                                ? 'bg-black text-[#FF5500]'
+                                : 'bg-amber-500/20 text-amber-300 border border-amber-400/30'
+                            }`}>
+                              ★
+                            </span>
+                          )}
+                        </button>
+                      ))}
                     </div>
                   </div>
                 </div>

@@ -423,7 +423,7 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
                       </h3>
                     </div>
                     <p className="text-xs text-slate-600 dark:text-slate-300 font-label-caps uppercase">
-                      Clasifican los <strong className="text-[#04A8FC]">TOP {cutoffTarget} Bladers</strong> con más puntos acumulados a {cutoffTarget === 8 ? 'Cuartos de Final' : cutoffTarget === 4 ? 'Semifinales' : 'Gran Final'}. Los demás participantes quedan fuera del corte.
+                      Fase Regular de {config.totalJornadas || 8} Jornadas • Clasifican los <strong className="text-[#04A8FC]">TOP {cutoffTarget} Bladers</strong> a {cutoffTarget === 8 ? 'Cuartos de Final' : cutoffTarget === 4 ? 'Semifinales' : 'Gran Final'} según la tabla oficial (Victorias y Puntos).
                     </p>
                   </div>
 
@@ -529,13 +529,13 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
                                   <span className="px-2.5 py-1 rounded-full text-[9px] sm:text-[10px] font-black bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 inline-flex items-center gap-1 shadow-sm">
                                     <span className="material-symbols-outlined text-xs">check_circle</span>
                                     <span>
-                                      {cutoffTarget === 8 ? 'PASA A CUARTOS' : cutoffTarget === 4 ? 'PASA A SEMIS' : 'PASA A FINAL'}
+                                      {cutoffTarget === 8 ? 'TOP 8 • CUARTOS' : cutoffTarget === 4 ? 'TOP 4 • SEMIS' : 'TOP 2 • FINAL'}
                                     </span>
                                   </span>
                                 ) : (
-                                  <span className="px-2.5 py-1 rounded-full text-[9px] sm:text-[10px] font-bold bg-red-500/10 text-red-500 border border-red-500/20 inline-flex items-center gap-1">
-                                    <span className="material-symbols-outlined text-xs">cancel</span>
-                                    <span>ELIMINADO</span>
+                                  <span className="px-2.5 py-1 rounded-full text-[9px] sm:text-[10px] font-bold bg-slate-500/10 text-slate-400 dark:text-slate-500 border border-slate-500/20 inline-flex items-center gap-1">
+                                    <span className="material-symbols-outlined text-xs">remove_circle_outline</span>
+                                    <span>{isRegularComplete ? 'FUERA DEL CORTE' : 'ZONA ELIMINACIÓN'}</span>
                                   </span>
                                 )}
                               </td>

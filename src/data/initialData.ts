@@ -28,9 +28,10 @@ export const INITIAL_CONFIG: TournamentConfig = {
   arenaStatus: 'Xtreme Stadium A',
   isStarted: false,
   regularPhaseMatchesPerBlader: 2,
+  totalJornadas: 8,
   playoffCutoffType: 'top_n',
-  playoffCutoffCount: 4,
-  minPointsToQualify: 4,
+  playoffCutoffCount: 8,
+  minPointsToQualify: 0,
   tournamentPhase: 'regular'
 };
 

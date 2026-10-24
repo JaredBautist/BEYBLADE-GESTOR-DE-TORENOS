@@ -590,6 +590,7 @@ export async function syncTournamentFormatToSupabase(format: {
   playoffCutoffType?: 'top_n' | 'min_points';
   playoffCutoffCount?: 8 | 4 | 2;
   minPointsToQualify?: number;
+  totalJornadas?: number;
   tournamentPhase?: 'regular' | 'playoffs' | 'single_elimination';
 }): Promise<{ success: boolean; error?: string }> {
   try {
@@ -604,8 +605,9 @@ export async function syncTournamentFormatToSupabase(format: {
       is_registration_open: format.isRegistrationOpen ?? true,
       regular_phase_matches_per_blader: format.regularPhaseMatchesPerBlader ?? 2,
       playoff_cutoff_type: format.playoffCutoffType ?? 'top_n',
-      playoff_cutoff_count: format.playoffCutoffCount ?? 4,
-      min_points_to_qualify: format.minPointsToQualify ?? 4,
+      playoff_cutoff_count: format.playoffCutoffCount ?? 8,
+      min_points_to_qualify: format.minPointsToQualify ?? 0,
+      total_jornadas: format.totalJornadas ?? 8,
       tournament_phase: format.tournamentPhase ?? 'regular',
       updated_at: new Date().toISOString()
     });
@@ -632,6 +634,7 @@ export async function fetchTournamentFormatFromSupabase(): Promise<{
   playoffCutoffType?: 'top_n' | 'min_points';
   playoffCutoffCount?: 8 | 4 | 2;
   minPointsToQualify?: number;
+  totalJornadas?: number;
   tournamentPhase?: 'regular' | 'playoffs' | 'single_elimination';
 } | null> {
   try {
@@ -651,8 +654,9 @@ export async function fetchTournamentFormatFromSupabase(): Promise<{
       isRegistrationOpen: data.is_registration_open ?? true,
       regularPhaseMatchesPerBlader: data.regular_phase_matches_per_blader ?? 2,
       playoffCutoffType: data.playoff_cutoff_type ?? 'top_n',
-      playoffCutoffCount: data.playoff_cutoff_count ?? 4,
-      minPointsToQualify: data.min_points_to_qualify ?? 4,
+      playoffCutoffCount: data.playoff_cutoff_count ?? 8,
+      minPointsToQualify: data.min_points_to_qualify ?? 0,
+      totalJornadas: data.total_jornadas ?? 8,
       tournamentPhase: data.tournament_phase ?? 'regular'
     };
   } catch (e) {
@@ -683,7 +687,8 @@ export async function syncConfigToSupabase(config: TournamentConfig) {
         maxParticipants: config.maxParticipants,
         arenaStatus: config.arenaStatus,
         isStarted: config.isStarted,
-        isRegistrationOpen: config.isRegistrationOpen
+        isRegistrationOpen: config.isRegistrationOpen,
+        totalJornadas: config.totalJornadas
       })
     ]);
   } catch (e) {

@@ -123,7 +123,7 @@ export function generateSingleEliminationBracket(
 }
 
 // -------------------------------------------------------------
-// 2. REGULAR PHASE (ROUND ROBIN - TODOS CONTRA TODOS)
+// 2. REGULAR PHASE (ROUND ROBIN / JORNADAS)
 // -------------------------------------------------------------
 export function generateRegularPhaseMatches(
   bladers: Blader[],
@@ -136,15 +136,16 @@ export function generateRegularPhaseMatches(
   const matches: Match[] = [];
   let matchNumber = 1;
 
-  // Standard Round-Robin Algorithm (Todos contra todos)
+  // Number of regular Jornadas configured by the organizer (default 8)
+  const targetJornadas = config.totalJornadas && config.totalJornadas > 0 ? config.totalJornadas : 8;
+
   const isOdd = n % 2 !== 0;
   const list: (Blader | null)[] = [...participants];
   if (isOdd) list.push(null); // Bye for odd number of players
 
-  const totalRounds = list.length - 1;
   const half = list.length / 2;
 
-  for (let round = 1; round <= totalRounds; round++) {
+  for (let round = 1; round <= targetJornadas; round++) {
     for (let i = 0; i < half; i++) {
       const bA = list[i];
       const bB = list[list.length - 1 - i];
@@ -186,12 +187,12 @@ export function generateRegularPhaseMatches(
 // -------------------------------------------------------------
 export function getRankedBladers(bladers: Blader[]): Blader[] {
   return [...bladers].sort((a, b) => {
-    // 1. Points Scored
-    const ptsDiff = (b.stats?.pointsScored || 0) - (a.stats?.pointsScored || 0);
-    if (ptsDiff !== 0) return ptsDiff;
-    // 2. Matches Won
+    // 1. Matches Won (Victorias de Duelo en Fase Regular)
     const winsDiff = (b.stats?.wins || 0) - (a.stats?.wins || 0);
     if (winsDiff !== 0) return winsDiff;
+    // 2. Points Scored in Battles (Puntos anotados)
+    const ptsDiff = (b.stats?.pointsScored || 0) - (a.stats?.pointsScored || 0);
+    if (ptsDiff !== 0) return ptsDiff;
     // 3. Xtreme + Burst finishes
     const finishesA = (a.stats?.xtremeFinishes || 0) * 3 + (a.stats?.burstFinishes || 0) * 2;
     const finishesB = (b.stats?.xtremeFinishes || 0) * 3 + (b.stats?.burstFinishes || 0) * 2;
@@ -206,18 +207,14 @@ export function generatePlayoffBracketFromRankings(
   const ranked = getRankedBladers(bladers);
   if (ranked.length < 2) return [];
 
-  // Determine target qualified count based on playoffCutoffCount (or total bladers)
+  // Determine target qualified count based on playoffCutoffCount (default 8: Top 8 Cuartos de Final)
   let targetCount = config.playoffCutoffCount || (ranked.length >= 8 ? 8 : ranked.length >= 4 ? 4 : 2);
   if (targetCount > ranked.length) {
-    targetCount = ranked.length >= 4 ? 4 : 2;
+    targetCount = ranked.length >= 8 ? 8 : ranked.length >= 4 ? 4 : 2;
   }
 
-  // Filter bladers by minPointsToQualify (if defined)
-  const minPts = config.minPointsToQualify || 0;
-  const eligible = ranked.filter(b => (b.stats?.pointsScored || 0) >= minPts);
-
-  // Top N highest ranked eligible bladers advance to playoffs
-  const qualified = eligible.slice(0, targetCount);
+  // Top N highest ranked bladers from the standings advance unconditionally to playoffs
+  const qualified = ranked.slice(0, targetCount);
 
   if (qualified.length < 2) return [];
 

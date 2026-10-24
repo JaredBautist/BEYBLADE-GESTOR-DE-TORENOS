@@ -899,6 +899,7 @@ export default function App() {
       playoffCutoffType: updatedConfig.playoffCutoffType,
       playoffCutoffCount: updatedConfig.playoffCutoffCount,
       minPointsToQualify: updatedConfig.minPointsToQualify,
+      totalJornadas: updatedConfig.totalJornadas,
       tournamentPhase: 'playoffs'
     });
 

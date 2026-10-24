@@ -123,6 +123,7 @@ export interface TournamentFormatConfig {
   isStarted: boolean;
   isRegistrationOpen?: boolean;
   regularPhaseMatchesPerBlader?: number; // e.g. 2, 3, 4 matches per blader
+  totalJornadas?: number; // Total de jornadas/rondas regulares a disputar (ej: 8 jornadas)
   playoffCutoffType?: 'top_n' | 'min_points';
   playoffCutoffCount?: 8 | 4 | 2; // Top 8 Cuartos, Top 4 Semis, Top 2 Final
   minPointsToQualify?: number; // e.g. 4 points
@@ -145,6 +146,7 @@ export interface TournamentConfig {
   isStarted: boolean;
   isRegistrationOpen?: boolean;
   regularPhaseMatchesPerBlader?: number; // e.g. 2, 3, 4 matches per blader
+  totalJornadas?: number; // Total de jornadas/rondas regulares a disputar (ej: 8 jornadas)
   playoffCutoffType?: 'top_n' | 'min_points';
   playoffCutoffCount?: 8 | 4 | 2; // Top 8 Cuartos, Top 4 Semis, Top 2 Final
   minPointsToQualify?: number; // e.g. 4 points
