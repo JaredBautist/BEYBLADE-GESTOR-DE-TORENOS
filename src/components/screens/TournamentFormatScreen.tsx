@@ -687,12 +687,25 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
             </div>
 
             {/* Capacity Participants */}
-            <div>
-              <label className="block font-label-caps text-xs text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider font-bold">
-                CUPO MÁXIMO DE BLADERS (PARTICIPANTES)
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {[8, 16, 32, 64].map((max) => (
+            <div className="p-4 rounded-2xl bg-black/5 dark:bg-white/5 border border-[#bec7d3]/40 dark:border-white/10 space-y-3">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div>
+                  <label className="block font-headline font-bold text-sm text-[#1a1c1e] dark:text-white uppercase">
+                    CUPO MÁXIMO DE BLADERS (DEFINIDO POR EL ORGANIZADOR)
+                  </label>
+                  <p className="text-[11px] font-body-text text-gray-500 dark:text-gray-400">
+                    Establece el número exacto de participantes que deseas admitir en el torneo o selecciona cupo abierto sin límite.
+                  </p>
+                </div>
+                <span className="px-2.5 py-1 rounded-full text-xs font-headline font-black uppercase bg-[#04A8FC]/15 text-[#04A8FC] border border-[#04A8FC]/30">
+                  {formData.maxParticipants >= 999 || !formData.maxParticipants
+                    ? 'Cupo Abierto (Sin Límite)'
+                    : `${formData.maxParticipants} Bladers`}
+                </span>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                {[8, 12, 16, 24, 32, 64].map((max) => (
                   <button
                     key={max}
                     type="button"
@@ -709,6 +722,50 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
                     {max} Bladers
                   </button>
                 ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const updated = { ...formData, maxParticipants: 999 };
+                    triggerSave(updated, 'Cupo configurado como Abierto (Sin Límite)');
+                  }}
+                  className={`px-4 py-2 rounded-xl text-xs font-headline font-bold transition-all ${
+                    formData.maxParticipants >= 999
+                      ? 'bg-emerald-500 text-white shadow-sm'
+                      : 'bg-slate-100 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
+                  }`}
+                >
+                  Sin Límite (Abierto)
+                </button>
+              </div>
+
+              {/* Custom Number Input */}
+              <div className="flex items-center gap-2 pt-1 border-t border-slate-200 dark:border-white/10">
+                <span className="text-xs font-label-caps text-slate-600 dark:text-slate-300 uppercase font-bold">
+                  O escribe un número personalizado:
+                </span>
+                <input
+                  type="number"
+                  min="2"
+                  max="512"
+                  value={formData.maxParticipants >= 999 ? '' : formData.maxParticipants}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10);
+                    if (!isNaN(val) && val > 0) {
+                      const updated = { ...formData, maxParticipants: val };
+                      setFormData(updated);
+                    }
+                  }}
+                  onBlur={() => {
+                    if (formData.maxParticipants) {
+                      triggerSave(formData, `Capacidad fijada en ${formData.maxParticipants} Bladers`);
+                    }
+                  }}
+                  placeholder="Ej. 10, 14, 20..."
+                  className="w-24 bg-white dark:bg-[#1a1a24] border border-slate-300 dark:border-white/10 rounded-xl px-3 py-1.5 text-xs font-bold text-center text-slate-900 dark:text-white focus:border-[#04A8FC] focus:outline-none"
+                />
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-label-caps uppercase font-bold">
+                  participantes
+                </span>
               </div>
             </div>
 
@@ -733,7 +790,7 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
         <div className="lg:col-span-4 space-y-6">
           {/* Quick Share Registration Portal */}
           {onOpenShareModal && (
-            <div className="glass-panel p-5 rounded-2xl border border-[#04A8FC]/30 bg-[#04A8FC]/5 space-y-3">
+            <div className="glass-panel p-5 rounded-2xl border border-[#04A8FC]/30 bg-[#04A8FC]/5 space-y-3.5 shadow-sm">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-[#04A8FC]">
                   <span className="material-symbols-outlined text-xl">qr_code_2</span>
@@ -741,10 +798,89 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
                     Auto-Inscripción de Bladers
                   </h4>
                 </div>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-[#04A8FC]/20 text-[#04A8FC]">
-                  {registeredBladersCount}/{formData.maxParticipants}
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-[#04A8FC]/20 text-[#04A8FC] border border-[#04A8FC]/30">
+                  {formData.maxParticipants >= 999 || !formData.maxParticipants
+                    ? `${registeredBladersCount} Inscritos (Sin Límite)`
+                    : `${registeredBladersCount} / ${formData.maxParticipants} Bladers`}
                 </span>
               </div>
+
+              {/* Selector Rápido de Cupo para el Organizador */}
+              <div className="p-3 rounded-xl bg-slate-900/60 dark:bg-black/40 border border-slate-700/60 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-label-caps uppercase font-bold text-slate-300 flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-sm text-amber-400">tune</span>
+                    <span>Límite fijado por Organizador:</span>
+                  </span>
+                  <span className="text-[11px] font-headline font-black text-[#04A8FC]">
+                    {formData.maxParticipants >= 999 || !formData.maxParticipants
+                      ? 'Abierto (Sin Límite)'
+                      : `${formData.maxParticipants} Cupos`}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {[8, 12, 16, 24, 32].map((num) => (
+                    <button
+                      key={num}
+                      type="button"
+                      onClick={() => {
+                        soundManager.playClick();
+                        const updated = { ...formData, maxParticipants: num };
+                        triggerSave(updated, `Límite fijado en ${num} Bladers`);
+                      }}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-headline font-black uppercase transition-all ${
+                        formData.maxParticipants === num
+                          ? 'bg-[#04A8FC] text-white shadow-sm ring-1 ring-[#04A8FC]'
+                          : 'bg-white/10 text-slate-300 hover:bg-white/20'
+                      }`}
+                    >
+                      {num}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      soundManager.playClick();
+                      const updated = { ...formData, maxParticipants: 999 };
+                      triggerSave(updated, 'Cupo fijado como Abierto (Sin Límite)');
+                    }}
+                    className={`px-2 py-1 rounded-lg text-[10px] font-headline font-black uppercase transition-all ${
+                      formData.maxParticipants >= 999
+                        ? 'bg-emerald-500 text-white shadow-sm ring-1 ring-emerald-400'
+                        : 'bg-white/10 text-slate-300 hover:bg-white/20'
+                    }`}
+                  >
+                    Sin Límite
+                  </button>
+
+                  <div className="flex items-center gap-1 ml-auto">
+                    <input
+                      type="number"
+                      min="2"
+                      max="256"
+                      value={formData.maxParticipants >= 999 ? '' : formData.maxParticipants}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value, 10);
+                        if (!isNaN(val) && val > 0) {
+                          const updated = { ...formData, maxParticipants: val };
+                          setFormData(updated);
+                        }
+                      }}
+                      onBlur={() => {
+                        if (formData.maxParticipants) {
+                          triggerSave(formData, `Límite actualizado a ${formData.maxParticipants} Bladers`);
+                        }
+                      }}
+                      placeholder="Otro"
+                      title="Escribe cualquier cupo que decida el organizador"
+                      className="w-14 px-1.5 py-1 rounded-lg text-[11px] font-bold text-center bg-white dark:bg-[#1a1a24] border border-slate-300 dark:border-white/20 text-slate-900 dark:text-white focus:outline-none focus:border-[#04A8FC]"
+                    />
+                    <span className="text-[10px] text-slate-400 font-label-caps uppercase font-bold">Cupos</span>
+                  </div>
+                </div>
+              </div>
+
               <p className="text-[11px] font-body-text text-slate-500 dark:text-slate-400">
                 Comparte el código QR o el enlace público por WhatsApp para que los participantes se inscriban solos desde sus teléfonos sin demoras.
               </p>

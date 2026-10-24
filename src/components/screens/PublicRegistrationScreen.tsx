@@ -73,9 +73,10 @@ export const PublicRegistrationScreen: React.FC<PublicRegistrationScreenProps> =
   const [showRosterModal, setShowRosterModal] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const hasParticipantLimit = Boolean(config.maxParticipants && config.maxParticipants > 0 && config.maxParticipants < 999);
   const isRegistrationOpen = config.isRegistrationOpen !== false && !config.isStarted;
-  const isFull = bladers.length >= config.maxParticipants;
-  const availableSlots = Math.max(0, config.maxParticipants - bladers.length);
+  const isFull = hasParticipantLimit ? bladers.length >= config.maxParticipants : false;
+  const availableSlots = hasParticipantLimit ? Math.max(0, config.maxParticipants - bladers.length) : null;
 
   // Handle Image Upload
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -111,7 +112,7 @@ export const PublicRegistrationScreen: React.FC<PublicRegistrationScreenProps> =
       return;
     }
 
-    if (isFull) {
+    if (isFull && hasParticipantLimit) {
       setErrorMessage(`El cupo máximo de ${config.maxParticipants} participantes ya ha sido alcanzado.`);
       return;
     }
@@ -338,9 +339,9 @@ export const PublicRegistrationScreen: React.FC<PublicRegistrationScreenProps> =
               </span>
             </div>
             <div className="p-2 rounded-xl bg-white/5 border border-white/5">
-              <span className="text-[9px] font-label-caps uppercase text-slate-400 block">Cupos Libres</span>
-              <span className={`font-headline font-black text-xs sm:text-sm uppercase block ${availableSlots <= 2 ? 'text-amber-400 font-black' : 'text-emerald-400'}`}>
-                {availableSlots} de {config.maxParticipants}
+              <span className="text-[9px] font-label-caps uppercase text-slate-400 block">Cupos</span>
+              <span className={`font-headline font-black text-xs sm:text-sm uppercase block ${hasParticipantLimit && availableSlots !== null && availableSlots <= 2 ? 'text-amber-400 font-black' : 'text-emerald-400'}`}>
+                {hasParticipantLimit ? `${availableSlots} de ${config.maxParticipants}` : 'Abierto (Sin Límite)'}
               </span>
             </div>
           </div>
@@ -781,7 +782,7 @@ export const PublicRegistrationScreen: React.FC<PublicRegistrationScreenProps> =
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-[#04A8FC]">groups</span>
                 <h3 className="font-headline font-black text-lg uppercase text-white">
-                  Bladers Inscritos ({bladers.length} / {config.maxParticipants})
+                  Bladers Inscritos ({bladers.length}{hasParticipantLimit ? ` / ${config.maxParticipants}` : ''})
                 </h3>
               </div>
               <button

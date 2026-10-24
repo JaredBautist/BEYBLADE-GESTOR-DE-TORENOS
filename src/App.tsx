@@ -1581,6 +1581,11 @@ export default function App() {
           setShowShareModal(false);
           setActiveScreen('public_registration');
         }}
+        onUpdateMaxParticipants={(max) => {
+          const updated = { ...config, maxParticipants: max };
+          setConfig(updated);
+          syncConfigToSupabase(updated);
+        }}
       />
 
       {/* Reset Tournament Modal */}

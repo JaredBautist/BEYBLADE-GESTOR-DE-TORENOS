@@ -9,6 +9,7 @@ interface ShareRegistrationModalProps {
   onClose: () => void;
   onToggleRegistrationOpen?: (isOpen: boolean) => void;
   onNavigateToRegistrationPreview?: () => void;
+  onUpdateMaxParticipants?: (max: number) => void;
 }
 
 export const ShareRegistrationModal: React.FC<ShareRegistrationModalProps> = ({
@@ -17,7 +18,8 @@ export const ShareRegistrationModal: React.FC<ShareRegistrationModalProps> = ({
   bladers,
   onClose,
   onToggleRegistrationOpen,
-  onNavigateToRegistrationPreview
+  onNavigateToRegistrationPreview,
+  onUpdateMaxParticipants
 }) => {
   const [copied, setCopied] = useState(false);
 
@@ -28,9 +30,12 @@ export const ShareRegistrationModal: React.FC<ShareRegistrationModalProps> = ({
   const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
   const registrationUrl = `${origin}${pathname}?mode=registro`;
 
+  const hasLimit = config.maxParticipants && config.maxParticipants > 0 && config.maxParticipants < 999;
   const isRegistrationOpen = config.isRegistrationOpen !== false && !config.isStarted;
-  const isFull = bladers.length >= config.maxParticipants;
-  const progressPct = Math.min(100, Math.round((bladers.length / (config.maxParticipants || 1)) * 100));
+  const isFull = hasLimit ? bladers.length >= config.maxParticipants : false;
+  const progressPct = hasLimit
+    ? Math.min(100, Math.round((bladers.length / config.maxParticipants) * 100))
+    : 100;
 
   const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=10&data=${encodeURIComponent(
     registrationUrl
@@ -47,7 +52,8 @@ export const ShareRegistrationModal: React.FC<ShareRegistrationModalProps> = ({
 
   const handleShareWhatsApp = () => {
     soundManager.playClick();
-    const message = `⚡ ¡INSCRIPCIONES ABIERTAS - ${config.leagueName.toUpperCase()}! ⚡\n\n🏆 Torneo: ${config.name}\n📍 Sede: ${config.communityCity || 'Cúcuta'}\n⚔️ Formato: ${config.type === 'league' ? 'Liga' : config.type === 'series' ? 'Serie 1v1' : 'Eliminatoria'}\n\n📲 Inscríbete con tu nombre y Beyblade X aquí:\n${registrationUrl}`;
+    const cupoText = hasLimit ? `${config.maxParticipants} Bladers` : 'Abierto (Sin Límite)';
+    const message = `⚡ ¡INSCRIPCIONES ABIERTAS - ${config.leagueName.toUpperCase()}! ⚡\n\n🏆 Torneo: ${config.name}\n📍 Sede: ${config.communityCity || 'Cúcuta'}\n⚔️ Formato: ${config.type === 'league' ? 'Liga' : config.type === 'series' ? 'Serie 1v1' : 'Eliminatoria'}\n🎯 Cupo: ${cupoText}\n\n📲 Inscríbete con tu nombre y Beyblade X aquí:\n${registrationUrl}`;
     const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
     window.open(waUrl, '_blank', 'noopener,noreferrer');
   };
@@ -114,19 +120,21 @@ export const ShareRegistrationModal: React.FC<ShareRegistrationModalProps> = ({
             </div>
 
             <span className="font-mono text-xs font-black text-slate-600 dark:text-slate-300">
-              {bladers.length} / {config.maxParticipants} Bladers
+              {hasLimit ? `${bladers.length} / ${config.maxParticipants} Bladers` : `${bladers.length} Bladers (Sin Límite)`}
             </span>
           </div>
 
-          {/* Progress Bar */}
-          <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
-            <div
-              className={`h-full transition-all duration-500 rounded-full ${
-                isFull ? 'bg-amber-500' : 'bg-[#04A8FC]'
-              }`}
-              style={{ width: `${progressPct}%` }}
-            ></div>
-          </div>
+          {/* Progress Bar (Only when there is a limit) */}
+          {hasLimit && (
+            <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
+              <div
+                className={`h-full transition-all duration-500 rounded-full ${
+                  isFull ? 'bg-amber-500' : 'bg-[#04A8FC]'
+                }`}
+                style={{ width: `${progressPct}%` }}
+              ></div>
+            </div>
+          )}
 
           {onToggleRegistrationOpen && (
             <div className="flex items-center justify-between pt-1 text-xs">
@@ -147,6 +155,71 @@ export const ShareRegistrationModal: React.FC<ShareRegistrationModalProps> = ({
               >
                 {isRegistrationOpen ? 'Abiertas ✓' : 'Pausadas ✕'}
               </button>
+            </div>
+          )}
+
+          {/* Cupo fijado por el Organizador */}
+          {onUpdateMaxParticipants && (
+            <div className="pt-2 border-t border-slate-200 dark:border-white/10 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-label-caps uppercase font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-sm text-amber-500">tune</span>
+                  <span>Cupo Fijado por el Organizador:</span>
+                </span>
+                <span className="font-headline font-black text-[#04A8FC] text-xs">
+                  {hasLimit ? `${config.maxParticipants} Cupos` : 'Abierto (Sin Límite)'}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {[8, 12, 16, 24, 32].map((num) => (
+                  <button
+                    key={num}
+                    type="button"
+                    onClick={() => {
+                      soundManager.playClick();
+                      onUpdateMaxParticipants(num);
+                    }}
+                    className={`px-2.5 py-1 rounded-xl text-xs font-headline font-black uppercase transition-all ${
+                      config.maxParticipants === num
+                        ? 'bg-[#04A8FC] text-white shadow-sm ring-1 ring-[#04A8FC]'
+                        : 'bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-white/20'
+                    }`}
+                  >
+                    {num}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    soundManager.playClick();
+                    onUpdateMaxParticipants(999);
+                  }}
+                  className={`px-2.5 py-1 rounded-xl text-xs font-headline font-black uppercase transition-all ${
+                    !hasLimit
+                      ? 'bg-emerald-500 text-white shadow-sm ring-1 ring-emerald-400'
+                      : 'bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-white/20'
+                  }`}
+                >
+                  Sin Límite
+                </button>
+                <div className="flex items-center gap-1 ml-auto">
+                  <input
+                    type="number"
+                    min="2"
+                    max="256"
+                    value={hasLimit ? config.maxParticipants : ''}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10);
+                      if (!isNaN(val) && val > 0) {
+                        onUpdateMaxParticipants(val);
+                      }
+                    }}
+                    placeholder="Otro"
+                    className="w-16 px-2 py-1 rounded-xl text-xs font-bold text-center bg-white dark:bg-[#1a1a24] border border-slate-300 dark:border-white/20 text-slate-900 dark:text-white focus:outline-none focus:border-[#04A8FC]"
+                  />
+                  <span className="text-[10px] text-slate-500 uppercase font-black">Cupos</span>
+                </div>
+              </div>
             </div>
           )}
         </div>

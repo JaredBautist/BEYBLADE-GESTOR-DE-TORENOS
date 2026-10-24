@@ -533,7 +533,9 @@ GRANT ALL ON TABLE community_config TO anon, authenticated, service_role;`;
               <li className="flex justify-between items-center">
                 <span className="text-gray-500 dark:text-gray-400">BLADERS REGISTRADOS</span>
                 <span className="font-headline font-black text-base text-[#04A8FC]">
-                  {registeredBladersCount} / {formData.maxParticipants}
+                  {formData.maxParticipants >= 999 || !formData.maxParticipants
+                    ? `${registeredBladersCount} (Sin Límite)`
+                    : `${registeredBladersCount} / ${formData.maxParticipants}`}
                 </span>
               </li>
               <li className="flex justify-between items-center">
