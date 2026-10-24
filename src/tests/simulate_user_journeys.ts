@@ -28,6 +28,9 @@ async function runSimulation() {
     // CASO 1: ORGANIZADOR - Configuración de Formato y Cupo Flexible
     // -----------------------------------------------------------------
     console.log('👉 [CASO 1]: Organizador configura el Formato y Cupo del Torneo...');
+    await context.addInitScript(() => {
+      localStorage.setItem('bbx_admin_session', JSON.stringify({ username: 'DiegoAdmin', role: 'admin', token: 'bbx_test_token' }));
+    });
     await page.goto('http://localhost:3000', { waitUntil: 'networkidle' });
 
     // Verify Title
