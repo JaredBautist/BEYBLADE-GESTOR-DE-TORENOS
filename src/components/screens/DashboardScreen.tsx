@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Blader, Match, TournamentConfig } from '../../types';
 import { soundManager } from '../../utils/audio';
 import { BladerAvatar } from '../BladerAvatar';
@@ -22,6 +22,8 @@ interface DashboardScreenProps {
   onQuickStartMatch: (nameA: string, nameB: string, targetScore: number) => void;
   onGeneratePlayoffs?: () => void;
   onUpdateMatchVideoUrl?: (matchId: string, videoUrl: string) => void;
+  autoAdvanceEnabled?: boolean;
+  onToggleAutoAdvance?: (enabled?: boolean) => void;
 }
 
 export const DashboardScreen: React.FC<DashboardScreenProps> = ({
@@ -40,7 +42,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   onSelectMatchForConsole,
   onQuickStartMatch,
   onGeneratePlayoffs,
-  onUpdateMatchVideoUrl
+  onUpdateMatchVideoUrl,
+  autoAdvanceEnabled = true,
+  onToggleAutoAdvance
 }) => {
   const [selectedComboSlotA, setSelectedComboSlotA] = useState<number>(1);
   const [selectedComboSlotB, setSelectedComboSlotB] = useState<number>(1);
@@ -57,17 +61,128 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const [customOnDeckAId, setCustomOnDeckAId] = useState<string | null>(null);
   const [customOnDeckBId, setCustomOnDeckBId] = useState<string | null>(null);
 
+  // Auto-advance countdown timer state (top-level hook)
+  const [autoAdvanceCountdown, setAutoAdvanceCountdown] = useState<number | null>(null);
+  const [isAutoAdvancePaused, setIsAutoAdvancePaused] = useState<boolean>(false);
+
   // Keep selection updated if allBladers changes
   React.useEffect(() => {
     if (allBladers.length > 0) {
+      const firstA = allBladers[0]?.id || '';
+      const differentB = allBladers.find((b) => b.id !== firstA)?.id || allBladers[1]?.id || firstA;
+
       if (!selectedBladerAId || !allBladers.some((b) => b.id === selectedBladerAId)) {
-        setSelectedBladerAId(allBladers[0].id);
+        setSelectedBladerAId(firstA);
       }
-      if (!selectedBladerBId || !allBladers.some((b) => b.id === selectedBladerBId)) {
-        setSelectedBladerBId(allBladers[1]?.id || allBladers[0].id);
+      if (!selectedBladerBId || !allBladers.some((b) => b.id === selectedBladerBId) || (selectedBladerBId === firstA && allBladers.length > 1)) {
+        setSelectedBladerBId(differentB);
       }
     }
   }, [allBladers]);
+
+  const bladerA = currentMatch?.bladerA;
+  const bladerB = currentMatch?.bladerB;
+
+  const currentComboA = bladerA?.combos?.find((c) => c.slot === selectedComboSlotA) || bladerA?.combos?.[0];
+  const currentComboB = bladerB?.combos?.find((c) => c.slot === selectedComboSlotB) || bladerB?.combos?.[0];
+
+  // Candidates for on-deck
+  const bladerPool = allBladers.length >= 2
+    ? allBladers
+    : [bladerA, bladerB].filter((b): b is Blader => Boolean(b));
+  const remainingBladers = bladerPool.filter(
+    (b) => b.id !== bladerA?.id && b.id !== bladerB?.id
+  );
+  const availablePool = remainingBladers.length >= 2 ? remainingBladers : bladerPool;
+  const onDeckA =
+    (customOnDeckAId && availablePool.find((b) => b.id === customOnDeckAId)) ||
+    availablePool[0] ||
+    null;
+  const onDeckB =
+    (customOnDeckBId && availablePool.find((b) => b.id === customOnDeckBId && b.id !== onDeckA?.id)) ||
+    availablePool.find((b) => b.id !== onDeckA?.id) ||
+    availablePool[1] ||
+    null;
+
+  const handleRandomizeOnDeckLocal = () => {
+    const pool = remainingBladers.length >= 2 ? remainingBladers : bladerPool;
+    if (pool.length < 2) return;
+    const shuffled = [...pool].sort(() => 0.5 - Math.random());
+    setCustomOnDeckAId(shuffled[0].id);
+    setCustomOnDeckBId(shuffled[1].id);
+    soundManager.playClick();
+  };
+
+  const isMatchFinished = Boolean(currentMatch && currentMatch.status === 'finished');
+  const isRegularPhase = (config.type === 'league' || config.type === 'series') && config.tournamentPhase !== 'playoffs';
+  const areAllRegularMatchesFinished =
+    isRegularPhase &&
+    matches.length > 0 &&
+    matches.every((m) => m.stage !== 'regular' || m.status === 'finished');
+
+  const totalRounds = matches && matches.length > 0 ? Math.max(...matches.map((m) => m.roundNumber || 1)) : 1;
+  const isBracketOrPlayoff = config.type === 'elimination' || currentMatch?.stage === 'playoff';
+  const isGrandFinalMatch = Boolean(
+    currentMatch &&
+    isBracketOrPlayoff &&
+    (currentMatch.roundName?.toLowerCase().includes('gran final') ||
+    currentMatch.id === 'playoff-grand-final' ||
+    currentMatch.id === 'match-final-direct' ||
+    (!currentMatch.nextMatchId && currentMatch.roundNumber === totalRounds && currentMatch.roundName?.toLowerCase().includes('final')))
+  );
+  const remainingUnfinishedMatches = matches.filter(
+    (m) => m.id !== currentMatch?.id && m.status !== 'finished'
+  );
+  const isTournamentFinal = isMatchFinished && isGrandFinalMatch && remainingUnfinishedMatches.length === 0;
+
+  const nextPlayableBracketMatch = isTournamentFinal
+    ? undefined
+    : matches.find(
+        (m) => m.id !== currentMatch?.id && m.status !== 'finished' && m.bladerA && m.bladerB
+      );
+
+  const handleTriggerImmediateAdvance = () => {
+    if (isTournamentFinal) return;
+    soundManager.playClick();
+    if (nextPlayableBracketMatch && onSelectMatchForConsole) {
+      onSelectMatchForConsole(nextPlayableBracketMatch);
+    } else if (onDeckA && onDeckB) {
+      onSelectOnDeckMatch(onDeckA.id, onDeckB.id);
+    }
+  };
+
+  useEffect(() => {
+    if (!isMatchFinished || isTournamentFinal || !autoAdvanceEnabled || isAutoAdvancePaused) {
+      setAutoAdvanceCountdown(null);
+      return;
+    }
+
+    if (autoAdvanceCountdown === null) {
+      setAutoAdvanceCountdown(3);
+      return;
+    }
+
+    if (autoAdvanceCountdown <= 0) {
+      handleTriggerImmediateAdvance();
+      setAutoAdvanceCountdown(null);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setAutoAdvanceCountdown((prev) => (prev !== null ? prev - 1 : null));
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [
+    isMatchFinished,
+    isTournamentFinal,
+    autoAdvanceEnabled,
+    isAutoAdvancePaused,
+    autoAdvanceCountdown,
+    nextPlayableBracketMatch,
+    onDeckA,
+    onDeckB
+  ]);
 
   const handleRandomizeStandby = () => {
     if (allBladers.length < 2) return;
@@ -132,6 +247,28 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               BATTLE CONSOLE
             </h1>
           </div>
+
+          {onToggleAutoAdvance && (
+            <button
+              id="btn-toggle-auto-advance-standby"
+              type="button"
+              onClick={() => {
+                soundManager.playClick();
+                onToggleAutoAdvance();
+              }}
+              className={`px-3.5 py-2 rounded-xl text-xs font-label-caps uppercase font-bold flex items-center gap-1.5 transition-all shadow-sm ${
+                autoAdvanceEnabled
+                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500/30'
+                  : 'bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-white/10 hover:border-slate-400'
+              }`}
+              title="Cargar automáticamente el siguiente duelo al terminar el combate"
+            >
+              <span className="material-symbols-outlined text-sm">
+                {autoAdvanceEnabled ? 'bolt' : 'flash_off'}
+              </span>
+              <span>Auto-Avance: {autoAdvanceEnabled ? 'ON' : 'OFF'}</span>
+            </button>
+          )}
         </div>
 
         {/* Empty State / Launch Box */}
@@ -381,58 +518,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     );
   }
 
-  const bladerA = currentMatch.bladerA;
-  const bladerB = currentMatch.bladerB;
-
-  const currentComboA = bladerA?.combos?.find((c) => c.slot === selectedComboSlotA) || bladerA?.combos?.[0];
-  const currentComboB = bladerB?.combos?.find((c) => c.slot === selectedComboSlotB) || bladerB?.combos?.[0];
-
-  // Candidates for on-deck
-  const remainingBladers = allBladers.filter(
-    (b) => b.id !== bladerA?.id && b.id !== bladerB?.id
-  );
-  const onDeckA =
-    (customOnDeckAId && remainingBladers.find((b) => b.id === customOnDeckAId)) ||
-    remainingBladers[0] ||
-    null;
-  const onDeckB =
-    (customOnDeckBId && remainingBladers.find((b) => b.id === customOnDeckBId && b.id !== onDeckA?.id)) ||
-    remainingBladers.find((b) => b.id !== onDeckA?.id) ||
-    remainingBladers[1] ||
-    null;
-
-  const handleRandomizeOnDeckLocal = () => {
-    const pool = remainingBladers.length >= 2 ? remainingBladers : allBladers;
-    if (pool.length < 2) return;
-    const shuffled = [...pool].sort(() => 0.5 - Math.random());
-    setCustomOnDeckAId(shuffled[0].id);
-    setCustomOnDeckBId(shuffled[1].id);
-    soundManager.playClick();
-  };
-
-  const isMatchFinished = currentMatch.status === 'finished';
-  const isRegularPhase = (config.type === 'league' || config.type === 'series') && config.tournamentPhase !== 'playoffs';
-  const areAllRegularMatchesFinished =
-    isRegularPhase &&
-    matches.length > 0 &&
-    matches.every((m) => m.stage !== 'regular' || m.status === 'finished');
-
-  const totalRounds = matches && matches.length > 0 ? Math.max(...matches.map((m) => m.roundNumber || 1)) : 1;
-  const isGrandFinalMatch = Boolean(
-    currentMatch.roundName?.toLowerCase().includes('gran final') ||
-    currentMatch.id === 'playoff-grand-final' ||
-    currentMatch.id === 'match-final-direct' ||
-    (!currentMatch.nextMatchId && (currentMatch.stage === 'playoff' || config.type === 'elimination')) ||
-    (currentMatch.roundNumber === totalRounds && currentMatch.roundName?.toLowerCase().includes('final'))
-  );
-  const isTournamentFinal = isMatchFinished && isGrandFinalMatch;
-
-  const nextPlayableBracketMatch = isTournamentFinal
-    ? undefined
-    : matches.find(
-        (m) => m.id !== currentMatch.id && m.status !== 'finished' && m.bladerA && m.bladerB
-      );
-
   const handlePointClick = (
     corner: 'A' | 'B',
     type: 'xtreme' | 'burst' | 'over' | 'spin' | 'stadium',
@@ -502,6 +587,29 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             <span className="hidden sm:inline">Nuevo Duelo</span>
           </button>
 
+          {/* Auto-Advance Quick Toggle Button */}
+          {onToggleAutoAdvance && (
+            <button
+              id="btn-toggle-auto-advance"
+              type="button"
+              onClick={() => {
+                soundManager.playClick();
+                onToggleAutoAdvance();
+              }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-label-caps uppercase font-bold flex items-center gap-1.5 transition-all shadow-sm ${
+                autoAdvanceEnabled
+                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500/30'
+                  : 'bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-white/10 hover:border-slate-400'
+              }`}
+              title="Cargar automáticamente el siguiente duelo al terminar el combate"
+            >
+              <span className="material-symbols-outlined text-sm">
+                {autoAdvanceEnabled ? 'bolt' : 'flash_off'}
+              </span>
+              <span>Auto-Avance: {autoAdvanceEnabled ? 'ON' : 'OFF'}</span>
+            </button>
+          )}
+
           {/* Video of Match Action Button */}
           {currentMatch.videoUrl ? (
             <div className="flex items-center gap-1">
@@ -549,11 +657,91 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
       {/* MATCH COMPLETION BANNER (IF STATUS IS FINISHED) */}
       {isMatchFinished && (
-        <div className={`p-4 sm:p-6 rounded-3xl border-2 shadow-xl animate-in fade-in text-center space-y-3 ${
+        <div className={`p-4 sm:p-6 rounded-3xl border-2 shadow-xl animate-in fade-in text-center space-y-4 ${
           isTournamentFinal
             ? 'bg-gradient-to-r from-amber-500/20 via-yellow-500/10 to-amber-500/20 border-amber-400 dark:border-amber-400/50'
             : 'bg-emerald-500/15 border-emerald-500/40 dark:bg-emerald-950/30'
         }`}>
+          {/* Auto-Advance In-Console Live Countdown Bar */}
+          {autoAdvanceEnabled && !isTournamentFinal && (
+            <div
+              id="dashboard-auto-advance-banner"
+              className="bg-slate-900/90 text-white p-3.5 sm:p-4 rounded-2xl border border-emerald-500/50 shadow-xl space-y-2 text-left"
+            >
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+                  <span className="font-headline font-black text-xs sm:text-sm uppercase tracking-wide text-emerald-400 flex items-center gap-1">
+                    <span className="material-symbols-outlined text-base">bolt</span>
+                    <span>AUTO-AVANCE CONSOLA: CARGANDO SIGUIENTE DUELO</span>
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono font-black text-sm bg-black/50 text-emerald-300 px-3 py-1 rounded-xl border border-emerald-500/40">
+                    {!isAutoAdvancePaused
+                      ? (autoAdvanceCountdown !== null && autoAdvanceCountdown > 0
+                        ? `${autoAdvanceCountdown}s`
+                        : '¡Cargando!')
+                      : 'En Pausa'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      soundManager.playClick();
+                      setIsAutoAdvancePaused((p) => !p);
+                    }}
+                    className="px-3 py-1.5 rounded-xl text-xs font-headline font-black uppercase border border-white/20 hover:bg-white/10 text-white transition-all flex items-center gap-1"
+                  >
+                    <span className="material-symbols-outlined text-xs">
+                      {isAutoAdvancePaused ? 'play_arrow' : 'pause'}
+                    </span>
+                    <span>{isAutoAdvancePaused ? 'Reanudar' : 'Pausar'}</span>
+                  </button>
+                  <button
+                    id="btn-immediate-advance"
+                    type="button"
+                    onClick={handleTriggerImmediateAdvance}
+                    className="px-3.5 py-1.5 rounded-xl text-xs font-headline font-black uppercase bg-emerald-500 hover:bg-emerald-400 text-black shadow-md shadow-emerald-500/30 transition-all flex items-center gap-1 hover:scale-105 active:scale-95"
+                  >
+                    <span>Cargar Ya</span>
+                    <span className="material-symbols-outlined text-xs">arrow_forward</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Countdown progress bar */}
+              <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+                <div
+                  className="bg-emerald-400 h-full transition-all duration-1000 ease-linear rounded-full"
+                  style={{ width: isAutoAdvancePaused ? '100%' : `${((autoAdvanceCountdown ?? 3) / 3) * 100}%` }}
+                />
+              </div>
+
+              <div className="text-[11px] font-label-caps text-slate-300 flex items-center justify-between">
+                <span>
+                  Próximo combate: <strong className="text-white">
+                    {nextPlayableBracketMatch
+                      ? `${nextPlayableBracketMatch.bladerA?.name} vs ${nextPlayableBracketMatch.bladerB?.name} (${nextPlayableBracketMatch.roundName})`
+                      : onDeckA && onDeckB
+                      ? `${onDeckA.name} vs ${onDeckB.name} (On-Deck)`
+                      : 'Siguiente Duelo'}
+                  </strong>
+                </span>
+                {onToggleAutoAdvance && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      soundManager.playClick();
+                      onToggleAutoAdvance(false);
+                    }}
+                    className="text-slate-400 hover:text-slate-200 underline text-[10px] uppercase font-bold"
+                  >
+                    Desactivar Auto
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
           <div className="flex items-center justify-center gap-2 flex-wrap">
             <span className="material-symbols-outlined text-3xl text-amber-500">
               {isTournamentFinal ? 'military_tech' : 'emoji_events'}
@@ -744,7 +932,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                         : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-white/10'
                     }`}
                   >
-                    {combo.blade.substring(0, 8)}
+                    {(combo.blade || combo.name || `Slot ${combo.slot}`).substring(0, 8)}
                   </button>
                 ))}
               </div>
@@ -951,7 +1139,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                         : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-white/10'
                     }`}
                   >
-                    {combo.blade.substring(0, 8)}
+                    {(combo.blade || combo.name || `Slot ${combo.slot}`).substring(0, 8)}
                   </button>
                 ))}
               </div>
@@ -1099,7 +1287,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       )}
 
       {/* ON DECK (Siguiente Enfrentamiento) Section - ONLY IF TOURNAMENT IS NOT CONCLUDED */}
-      {!isTournamentFinal && remainingBladers.length >= 2 && onDeckA && onDeckB && (
+      {!isTournamentFinal && allBladers.length >= 2 && onDeckA && onDeckB && (
         <div className="glass-panel p-5 rounded-2xl border border-[#bec7d3]/30 dark:border-white/10 relative overflow-hidden bg-gradient-to-r from-transparent via-[#04A8FC]/5 to-transparent">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
             <div>
@@ -1111,7 +1299,13 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               </h3>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              {autoAdvanceEnabled && (
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border border-emerald-500/30 text-xs font-label-caps font-black uppercase">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span>Auto-Carga Activa</span>
+                </div>
+              )}
               <button
                 id="btn-randomize-on-deck"
                 onClick={handleRandomizeOnDeckLocal}

@@ -11,8 +11,10 @@ interface WinnerModalProps {
   nextMatch?: Match | null;
   onClose: () => void;
   onGoToBracket: () => void;
-  onNextMatch?: () => void;
+  onNextMatch?: (match?: Match | null) => void;
   onSaveVideoUrl?: (matchId: string, videoUrl: string) => void;
+  autoAdvanceEnabled?: boolean;
+  onToggleAutoAdvance?: (enabled?: boolean) => void;
 }
 
 export const WinnerModal: React.FC<WinnerModalProps> = ({
@@ -23,11 +25,33 @@ export const WinnerModal: React.FC<WinnerModalProps> = ({
   onClose,
   onGoToBracket,
   onNextMatch,
-  onSaveVideoUrl
+  onSaveVideoUrl,
+  autoAdvanceEnabled = true,
+  onToggleAutoAdvance
 }) => {
   const [videoUrlInput, setVideoUrlInput] = useState(match.videoUrl || '');
   const [savedVideoMsg, setSavedVideoMsg] = useState(false);
   const [showVideoInput, setShowVideoInput] = useState(Boolean(match.videoUrl));
+  const [countdown, setCountdown] = useState<number>(3);
+  const [isPaused, setIsPaused] = useState<boolean>(false);
+
+  // Auto-advance countdown timer
+  useEffect(() => {
+    if (!autoAdvanceEnabled || isTournamentFinal || !nextMatch || isPaused) return;
+
+    if (countdown <= 0) {
+      if (onNextMatch) {
+        onNextMatch(nextMatch);
+      }
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setCountdown((prev) => prev - 1);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [autoAdvanceEnabled, isTournamentFinal, nextMatch, isPaused, countdown, onNextMatch]);
   useEffect(() => {
     soundManager.playVictory();
 
@@ -57,7 +81,10 @@ export const WinnerModal: React.FC<WinnerModalProps> = ({
   }, [isTournamentFinal]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+    <div
+      id="winner-celebration-modal"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
+    >
       <div className="bg-white dark:bg-[#13131a] border-2 border-[#FCEE21] rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative overflow-hidden text-center space-y-6">
         {/* Glow background */}
         <div className="absolute inset-0 bg-gradient-to-b from-[#FCEE21]/15 via-transparent to-transparent pointer-events-none"></div>
@@ -168,6 +195,66 @@ export const WinnerModal: React.FC<WinnerModalProps> = ({
           </div>
         )}
 
+        {/* Auto-Advance Notification & Control Banner */}
+        {autoAdvanceEnabled && nextMatch && !isTournamentFinal && (
+          <div
+            id="winner-modal-auto-advance-banner"
+            className="p-3.5 rounded-2xl bg-gradient-to-r from-[#04A8FC]/15 via-emerald-500/15 to-[#04A8FC]/15 border border-[#04A8FC]/30 text-left space-y-2"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span className="font-headline font-black text-xs uppercase tracking-wider text-[#04A8FC] dark:text-sky-300 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-sm">bolt</span>
+                  <span>AUTO-AVANCE ACTIVO</span>
+                </span>
+              </div>
+              <span className="font-mono font-black text-xs px-2.5 py-0.5 rounded-lg bg-black/10 dark:bg-white/10 text-slate-800 dark:text-white">
+                {!isPaused ? (countdown > 0 ? `Siguiente en ${countdown}s` : '¡Cargando!') : 'En Pausa'}
+              </span>
+            </div>
+
+            {/* Visual Animated Countdown Bar */}
+            <div className="w-full bg-black/10 dark:bg-white/10 h-1.5 rounded-full overflow-hidden">
+              <div
+                className="bg-gradient-to-r from-[#04A8FC] to-emerald-400 h-full transition-all duration-1000 ease-linear rounded-full"
+                style={{ width: isPaused ? '100%' : `${(countdown / 3) * 100}%` }}
+              />
+            </div>
+
+            <div className="flex items-center justify-between text-[11px] font-label-caps pt-0.5 text-slate-600 dark:text-slate-300">
+              <span className="truncate mr-2">
+                Próximo: <strong className="text-slate-900 dark:text-white">{nextMatch.bladerA?.name || 'Rojo'} vs {nextMatch.bladerB?.name || 'Azul'}</strong>
+              </span>
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <button
+                  id="btn-winner-modal-pause-toggle"
+                  type="button"
+                  onClick={() => {
+                    soundManager.playClick();
+                    setIsPaused((p) => !p);
+                  }}
+                  className="px-2 py-0.5 rounded-md border border-slate-300 dark:border-white/20 text-slate-700 dark:text-slate-200 hover:bg-black/5 dark:hover:bg-white/10 font-bold uppercase text-[10px]"
+                >
+                  {isPaused ? '▶ Reanudar' : '⏸ Pausar'}
+                </button>
+                <button
+                  id="btn-winner-modal-load-now"
+                  type="button"
+                  onClick={() => {
+                    soundManager.playClick();
+                    onNextMatch?.(nextMatch);
+                  }}
+                  className="px-2 py-0.5 rounded-md bg-[#04A8FC] hover:bg-[#008fe0] text-white font-bold uppercase text-[10px] flex items-center gap-0.5 shadow-sm"
+                >
+                  <span>Cargar Ya</span>
+                  <span className="material-symbols-outlined text-[12px]">bolt</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
           {isTournamentFinal ? (
@@ -206,13 +293,16 @@ export const WinnerModal: React.FC<WinnerModalProps> = ({
 
               {onNextMatch && nextMatch ? (
                 <button
+                  id="btn-modal-next-match"
                   onClick={() => {
                     soundManager.playClick();
                     onNextMatch();
                   }}
                   className="w-full sm:flex-1 py-3 px-4 rounded-xl bg-[#04A8FC] hover:bg-[#008fe0] text-white font-headline font-black text-xs uppercase shadow-lg shadow-[#04A8FC]/30 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-1.5"
                 >
-                  <span>Siguiente Duelo</span>
+                  <span>
+                    Siguiente Duelo {autoAdvanceEnabled && !isPaused && countdown > 0 ? `(${countdown}s)` : ''}
+                  </span>
                   <span className="material-symbols-outlined text-base">arrow_forward</span>
                 </button>
               ) : (

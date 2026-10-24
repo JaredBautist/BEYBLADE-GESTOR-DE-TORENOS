@@ -223,6 +223,28 @@ export default function App() {
 
   const [currentMatch, setCurrentMatch] = useState<Match | null>(matches[0] || null);
 
+  // Auto-Advance in Battle Console state
+  const [autoAdvanceEnabled, setAutoAdvanceEnabled] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('bbx_auto_advance');
+      return saved !== null ? saved === 'true' : true;
+    } catch {
+      return true;
+    }
+  });
+
+  const handleToggleAutoAdvance = (enabled?: boolean) => {
+    setAutoAdvanceEnabled((prev) => {
+      const nextVal = enabled !== undefined ? enabled : !prev;
+      try {
+        localStorage.setItem('bbx_auto_advance', String(nextVal));
+      } catch {
+        // ignore
+      }
+      return nextVal;
+    });
+  };
+
   // Modals state
   const [showResetModal, setShowResetModal] = useState<boolean>(false);
   const [winnerModalData, setWinnerModalData] = useState<{
@@ -596,19 +618,65 @@ export default function App() {
         })
       );
 
-      const totalRounds = matches.length > 0 ? Math.max(...matches.map((m) => m.roundNumber || 1)) : 1;
-      const isFinal = !currentMatch.nextMatchId || currentMatch.roundNumber === totalRounds || (currentMatch.roundName?.toLowerCase().includes('final') ?? false);
+      // Determine if this is truly the conclusion of the entire tournament
+      const isPlayoffOrElimination = config.type === 'elimination' || currentMatch.stage === 'playoff';
+      const maxRound = matches.length > 0 ? Math.max(...matches.map((m) => m.roundNumber || 1)) : 1;
+      const isGrandFinalMatch = Boolean(
+        isPlayoffOrElimination &&
+        (currentMatch.id === 'playoff-grand-final' ||
+         currentMatch.id === 'match-final-direct' ||
+         currentMatch.roundName?.toLowerCase().includes('gran final') ||
+         (!currentMatch.nextMatchId && currentMatch.roundNumber === maxRound && currentMatch.roundName?.toLowerCase().includes('final')))
+      );
+      const remainingUnfinishedMatches = matches.filter(
+        (m) => m.id !== currentMatch.id && m.status !== 'finished'
+      );
+      const isTournamentFinal = isGrandFinalMatch && remainingUnfinishedMatches.length === 0;
+
+      // Find next bracket or league match that already has both bladers
       const nextPlayableMatch = matches.find(
         (m) => m.id !== currentMatch.id && m.status !== 'finished' && m.bladerA && m.bladerB
       ) || null;
+
+      // If no pre-scheduled bracket match, but tournament is not over, prepare next on-deck match
+      let upcomingMatch: Match | null = nextPlayableMatch;
+      const bladerPool = bladers.length >= 2
+        ? bladers
+        : [currentMatch.bladerA, currentMatch.bladerB].filter((b): b is Blader => Boolean(b));
+
+      if (!upcomingMatch && !isTournamentFinal && bladerPool.length >= 2) {
+        const remaining = bladerPool.filter((b) => b.id !== currentMatch.bladerA?.id && b.id !== currentMatch.bladerB?.id);
+        const pool = remaining.length >= 2 ? remaining : bladerPool;
+        const candidateA = pool[0];
+        const candidateB = pool.find((b) => b.id !== candidateA.id) || pool[1];
+
+        if (candidateA && candidateB) {
+          upcomingMatch = {
+            id: `match-auto-${Date.now()}`,
+            roundNumber: currentMatch.roundNumber || 1,
+            roundName: currentMatch.roundName ? `${currentMatch.roundName} (Siguiente)` : 'Duelo Siguiente',
+            matchNumber: matches.length + 1,
+            bladerA: candidateA,
+            bladerB: candidateB,
+            scoreA: 0,
+            scoreB: 0,
+            targetScore: config.victoryConditions.pointsToWin,
+            status: 'live',
+            winnerId: null,
+            cornerA: 'Red',
+            cornerB: 'Blue',
+            events: []
+          };
+        }
+      }
 
       // Open celebration modal
       setWinnerModalData({
         isOpen: true,
         winner: winningBlader,
         match: updatedMatch,
-        isTournamentFinal: isFinal || !nextPlayableMatch,
-        nextMatch: nextPlayableMatch
+        isTournamentFinal,
+        nextMatch: upcomingMatch
       });
     }
   };
@@ -1441,6 +1509,8 @@ export default function App() {
             onSelectMatchForConsole={handleSelectMatchForConsole}
             onGeneratePlayoffs={handleGeneratePlayoffs}
             onUpdateMatchVideoUrl={handleUpdateMatchVideoUrl}
+            autoAdvanceEnabled={autoAdvanceEnabled}
+            onToggleAutoAdvance={handleToggleAutoAdvance}
           />
         )}
 
@@ -1606,18 +1676,37 @@ export default function App() {
           match={winnerModalData.match}
           isTournamentFinal={winnerModalData.isTournamentFinal}
           nextMatch={winnerModalData.nextMatch}
+          autoAdvanceEnabled={autoAdvanceEnabled}
+          onToggleAutoAdvance={handleToggleAutoAdvance}
           onClose={() => setWinnerModalData({ isOpen: false, winner: null, match: null, isTournamentFinal: false, nextMatch: null })}
           onSaveVideoUrl={handleUpdateMatchVideoUrl}
           onGoToBracket={() => {
             setWinnerModalData({ isOpen: false, winner: null, match: null, isTournamentFinal: false, nextMatch: null });
             setActiveScreen('bracket');
           }}
-          onNextMatch={() => {
-            const nextM = winnerModalData.nextMatch;
+          onNextMatch={(targetMatch?: Match | null) => {
+            const nextM = targetMatch || winnerModalData.nextMatch;
             setWinnerModalData({ isOpen: false, winner: null, match: null, isTournamentFinal: false, nextMatch: null });
             if (nextM) {
-              setCurrentMatch(nextM);
+              const freshMatch: Match = {
+                ...nextM,
+                scoreA: 0,
+                scoreB: 0,
+                status: 'live',
+                winnerId: null,
+                winnerName: undefined,
+                events: []
+              };
+              setCurrentMatch(freshMatch);
+              setMatches((prev) => {
+                if (!prev.some((m) => m.id === freshMatch.id)) {
+                  return [freshMatch, ...prev];
+                }
+                return prev.map((m) => (m.id === freshMatch.id ? freshMatch : m));
+              });
+              syncMatchToSupabase(freshMatch);
               setActiveScreen('dashboard');
+              soundManager.playClick();
             }
           }}
         />
