@@ -815,7 +815,7 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
                   const isEliminationTree = config.type === 'elimination' || matches.some(m => m.stage === 'playoff');
                   
                   // Component for a single round column
-                  const RoundColumn = ({ rNum, matchesSlice, isFinal }: { rNum: number, matchesSlice: typeof matches, isFinal?: boolean }) => {
+                  const RoundColumn = ({ rNum, matchesSlice, isFinal }: { key?: React.Key; rNum: number; matchesSlice: typeof matches; isFinal?: boolean }) => {
                     const rTitle = matchesSlice[0]?.roundName?.split(' - ')[0] || `Ronda ${rNum}`;
                     return (
                       <div key={rNum} className="w-64 sm:w-80 flex flex-col flex-shrink-0 space-y-4">

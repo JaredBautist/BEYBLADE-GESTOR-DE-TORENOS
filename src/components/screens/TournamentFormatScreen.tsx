@@ -44,15 +44,7 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
       minPointsToQualify: updated.minPointsToQualify ?? 4,
       tournamentPhase: updated.tournamentPhase ?? 'regular'
     });
-    syncConfigToSupabase({
-      name: updated.name,
-      season: updated.season,
-      leagueName: updated.leagueName,
-      communityCity: updated.communityCity,
-      communityTagline: updated.communityTagline,
-      organizerName: updated.organizerName,
-      logoUrl: updated.logoUrl
-    });
+    syncConfigToSupabase(updated);
     setSaveFeedback(msg);
     setTimeout(() => setSaveFeedback(''), 3000);
   };

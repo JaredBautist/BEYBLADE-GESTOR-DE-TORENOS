@@ -48,6 +48,7 @@ import {
   deleteHistoryRecordFromSupabase,
   deleteAllHistoryFromSupabase,
   syncConfigToSupabase,
+  syncTournamentFormatToSupabase,
   fetchConfigFromSupabase,
   syncMatchToSupabase,
   fetchMatchesFromSupabase,

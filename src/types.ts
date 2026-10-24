@@ -75,7 +75,7 @@ export interface TournamentRecord {
     alias?: string;
     team?: string;
     avatarUrl?: string;
-    combos?: BeybladeCombo[];
+    combos?: BladerCombo[];
     stats?: {
       wins: number;
       losses: number;
