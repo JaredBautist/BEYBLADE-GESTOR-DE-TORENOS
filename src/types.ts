@@ -121,6 +121,7 @@ export interface TournamentFormatConfig {
   maxParticipants: number;
   arenaStatus: string;
   isStarted: boolean;
+  isRegistrationOpen?: boolean;
   regularPhaseMatchesPerBlader?: number; // e.g. 2, 3, 4 matches per blader
   playoffCutoffType?: 'top_n' | 'min_points';
   playoffCutoffCount?: 8 | 4 | 2; // Top 8 Cuartos, Top 4 Semis, Top 2 Final
@@ -142,6 +143,7 @@ export interface TournamentConfig {
   maxParticipants: number;
   arenaStatus: string;
   isStarted: boolean;
+  isRegistrationOpen?: boolean;
   regularPhaseMatchesPerBlader?: number; // e.g. 2, 3, 4 matches per blader
   playoffCutoffType?: 'top_n' | 'min_points';
   playoffCutoffCount?: 8 | 4 | 2; // Top 8 Cuartos, Top 4 Semis, Top 2 Final
@@ -195,4 +197,5 @@ export type ActiveScreen =
   | 'configuration'
   | 'equipment'
   | 'history'
-  | 'rules';
+  | 'rules'
+  | 'public_registration';

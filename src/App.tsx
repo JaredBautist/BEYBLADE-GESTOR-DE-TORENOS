@@ -28,6 +28,8 @@ import { WinnerModal } from './components/WinnerModal';
 import { NewBattleModal } from './components/NewBattleModal';
 import { SupportModal } from './components/SupportModal';
 import { ResetTournamentModal, ResetMode } from './components/ResetTournamentModal';
+import { ShareRegistrationModal } from './components/ShareRegistrationModal';
+import { PublicRegistrationScreen } from './components/screens/PublicRegistrationScreen';
 import {
   syncBladerToSupabase,
   syncAllBladersToSupabase,
@@ -63,7 +65,22 @@ import { soundManager } from './utils/audio';
 import { syncComboPiecesToCatalog, createRegisteredCombosFromBlader } from './utils/comboUtils';
 
 export default function App() {
-  const [activeScreen, setActiveScreen] = useState<ActiveScreen>('tournament_format');
+  const [activeScreen, setActiveScreen] = useState<ActiveScreen>(() => {
+    if (typeof window !== 'undefined') {
+      const search = window.location.search.toLowerCase();
+      const hash = window.location.hash.toLowerCase();
+      if (
+        search.includes('registro') ||
+        search.includes('register') ||
+        search.includes('join') ||
+        hash.includes('registro')
+      ) {
+        return 'public_registration';
+      }
+    }
+    return 'tournament_format';
+  });
+  const [showShareModal, setShowShareModal] = useState<boolean>(false);
   const [isDark, setIsDark] = useState<boolean>(true);
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
@@ -222,6 +239,31 @@ export default function App() {
   });
   const [newBattleModalOpen, setNewBattleModalOpen] = useState<boolean>(false);
   const [supportModalOpen, setSupportModalOpen] = useState<boolean>(false);
+
+  // Listen for browser URL / hash changes for public registration mode
+  useEffect(() => {
+    const checkUrlForRegistration = () => {
+      if (typeof window !== 'undefined') {
+        const search = window.location.search.toLowerCase();
+        const hash = window.location.hash.toLowerCase();
+        if (
+          search.includes('registro') ||
+          search.includes('register') ||
+          search.includes('join') ||
+          hash.includes('registro')
+        ) {
+          setActiveScreen('public_registration');
+        }
+      }
+    };
+
+    window.addEventListener('popstate', checkUrlForRegistration);
+    window.addEventListener('hashchange', checkUrlForRegistration);
+    return () => {
+      window.removeEventListener('popstate', checkUrlForRegistration);
+      window.removeEventListener('hashchange', checkUrlForRegistration);
+    };
+  }, []);
 
   // Sync to localStorage
   useEffect(() => {
@@ -1295,8 +1337,23 @@ export default function App() {
       {/* Tactical Grid Background Overlay */}
       <div className="fixed inset-0 pointer-events-none bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px] z-0"></div>
 
-      {/* Sidebar for Desktop */}
-      <div className="hidden md:block">
+      {activeScreen === 'public_registration' ? (
+        <PublicRegistrationScreen
+          config={config}
+          bladers={bladers}
+          onAddBlader={handleAddBlader}
+          onAddCombo={handleAddCombo}
+          onReturnToAdmin={() => {
+            setActiveScreen('bladers');
+            if (typeof window !== 'undefined' && window.history?.pushState) {
+              window.history.pushState({}, '', window.location.pathname);
+            }
+          }}
+        />
+      ) : (
+        <>
+          {/* Sidebar for Desktop */}
+          <div className="hidden md:block">
         <Sidebar
           activeScreen={activeScreen}
           setActiveScreen={setActiveScreen}
@@ -1398,6 +1455,7 @@ export default function App() {
               setActiveScreen('bladers');
             }}
             onResetTournament={() => setShowResetModal(true)}
+            onOpenShareModal={() => setShowShareModal(true)}
           />
         )}
 
@@ -1422,6 +1480,7 @@ export default function App() {
             onToggleVerified={handleToggleVerified}
             onDeleteBlader={handleDeleteBlader}
             onToggleBadge={handleToggleBadge}
+            onOpenShareModal={() => setShowShareModal(true)}
           />
         )}
 
@@ -1504,6 +1563,25 @@ export default function App() {
           );
         })}
       </nav>
+        </>
+      )}
+
+      {/* Share Registration Modal */}
+      <ShareRegistrationModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        config={config}
+        bladers={bladers}
+        onToggleRegistrationOpen={(isOpen) => {
+          const updated = { ...config, isRegistrationOpen: isOpen };
+          setConfig(updated);
+          syncConfigToSupabase(updated);
+        }}
+        onNavigateToRegistrationPreview={() => {
+          setShowShareModal(false);
+          setActiveScreen('public_registration');
+        }}
+      />
 
       {/* Reset Tournament Modal */}
       <ResetTournamentModal

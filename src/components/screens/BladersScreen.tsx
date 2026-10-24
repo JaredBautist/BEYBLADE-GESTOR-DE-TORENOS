@@ -15,6 +15,7 @@ interface BladersScreenProps {
   onDeleteBlader: (id: string) => void;
   onToggleBadge?: (bladerId: string, badgeId: string) => void;
   onLoadOfficialRoster?: (roster: Blader[]) => void;
+  onOpenShareModal?: () => void;
 }
 
 // Avatares de protagonistas de Beyblade precargados para selección rápida
@@ -32,7 +33,8 @@ export const BladersScreen: React.FC<BladersScreenProps> = ({
   onToggleVerified,
   onDeleteBlader,
   onToggleBadge,
-  onLoadOfficialRoster
+  onLoadOfficialRoster,
+  onOpenShareModal
 }) => {
   const [name, setName] = useState<string>('');
   const [alias, setAlias] = useState<string>('');
@@ -321,10 +323,27 @@ export const BladersScreen: React.FC<BladersScreenProps> = ({
           </p>
         </div>
 
-        {/* Live Auto-sync Status */}
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-label-caps uppercase font-bold">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span>Sincronización Automática Activa</span>
+        {/* Live Auto-sync Status & Share QR Action */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          {onOpenShareModal && (
+            <button
+              type="button"
+              onClick={() => {
+                soundManager.playClick();
+                onOpenShareModal();
+              }}
+              className="bg-[#04A8FC] hover:bg-[#008fe0] text-white px-4 py-2 rounded-xl text-xs font-headline font-black uppercase flex items-center gap-2 shadow-md shadow-[#04A8FC]/20 transition-all active:scale-[0.97]"
+              title="Compartir link y código QR para que los Bladers se registren solos"
+            >
+              <span className="material-symbols-outlined text-base">qr_code_2</span>
+              <span>Link de Auto-Inscripción & QR</span>
+            </button>
+          )}
+
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-label-caps uppercase font-bold">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>Sincronización en Vivo</span>
+          </div>
         </div>
       </div>
 
@@ -332,6 +351,37 @@ export const BladersScreen: React.FC<BladersScreenProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Form Container */}
         <div className="lg:col-span-7 space-y-6">
+          {/* Quick Invitation Banner */}
+          {onOpenShareModal && (
+            <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#04A8FC]/15 via-[#04A8FC]/5 to-transparent border border-[#04A8FC]/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-[#04A8FC] text-white flex items-center justify-center font-bold flex-shrink-0 shadow-md">
+                  <span className="material-symbols-outlined text-xl">phonelink_ring</span>
+                </div>
+                <div>
+                  <h4 className="font-headline font-black text-xs sm:text-sm uppercase text-slate-900 dark:text-white">
+                    ¿Quieres evitar registrar Blader por Blader manualmente?
+                  </h4>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                    Proyecta el código QR o manda el enlace por WhatsApp para que cada jugador ingrese sus datos y Beyblades solos desde su teléfono.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  soundManager.playClick();
+                  onOpenShareModal();
+                }}
+                className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[#04A8FC] hover:bg-[#008fe0] text-white text-xs font-headline font-black uppercase flex items-center justify-center gap-1.5 flex-shrink-0 transition-all active:scale-[0.97] shadow-sm"
+              >
+                <span className="material-symbols-outlined text-base">qr_code</span>
+                <span>Abrir QR</span>
+              </button>
+            </div>
+          )}
+
           <div className="glass-panel p-6 md:p-8 rounded-3xl border border-slate-200 dark:border-white/10 shadow-sm relative overflow-hidden bg-white dark:bg-[#15151c]">
             <h3 className="font-headline font-black text-xl text-[#04A8FC] uppercase mb-6 flex items-center gap-2">
               <span className="material-symbols-outlined">person_add</span>

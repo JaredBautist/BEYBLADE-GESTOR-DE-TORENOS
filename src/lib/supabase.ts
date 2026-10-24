@@ -113,6 +113,7 @@ CREATE TABLE IF NOT EXISTS tournament_config (
   max_participants INTEGER DEFAULT 32,
   arena_status TEXT DEFAULT 'Xtreme Stadium A',
   is_started BOOLEAN DEFAULT FALSE,
+  is_registration_open BOOLEAN DEFAULT TRUE,
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -584,6 +585,7 @@ export async function syncTournamentFormatToSupabase(format: {
   maxParticipants: number;
   arenaStatus: string;
   isStarted?: boolean;
+  isRegistrationOpen?: boolean;
   regularPhaseMatchesPerBlader?: number;
   playoffCutoffType?: 'top_n' | 'min_points';
   playoffCutoffCount?: 8 | 4 | 2;
@@ -599,6 +601,7 @@ export async function syncTournamentFormatToSupabase(format: {
       max_participants: format.maxParticipants,
       arena_status: format.arenaStatus,
       is_started: !!format.isStarted,
+      is_registration_open: format.isRegistrationOpen ?? true,
       regular_phase_matches_per_blader: format.regularPhaseMatchesPerBlader ?? 2,
       playoff_cutoff_type: format.playoffCutoffType ?? 'top_n',
       playoff_cutoff_count: format.playoffCutoffCount ?? 4,
@@ -624,6 +627,7 @@ export async function fetchTournamentFormatFromSupabase(): Promise<{
   maxParticipants?: number;
   arenaStatus?: string;
   isStarted?: boolean;
+  isRegistrationOpen?: boolean;
   regularPhaseMatchesPerBlader?: number;
   playoffCutoffType?: 'top_n' | 'min_points';
   playoffCutoffCount?: 8 | 4 | 2;
@@ -644,6 +648,7 @@ export async function fetchTournamentFormatFromSupabase(): Promise<{
       maxParticipants: data.max_participants,
       arenaStatus: data.arena_status,
       isStarted: data.is_started,
+      isRegistrationOpen: data.is_registration_open ?? true,
       regularPhaseMatchesPerBlader: data.regular_phase_matches_per_blader ?? 2,
       playoffCutoffType: data.playoff_cutoff_type ?? 'top_n',
       playoffCutoffCount: data.playoff_cutoff_count ?? 4,
@@ -677,7 +682,8 @@ export async function syncConfigToSupabase(config: TournamentConfig) {
         victoryConditions: config.victoryConditions,
         maxParticipants: config.maxParticipants,
         arenaStatus: config.arenaStatus,
-        isStarted: config.isStarted
+        isStarted: config.isStarted,
+        isRegistrationOpen: config.isRegistrationOpen
       })
     ]);
   } catch (e) {
@@ -713,7 +719,8 @@ export async function fetchConfigFromSupabase(): Promise<Partial<TournamentConfi
         victoryConditions: data.victory_conditions,
         maxParticipants: data.max_participants,
         arenaStatus: data.arena_status,
-        isStarted: data.is_started
+        isStarted: data.is_started,
+        isRegistrationOpen: data.is_registration_open ?? true
       };
     }
 
@@ -730,7 +737,8 @@ export async function fetchConfigFromSupabase(): Promise<Partial<TournamentConfi
       victoryConditions: formatData?.victoryConditions,
       maxParticipants: formatData?.maxParticipants,
       arenaStatus: formatData?.arenaStatus,
-      isStarted: formatData?.isStarted
+      isStarted: formatData?.isStarted,
+      isRegistrationOpen: formatData?.isRegistrationOpen ?? true
     };
 
     // Remove undefined fields so they don't overwrite defaults when spreading

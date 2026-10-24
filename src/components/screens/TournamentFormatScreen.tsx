@@ -9,6 +9,7 @@ interface TournamentFormatScreenProps {
   onSaveConfig: (updated: TournamentConfig) => void;
   onStartTournament: () => void;
   onResetTournament?: () => void;
+  onOpenShareModal?: () => void;
 }
 
 export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
@@ -16,7 +17,8 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
   registeredBladersCount,
   onSaveConfig,
   onStartTournament,
-  onResetTournament
+  onResetTournament,
+  onOpenShareModal
 }) => {
   const [formData, setFormData] = useState<TournamentConfig>({ ...config });
   const [isSaved, setIsSaved] = useState<boolean>(false);
@@ -141,12 +143,27 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
             Define las reglas oficiales de combate, escala de deck, condiciones de victoria y sede de los enfrentamientos.
           </p>
         </div>
-        {saveFeedback && (
-          <div className="px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 dark:text-emerald-400 rounded-xl text-xs font-label-caps uppercase font-black flex items-center gap-2 animate-fade-in shadow-sm">
-            <span className="material-symbols-outlined text-base">cloud_done</span>
-            <span>{saveFeedback}</span>
-          </div>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {onOpenShareModal && (
+            <button
+              type="button"
+              onClick={() => {
+                soundManager.playClick();
+                onOpenShareModal();
+              }}
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#04A8FC] to-[#0385c7] hover:from-[#0385c7] hover:to-[#026aa0] text-white font-headline font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-[#04A8FC]/20 transition-all active:scale-95 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-base">qr_code_2</span>
+              <span>Link & QR Inscripción</span>
+            </button>
+          )}
+          {saveFeedback && (
+            <div className="px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 dark:text-emerald-400 rounded-xl text-xs font-label-caps uppercase font-black flex items-center gap-2 animate-fade-in shadow-sm">
+              <span className="material-symbols-outlined text-base">cloud_done</span>
+              <span>{saveFeedback}</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Bento Grid Layout */}
@@ -714,6 +731,37 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
 
         {/* Action Area: Start Tournament Protocol (Col 4) */}
         <div className="lg:col-span-4 space-y-6">
+          {/* Quick Share Registration Portal */}
+          {onOpenShareModal && (
+            <div className="glass-panel p-5 rounded-2xl border border-[#04A8FC]/30 bg-[#04A8FC]/5 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-[#04A8FC]">
+                  <span className="material-symbols-outlined text-xl">qr_code_2</span>
+                  <h4 className="font-headline font-black text-xs uppercase tracking-wide">
+                    Auto-Inscripción de Bladers
+                  </h4>
+                </div>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-[#04A8FC]/20 text-[#04A8FC]">
+                  {registeredBladersCount}/{formData.maxParticipants}
+                </span>
+              </div>
+              <p className="text-[11px] font-body-text text-slate-500 dark:text-slate-400">
+                Comparte el código QR o el enlace público por WhatsApp para que los participantes se inscriban solos desde sus teléfonos sin demoras.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  soundManager.playClick();
+                  onOpenShareModal();
+                }}
+                className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#04A8FC] to-[#0096e6] hover:brightness-110 text-white font-headline font-black text-xs uppercase tracking-wider shadow-md shadow-[#04A8FC]/20 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+              >
+                <span className="material-symbols-outlined text-sm">share</span>
+                <span>Abrir QR y Link Público</span>
+              </button>
+            </div>
+          )}
+
           <div className="glass-panel p-6 rounded-2xl border border-[#04A8FC]/30 flex flex-col items-center text-center relative overflow-hidden shadow-md bg-gradient-to-b from-white/90 to-[#04A8FC]/5 dark:from-[#131318]/90 dark:to-[#04A8FC]/10">
             <div className="absolute inset-0 bg-gradient-to-t from-[#04A8FC]/10 to-transparent pointer-events-none"></div>
 
