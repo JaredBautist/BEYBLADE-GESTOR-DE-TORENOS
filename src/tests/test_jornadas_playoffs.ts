@@ -15,17 +15,17 @@ async function runJornadasAndPlayoffsTests() {
   console.log('🧪 PARTE 1: Verificación lógica pura de Jornadas y Top 8 Cutoff...');
   
   const mockBladers: Blader[] = [
-    { id: 'b1', name: 'Valt Aoi', alias: 'Valkyrie', team: 'BC Sol', avatarUrl: '', verified: true, combos: [], badges: [], stats: { matchesPlayed: 8, wins: 7, losses: 1, pointsScored: 21, xtremeFinishes: 4, burstFinishes: 2, overFinishes: 1, spinFinishes: 0 } },
-    { id: 'b2', name: 'Shu Kurenai', alias: 'Spriggan', team: 'Raging Bulls', avatarUrl: '', verified: true, combos: [], badges: [], stats: { matchesPlayed: 8, wins: 6, losses: 2, pointsScored: 19, xtremeFinishes: 3, burstFinishes: 3, overFinishes: 1, spinFinishes: 0 } },
-    { id: 'b3', name: 'Free De La Hoya', alias: 'Fafnir', team: 'BC Sol', avatarUrl: '', verified: true, combos: [], badges: [], stats: { matchesPlayed: 8, wins: 6, losses: 2, pointsScored: 18, xtremeFinishes: 2, burstFinishes: 2, overFinishes: 2, spinFinishes: 2 } },
-    { id: 'b4', name: 'Lui Shirosagijo', alias: 'Longinus', team: 'Rideout', avatarUrl: '', verified: true, combos: [], badges: [], stats: { matchesPlayed: 8, wins: 5, losses: 3, pointsScored: 16, xtremeFinishes: 4, burstFinishes: 1, overFinishes: 0, spinFinishes: 0 } },
-    { id: 'b5', name: 'Aiga Akaba', alias: 'Achilles', team: 'Beigoma', avatarUrl: '', verified: true, combos: [], badges: [], stats: { matchesPlayed: 8, wins: 4, losses: 4, pointsScored: 14, xtremeFinishes: 2, burstFinishes: 1, overFinishes: 2, spinFinishes: 1 } },
-    { id: 'b6', name: 'Dante Koryu', alias: 'Dragon', team: 'Victories', avatarUrl: '', verified: true, combos: [], badges: [], stats: { matchesPlayed: 8, wins: 4, losses: 4, pointsScored: 12, xtremeFinishes: 1, burstFinishes: 2, overFinishes: 1, spinFinishes: 1 } },
-    { id: 'b7', name: 'Bell Daikokuten', alias: 'Belial', team: 'Phantom', avatarUrl: '', verified: true, combos: [], badges: [], stats: { matchesPlayed: 8, wins: 3, losses: 5, pointsScored: 10, xtremeFinishes: 1, burstFinishes: 1, overFinishes: 1, spinFinishes: 1 } },
-    { id: 'b8', name: 'Bird Kazami', alias: 'HellsScythe', team: 'Persona', avatarUrl: '', verified: true, combos: [], badges: [], stats: { matchesPlayed: 8, wins: 2, losses: 6, pointsScored: 6, xtremeFinishes: 0, burstFinishes: 1, overFinishes: 1, spinFinishes: 1 } },
+    { id: 'b1', name: 'Valt Aoi', alias: 'Valkyrie', team: 'BC Sol', avatarUrl: '', verified: true, registeredAt: new Date().toISOString(), combos: [], badges: [], stats: { matchesPlayed: 8, wins: 7, losses: 1, pointsScored: 21, xtremeFinishes: 4, burstFinishes: 2, overFinishes: 1, spinFinishes: 0 } },
+    { id: 'b2', name: 'Shu Kurenai', alias: 'Spriggan', team: 'Raging Bulls', avatarUrl: '', verified: true, registeredAt: new Date().toISOString(), combos: [], badges: [], stats: { matchesPlayed: 8, wins: 6, losses: 2, pointsScored: 19, xtremeFinishes: 3, burstFinishes: 3, overFinishes: 1, spinFinishes: 0 } },
+    { id: 'b3', name: 'Free De La Hoya', alias: 'Fafnir', team: 'BC Sol', avatarUrl: '', verified: true, registeredAt: new Date().toISOString(), combos: [], badges: [], stats: { matchesPlayed: 8, wins: 6, losses: 2, pointsScored: 18, xtremeFinishes: 2, burstFinishes: 2, overFinishes: 2, spinFinishes: 2 } },
+    { id: 'b4', name: 'Lui Shirosagijo', alias: 'Longinus', team: 'Rideout', avatarUrl: '', verified: true, registeredAt: new Date().toISOString(), combos: [], badges: [], stats: { matchesPlayed: 8, wins: 5, losses: 3, pointsScored: 16, xtremeFinishes: 4, burstFinishes: 1, overFinishes: 0, spinFinishes: 0 } },
+    { id: 'b5', name: 'Aiga Akaba', alias: 'Achilles', team: 'Beigoma', avatarUrl: '', verified: true, registeredAt: new Date().toISOString(), combos: [], badges: [], stats: { matchesPlayed: 8, wins: 4, losses: 4, pointsScored: 14, xtremeFinishes: 2, burstFinishes: 1, overFinishes: 2, spinFinishes: 1 } },
+    { id: 'b6', name: 'Dante Koryu', alias: 'Dragon', team: 'Victories', avatarUrl: '', verified: true, registeredAt: new Date().toISOString(), combos: [], badges: [], stats: { matchesPlayed: 8, wins: 4, losses: 4, pointsScored: 12, xtremeFinishes: 1, burstFinishes: 2, overFinishes: 1, spinFinishes: 1 } },
+    { id: 'b7', name: 'Bell Daikokuten', alias: 'Belial', team: 'Phantom', avatarUrl: '', verified: true, registeredAt: new Date().toISOString(), combos: [], badges: [], stats: { matchesPlayed: 8, wins: 3, losses: 5, pointsScored: 10, xtremeFinishes: 1, burstFinishes: 1, overFinishes: 1, spinFinishes: 1 } },
+    { id: 'b8', name: 'Bird Kazami', alias: 'HellsScythe', team: 'Persona', avatarUrl: '', verified: true, registeredAt: new Date().toISOString(), combos: [], badges: [], stats: { matchesPlayed: 8, wins: 2, losses: 6, pointsScored: 6, xtremeFinishes: 0, burstFinishes: 1, overFinishes: 1, spinFinishes: 1 } },
     // 9th and 10th players outside the cut
-    { id: 'b9', name: 'Ekusu Kurosu', alias: 'DranSword', team: 'Persona', avatarUrl: '', verified: true, combos: [], badges: [], stats: { matchesPlayed: 8, wins: 1, losses: 7, pointsScored: 4, xtremeFinishes: 0, burstFinishes: 1, overFinishes: 0, spinFinishes: 0 } },
-    { id: 'b10', name: 'Multi Nanairo', alias: 'WizardArrow', team: 'Persona', avatarUrl: '', verified: true, combos: [], badges: [], stats: { matchesPlayed: 8, wins: 0, losses: 8, pointsScored: 2, xtremeFinishes: 0, burstFinishes: 0, overFinishes: 1, spinFinishes: 0 } }
+    { id: 'b9', name: 'Ekusu Kurosu', alias: 'DranSword', team: 'Persona', avatarUrl: '', verified: true, registeredAt: new Date().toISOString(), combos: [], badges: [], stats: { matchesPlayed: 8, wins: 1, losses: 7, pointsScored: 4, xtremeFinishes: 0, burstFinishes: 1, overFinishes: 0, spinFinishes: 0 } },
+    { id: 'b10', name: 'Multi Nanairo', alias: 'WizardArrow', team: 'Persona', avatarUrl: '', verified: true, registeredAt: new Date().toISOString(), combos: [], badges: [], stats: { matchesPlayed: 8, wins: 0, losses: 8, pointsScored: 2, xtremeFinishes: 0, burstFinishes: 0, overFinishes: 1, spinFinishes: 0 } }
   ];
 
   const testConfig: TournamentConfig = {
@@ -38,10 +38,11 @@ async function runJornadasAndPlayoffsTests() {
     battleScale: '3v3',
     victoryConditions: {
       pointsToWin: 5,
-      xtremeFinishPoints: 3,
-      burstFinishPoints: 2,
-      overFinishPoints: 2,
-      spinFinishPoints: 1
+      xtremeDashPts: 3,
+      burstFinishPts: 2,
+      overFinishPts: 2,
+      spinFinishPts: 1,
+      stadiumOutPts: 2
     },
     maxParticipants: 16,
     arenaStatus: 'Estadio Xtreme Activo',
@@ -204,7 +205,7 @@ async function runJornadasAndPlayoffsTests() {
     }
 
     // Check Jornadas view tab
-    const jornadasTab = page.locator('button:has-text("Jornadas"), button:has-text("Duelos")');
+    const jornadasTab = page.locator('#btn-view-rounds');
     if (await jornadasTab.isVisible()) {
       await jornadasTab.click();
       await page.waitForTimeout(400);

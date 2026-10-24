@@ -272,6 +272,7 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
           <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-headline font-bold uppercase">
             {isLeagueOrSeries && (
               <button
+                id="btn-view-standings"
                 onClick={() => {
                   soundManager.playClick();
                   setViewMode('standings');
@@ -288,6 +289,7 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
             )}
 
             <button
+              id="btn-view-rounds"
               onClick={() => {
                 soundManager.playClick();
                 setViewMode('rounds');
@@ -305,6 +307,7 @@ export const BracketScreen: React.FC<BracketScreenProps> = ({
             </button>
 
             <button
+              id="btn-view-tree"
               onClick={() => {
                 soundManager.playClick();
                 setViewMode('tree');

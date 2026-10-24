@@ -790,6 +790,39 @@ export async function syncMatchToSupabase(match: Match): Promise<{ success: bool
   }
 }
 
+export async function syncAllMatchesToSupabase(matches: Match[]): Promise<{ success: boolean; error?: string }> {
+  try {
+    if (!matches || matches.length === 0) return { success: true };
+    const payloads = matches.map((m) => ({
+      id: m.id,
+      round_number: m.roundNumber,
+      round_name: m.roundName,
+      match_number: m.matchNumber,
+      blader_a: m.bladerA,
+      blader_b: m.bladerB,
+      score_a: m.scoreA,
+      score_b: m.scoreB,
+      target_score: m.targetScore,
+      status: m.status,
+      winner_id: m.winnerId,
+      winner_name: m.winnerName,
+      corner_a: m.cornerA,
+      corner_b: m.cornerB,
+      events: m.events || [],
+      video_url: m.videoUrl || null
+    }));
+    const { error } = await supabase.from('matches').upsert(payloads);
+    if (error) {
+      console.error('Supabase sync all matches error:', error);
+      return { success: false, error: error.message };
+    }
+    return { success: true };
+  } catch (e: any) {
+    console.warn('Supabase sync all matches warning:', e);
+    return { success: false, error: e?.message };
+  }
+}
+
 export async function fetchMatchesFromSupabase(): Promise<Match[]> {
   try {
     const { data, error } = await supabase
