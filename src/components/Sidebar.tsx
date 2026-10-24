@@ -15,6 +15,8 @@ interface SidebarProps {
   communityCity?: string;
   logoUrl?: string;
   onUploadLogo?: (url: string) => void;
+  adminUser?: string;
+  onLogout?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -28,7 +30,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   season = 'Temporada Oficial',
   communityCity = 'Cúcuta',
   logoUrl,
-  onUploadLogo
+  onUploadLogo,
+  adminUser,
+  onLogout
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -212,6 +216,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <span className="material-symbols-outlined text-base text-[#DC2626] animate-pulse">restart_alt</span>
           <span>Reiniciar Torneo</span>
         </button>
+
+        {/* Admin Logout Button */}
+        {onLogout && (
+          <button
+            id="btn-sidebar-logout"
+            onClick={() => {
+              soundManager.playClick();
+              onLogout();
+              onCloseMobile?.();
+            }}
+            className="w-full flex items-center gap-3 px-4 py-2 text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl font-label-caps text-xs uppercase tracking-wider transition-all font-bold"
+          >
+            <span className="material-symbols-outlined text-base">logout</span>
+            <span>Cerrar Sesión ({adminUser || 'Admin'})</span>
+          </button>
+        )}
       </div>
     </aside>
   );

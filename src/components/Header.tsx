@@ -18,6 +18,8 @@ interface HeaderProps {
   communityTagline?: string;
   communityCity?: string;
   tournamentName?: string;
+  adminUser?: string;
+  onLogout?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -34,7 +36,9 @@ export const Header: React.FC<HeaderProps> = ({
   leagueName = 'Comunidad Beyblade Cúcuta',
   communityTagline = 'CÚCUTA • OFICIAL',
   communityCity = 'Cúcuta',
-  tournamentName = 'BEYBLADE X TOURNAMENT'
+  tournamentName = 'BEYBLADE X TOURNAMENT',
+  adminUser,
+  onLogout
 }) => {
   return (
     <header className="bg-white/95 dark:bg-[#131318]/95 border-b border-slate-200 dark:border-white/10 backdrop-blur-xl fixed top-0 left-0 right-0 md:left-64 z-40 h-16 flex items-center justify-between px-3 sm:px-4 md:px-8 transition-colors duration-200 shadow-sm">
@@ -222,6 +226,32 @@ export const Header: React.FC<HeaderProps> = ({
             Juez Oficial • {communityCity || 'Oficial'}
           </div>
         </div>
+
+        {/* Admin Session Badge & Logout Button */}
+        {onLogout && (
+          <div className="flex items-center gap-1.5 pl-1.5 border-l border-slate-200 dark:border-white/10">
+            <div
+              id="admin-user-badge"
+              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-sky-500/10 border border-sky-500/20 text-[#0284c7] dark:text-[#04A8FC] text-xs font-label-caps uppercase font-black"
+            >
+              <span className="material-symbols-outlined text-sm">shield_person</span>
+              <span>{adminUser || 'Admin'}</span>
+            </div>
+            <button
+              id="btn-admin-logout"
+              type="button"
+              onClick={() => {
+                soundManager.playClick();
+                onLogout();
+              }}
+              title="Cerrar Sesión de Administrador"
+              className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-red-500/10 text-slate-500 hover:text-[#DC2626] border border-slate-200/80 dark:border-white/5 flex items-center justify-center transition-all shadow-sm active:scale-[0.92] touch-manipulation"
+              aria-label="Cerrar sesión"
+            >
+              <span className="material-symbols-outlined text-lg">logout</span>
+            </button>
+          </div>
+        )}
       </div>
     </header>
   );

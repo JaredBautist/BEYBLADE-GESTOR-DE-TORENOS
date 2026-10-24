@@ -76,6 +76,7 @@ async function testMobileResponsive() {
       localStorage.setItem('bbx_bladers', JSON.stringify(sampleBladers));
       localStorage.setItem('bbx_matches', JSON.stringify([sampleMatch]));
       localStorage.setItem('bbx_auto_advance', 'true');
+      localStorage.setItem('bbx_admin_session', JSON.stringify({ username: 'DiegoAdmin', role: 'admin', token: 'bbx_test_token' }));
     });
 
     await page.reload();

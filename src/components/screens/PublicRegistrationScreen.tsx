@@ -236,7 +236,7 @@ export const PublicRegistrationScreen: React.FC<PublicRegistrationScreenProps> =
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col justify-between selection:bg-[#04A8FC] selection:text-white pb-12">
+    <div id="public-registration-screen" className="min-h-screen bg-slate-900 text-slate-100 flex flex-col justify-between selection:bg-[#04A8FC] selection:text-white pb-12">
       {/* Top Bar with Admin Return option */}
       <header className="px-4 py-3 border-b border-white/10 bg-slate-950/80 backdrop-blur-md flex items-center justify-between sticky top-0 z-30">
         <div className="flex items-center gap-3">

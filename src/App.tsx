@@ -30,7 +30,9 @@ import { SupportModal } from './components/SupportModal';
 import { ResetTournamentModal, ResetMode } from './components/ResetTournamentModal';
 import { ShareRegistrationModal } from './components/ShareRegistrationModal';
 import { PublicRegistrationScreen } from './components/screens/PublicRegistrationScreen';
+import { AdminLoginScreen } from './components/screens/AdminLoginScreen';
 import { MobileBottomNav } from './components/MobileBottomNav';
+import { getStoredAdminSession, clearAdminSession } from './utils/auth';
 import {
   syncBladerToSupabase,
   syncAllBladersToSupabase,
@@ -86,6 +88,19 @@ export default function App() {
   const [isDark, setIsDark] = useState<boolean>(true);
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
+  const [adminSession, setAdminSession] = useState<{ username: string } | null>(() => {
+    return getStoredAdminSession();
+  });
+
+  const handleAdminLoginSuccess = (username: string) => {
+    setAdminSession({ username });
+  };
+
+  const handleAdminLogout = () => {
+    clearAdminSession();
+    setAdminSession(null);
+    soundManager.playClick();
+  };
 
   // Core Tournament State with localStorage & Supabase
   const [config, setConfig] = useState<TournamentConfig>(() => {
@@ -281,6 +296,7 @@ export default function App() {
       }
     };
 
+    checkUrlForRegistration();
     window.addEventListener('popstate', checkUrlForRegistration);
     window.addEventListener('hashchange', checkUrlForRegistration);
     return () => {
@@ -1420,89 +1436,109 @@ export default function App() {
             }
           }}
         />
+      ) : !adminSession ? (
+        <AdminLoginScreen
+          onLoginSuccess={handleAdminLoginSuccess}
+          onNavigateToRegistration={() => {
+            setActiveScreen('public_registration');
+            if (typeof window !== 'undefined' && window.history?.pushState) {
+              window.history.pushState({}, '', '#registro');
+            }
+          }}
+          isDark={isDark}
+          onToggleTheme={() => setIsDark(!isDark)}
+          logoUrl={config.logoUrl}
+          tournamentName={config.name}
+          leagueName={config.leagueName}
+        />
       ) : (
         <>
           {/* Sidebar for Desktop */}
           <div className="hidden md:block">
-        <Sidebar
-          activeScreen={activeScreen}
-          setActiveScreen={setActiveScreen}
-          onOpenNewBattle={() => setNewBattleModalOpen(true)}
-          onOpenSupportModal={() => setSupportModalOpen(true)}
-          onResetTournament={() => setShowResetModal(true)}
-          leagueName={config.leagueName}
-          season={config.season}
-          communityCity={config.communityCity}
-          logoUrl={config.logoUrl}
-          onUploadLogo={(url) => {
-            const updated = { ...config, logoUrl: url };
-            setConfig(updated);
-            syncConfigToSupabase(updated);
-          }}
-        />
-      </div>
+            <Sidebar
+              activeScreen={activeScreen}
+              setActiveScreen={setActiveScreen}
+              onOpenNewBattle={() => setNewBattleModalOpen(true)}
+              onOpenSupportModal={() => setSupportModalOpen(true)}
+              onResetTournament={() => setShowResetModal(true)}
+              leagueName={config.leagueName}
+              season={config.season}
+              communityCity={config.communityCity}
+              logoUrl={config.logoUrl}
+              onUploadLogo={(url) => {
+                const updated = { ...config, logoUrl: url };
+                setConfig(updated);
+                syncConfigToSupabase(updated);
+              }}
+              adminUser={adminSession.username}
+              onLogout={handleAdminLogout}
+            />
+          </div>
 
-      {/* Mobile Drawer (Slide-over Sidebar with full options & Reset) */}
-      {/* Mobile Drawer (Slide-over Sidebar with full options & Reset) */}
-      {isMobileMenuOpen && (
-        <div id="mobile-drawer-sheet" className="fixed inset-0 z-50 md:hidden animate-fade-in">
-          {/* Backdrop */}
-          <div
-            id="mobile-drawer-backdrop"
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity"
-          />
+          {/* Mobile Drawer (Slide-over Sidebar with full options & Reset) */}
+          {isMobileMenuOpen && (
+            <div id="mobile-drawer-sheet" className="fixed inset-0 z-50 md:hidden animate-fade-in">
+              {/* Backdrop */}
+              <div
+                id="mobile-drawer-backdrop"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity"
+              />
 
-          {/* Drawer Sidebar */}
-          <Sidebar
+              {/* Drawer Sidebar */}
+              <Sidebar
+                activeScreen={activeScreen}
+                setActiveScreen={(screen) => {
+                  setActiveScreen(screen);
+                  setIsMobileMenuOpen(false);
+                }}
+                onOpenNewBattle={() => {
+                  setNewBattleModalOpen(true);
+                  setIsMobileMenuOpen(false);
+                }}
+                onOpenSupportModal={() => {
+                  setSupportModalOpen(true);
+                  setIsMobileMenuOpen(false);
+                }}
+                onResetTournament={() => {
+                  setShowResetModal(true);
+                  setIsMobileMenuOpen(false);
+                }}
+                onCloseMobile={() => setIsMobileMenuOpen(false)}
+                leagueName={config.leagueName}
+                season={config.season}
+                communityCity={config.communityCity}
+                logoUrl={config.logoUrl}
+                onUploadLogo={(url) => {
+                  const updated = { ...config, logoUrl: url };
+                  setConfig(updated);
+                  syncConfigToSupabase(updated);
+                }}
+                adminUser={adminSession.username}
+                onLogout={handleAdminLogout}
+              />
+            </div>
+          )}
+
+          {/* Top Header */}
+          <Header
             activeScreen={activeScreen}
-            setActiveScreen={(screen) => {
-              setActiveScreen(screen);
-              setIsMobileMenuOpen(false);
-            }}
-            onOpenNewBattle={() => {
-              setNewBattleModalOpen(true);
-              setIsMobileMenuOpen(false);
-            }}
-            onOpenSupportModal={() => {
-              setSupportModalOpen(true);
-              setIsMobileMenuOpen(false);
-            }}
-            onResetTournament={() => {
-              setShowResetModal(true);
-              setIsMobileMenuOpen(false);
-            }}
-            onCloseMobile={() => setIsMobileMenuOpen(false)}
-            leagueName={config.leagueName}
-            season={config.season}
-            communityCity={config.communityCity}
+            setActiveScreen={setActiveScreen}
+            isDark={isDark}
+            setIsDark={setIsDark}
+            isMuted={isMuted}
+            setIsMuted={setIsMuted}
+            onOpenNewBladerModal={() => setActiveScreen('bladers')}
+            onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            onResetTournament={() => setShowResetModal(true)}
             logoUrl={config.logoUrl}
-            onUploadLogo={(url) => {
-              const updated = { ...config, logoUrl: url };
-              setConfig(updated);
-              syncConfigToSupabase(updated);
-            }}
+            leagueName={config.leagueName}
+            communityTagline={config.communityTagline}
+            communityCity={config.communityCity}
+            tournamentName={config.name}
+            adminUser={adminSession.username}
+            onLogout={handleAdminLogout}
           />
-        </div>
-      )}
-
-      {/* Top Header */}
-      <Header
-        activeScreen={activeScreen}
-        setActiveScreen={setActiveScreen}
-        isDark={isDark}
-        setIsDark={setIsDark}
-        isMuted={isMuted}
-        setIsMuted={setIsMuted}
-        onOpenNewBladerModal={() => setActiveScreen('bladers')}
-        onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        onResetTournament={() => setShowResetModal(true)}
-        logoUrl={config.logoUrl}
-        leagueName={config.leagueName}
-        communityTagline={config.communityTagline}
-        communityCity={config.communityCity}
-        tournamentName={config.name}
-      />
 
       {/* Main Content Area */}
       <main className="flex-1 md:ml-64 pt-16 sm:pt-20 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] md:pb-12 px-2.5 sm:px-6 md:px-8 relative z-10">
@@ -1622,8 +1658,6 @@ export default function App() {
         onOpenMoreMenu={() => setIsMobileMenuOpen(true)}
         isLiveMatchActive={Boolean(currentMatch && currentMatch.status === 'live')}
       />
-        </>
-      )}
 
       {/* Share Registration Modal */}
       <ShareRegistrationModal
@@ -1712,6 +1746,8 @@ export default function App() {
 
       {/* Support & Community Modal */}
       {supportModalOpen && <SupportModal onClose={() => setSupportModalOpen(false)} />}
+        </>
+      )}
     </div>
   );
 }
