@@ -30,6 +30,7 @@ import { SupportModal } from './components/SupportModal';
 import { ResetTournamentModal, ResetMode } from './components/ResetTournamentModal';
 import { ShareRegistrationModal } from './components/ShareRegistrationModal';
 import { PublicRegistrationScreen } from './components/screens/PublicRegistrationScreen';
+import { MobileBottomNav } from './components/MobileBottomNav';
 import {
   syncBladerToSupabase,
   syncAllBladersToSupabase,
@@ -1442,10 +1443,12 @@ export default function App() {
       </div>
 
       {/* Mobile Drawer (Slide-over Sidebar with full options & Reset) */}
+      {/* Mobile Drawer (Slide-over Sidebar with full options & Reset) */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-50 md:hidden animate-fade-in">
+        <div id="mobile-drawer-sheet" className="fixed inset-0 z-50 md:hidden animate-fade-in">
           {/* Backdrop */}
           <div
+            id="mobile-drawer-backdrop"
             onClick={() => setIsMobileMenuOpen(false)}
             className="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity"
           />
@@ -1453,10 +1456,22 @@ export default function App() {
           {/* Drawer Sidebar */}
           <Sidebar
             activeScreen={activeScreen}
-            setActiveScreen={setActiveScreen}
-            onOpenNewBattle={() => setNewBattleModalOpen(true)}
-            onOpenSupportModal={() => setSupportModalOpen(true)}
-            onResetTournament={() => setShowResetModal(true)}
+            setActiveScreen={(screen) => {
+              setActiveScreen(screen);
+              setIsMobileMenuOpen(false);
+            }}
+            onOpenNewBattle={() => {
+              setNewBattleModalOpen(true);
+              setIsMobileMenuOpen(false);
+            }}
+            onOpenSupportModal={() => {
+              setSupportModalOpen(true);
+              setIsMobileMenuOpen(false);
+            }}
+            onResetTournament={() => {
+              setShowResetModal(true);
+              setIsMobileMenuOpen(false);
+            }}
             onCloseMobile={() => setIsMobileMenuOpen(false)}
             leagueName={config.leagueName}
             season={config.season}
@@ -1490,7 +1505,7 @@ export default function App() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 md:ml-64 pt-20 pb-24 md:pb-12 px-3 sm:px-6 md:px-8 relative z-10">
+      <main className="flex-1 md:ml-64 pt-16 sm:pt-20 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] md:pb-12 px-2.5 sm:px-6 md:px-8 relative z-10">
         {activeScreen === 'dashboard' && (
           <DashboardScreen
             currentMatch={currentMatch}
@@ -1600,40 +1615,13 @@ export default function App() {
         )}
       </main>
 
-      {/* Mobile Bottom Navigation Bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/95 dark:bg-[#111116]/95 border-t border-slate-200 dark:border-white/10 backdrop-blur-xl flex items-center justify-around px-1.5 z-40 shadow-2xl">
-        {[
-          { id: 'tournament_format', label: 'Formato', icon: 'tune' },
-          { id: 'dashboard', label: 'Consola', icon: 'sports_kabaddi' },
-          { id: 'bracket', label: 'Bracket', icon: 'account_tree' },
-          { id: 'bladers', label: 'Bladers', icon: 'groups' },
-          { id: 'community_config', label: 'Comunidad', icon: 'domain' },
-          { id: 'history', label: 'Historial', icon: 'emoji_events' }
-        ].map((item) => {
-          const isActive = activeScreen === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => {
-                soundManager.playClick();
-                setActiveScreen(item.id as ActiveScreen);
-              }}
-              className={`flex-1 flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl transition-all min-h-[48px] ${
-                isActive
-                  ? 'text-[#0284c7] dark:text-[#04A8FC] bg-sky-50 dark:bg-[#04A8FC]/15 font-black scale-105'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white'
-              }`}
-            >
-              <span className="material-symbols-outlined text-[20px] mb-0.5">
-                {item.icon}
-              </span>
-              <span className="font-label-caps text-[9px] uppercase tracking-wider leading-none">
-                {item.label}
-              </span>
-            </button>
-          );
-        })}
-      </nav>
+      {/* Mobile Bottom Navigation Bar (Phone & Tablet) */}
+      <MobileBottomNav
+        activeScreen={activeScreen}
+        setActiveScreen={setActiveScreen}
+        onOpenMoreMenu={() => setIsMobileMenuOpen(true)}
+        isLiveMatchActive={Boolean(currentMatch && currentMatch.status === 'live')}
+      />
         </>
       )}
 

@@ -324,7 +324,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   <select
                     value={selectedBladerAId}
                     onChange={(e) => setSelectedBladerAId(e.target.value)}
-                    className="w-full bg-white dark:bg-[#1a1a24] border border-red-300 dark:border-red-800 rounded-xl p-3 text-sm font-headline font-bold text-slate-900 dark:text-white uppercase focus:ring-2 focus:ring-[#DC2626] focus:outline-none shadow-sm"
+                    className="w-full bg-white dark:bg-[#1a1a24] border border-red-300 dark:border-red-800 rounded-xl p-3 text-base md:text-sm font-headline font-bold text-slate-900 dark:text-white uppercase focus:ring-2 focus:ring-[#DC2626] focus:outline-none shadow-sm touch-manipulation"
                   >
                     {allBladers.map((b) => (
                       <option key={b.id} value={b.id}>
@@ -358,7 +358,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                       type="button"
                       onClick={handleRandomizeStandby}
                       title="Emparejar Bladers al Azar"
-                      className="p-2 rounded-xl bg-white dark:bg-white/10 border border-slate-300 dark:border-white/10 hover:border-[#04A8FC] text-[#04A8FC] hover:bg-[#04A8FC]/10 transition-all shadow-sm flex items-center justify-center hover:scale-110 active:scale-95"
+                      className="p-2 rounded-xl bg-white dark:bg-white/10 border border-slate-300 dark:border-white/10 hover:border-[#04A8FC] text-[#04A8FC] hover:bg-[#04A8FC]/10 transition-all shadow-sm flex items-center justify-center hover:scale-110 active:scale-95 touch-manipulation"
                     >
                       <span className="material-symbols-outlined text-base">casino</span>
                     </button>
@@ -377,7 +377,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   <select
                     value={selectedBladerBId}
                     onChange={(e) => setSelectedBladerBId(e.target.value)}
-                    className="w-full bg-white dark:bg-[#1a1a24] border border-sky-300 dark:border-sky-800 rounded-xl p-3 text-sm font-headline font-bold text-slate-900 dark:text-white uppercase focus:ring-2 focus:ring-[#0284C7] focus:outline-none shadow-sm"
+                    className="w-full bg-white dark:bg-[#1a1a24] border border-sky-300 dark:border-sky-800 rounded-xl p-3 text-base md:text-sm font-headline font-bold text-slate-900 dark:text-white uppercase focus:ring-2 focus:ring-[#0284C7] focus:outline-none shadow-sm touch-manipulation"
                   >
                     {allBladers.map((b) => (
                       <option key={b.id} value={b.id}>
@@ -841,47 +841,107 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         </div>
       )}
 
+      {/* Mobile Live Duel Summary Banner (visible on mobile only) */}
+      <div id="mobile-live-duel-banner" className="lg:hidden bg-slate-900/95 dark:bg-[#12121a] text-white p-3.5 rounded-2xl border border-slate-700/60 dark:border-white/10 shadow-lg flex items-center justify-between gap-2 touch-manipulation">
+        {/* Corner Red mini */}
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <BladerAvatar blader={bladerA} size="md" cornerColor="red" />
+          <div className="min-w-0 flex-1">
+            <span className="text-[10px] font-label-caps uppercase text-red-400 font-black block truncate">
+              {bladerA?.name || 'Roja'}
+            </span>
+            <span className="text-[9px] text-slate-400 font-mono truncate block">
+              {currentComboA?.name ? currentComboA.name.slice(0, 14) : 'Combate'}
+            </span>
+          </div>
+          <span className="font-headline font-black text-2xl sm:text-3xl text-red-500 tabular-nums">
+            {currentMatch.scoreA}
+          </span>
+        </div>
+
+        {/* Center Target & VS */}
+        <div className="flex flex-col items-center px-1.5 flex-shrink-0">
+          <span className="text-[9px] font-label-caps uppercase text-amber-400 font-black px-2 py-0.5 rounded-full bg-amber-400/15 border border-amber-400/30">
+            {config.type === 'series' ? 'SERIE' : `A ${currentMatch.targetScore}`}
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              soundManager.playClick();
+              onSwapCorners();
+            }}
+            title="Invertir Esquinas"
+            className="p-1 rounded-lg text-slate-400 hover:text-white active:scale-[0.88] transition-transform mt-0.5"
+          >
+            <span className="material-symbols-outlined text-base">swap_horiz</span>
+          </button>
+        </div>
+
+        {/* Corner Blue mini */}
+        <div className="flex items-center justify-end gap-2 min-w-0 flex-1 text-right">
+          <span className="font-headline font-black text-2xl sm:text-3xl text-sky-400 tabular-nums">
+            {currentMatch.scoreB}
+          </span>
+          <div className="min-w-0 flex-1">
+            <span className="text-[10px] font-label-caps uppercase text-sky-400 font-black block truncate">
+              {bladerB?.name || 'Azul'}
+            </span>
+            <span className="text-[9px] text-slate-400 font-mono truncate block">
+              {currentComboB?.name ? currentComboB.name.slice(0, 14) : 'Combate'}
+            </span>
+          </div>
+          <BladerAvatar blader={bladerB} size="md" cornerColor="blue" />
+        </div>
+      </div>
+
       {/* Mobile Corner Quick-Switch Tabs (visible only on mobile) */}
-      <div className="lg:hidden flex items-center gap-1.5 bg-slate-100 dark:bg-white/5 p-1 rounded-2xl border border-slate-200 dark:border-white/10">
+      <div className="lg:hidden flex items-center gap-1.5 bg-slate-100 dark:bg-white/5 p-1 rounded-2xl border border-slate-200 dark:border-white/10 touch-manipulation">
         <button
+          id="mobile-corner-tab-both"
+          type="button"
           onClick={() => {
             soundManager.playClick();
             setMobileCornerFilter('both');
           }}
-          className={`flex-1 py-2 rounded-xl font-headline font-bold text-xs uppercase transition-all ${
+          className={`flex-1 py-2.5 min-h-[46px] rounded-xl font-headline font-bold text-xs uppercase transition-all duration-150 ease-out active:scale-[0.95] flex items-center justify-center gap-1 ${
             mobileCornerFilter === 'both'
               ? 'bg-white dark:bg-[#1a1a24] text-slate-900 dark:text-white shadow-sm font-black'
               : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
           }`}
         >
-          Ambas Esquinas
+          <span className="material-symbols-outlined text-sm">view_week</span>
+          <span>Ambas</span>
         </button>
         <button
+          id="mobile-corner-tab-cornerA"
+          type="button"
           onClick={() => {
             soundManager.playClick();
             setMobileCornerFilter('A');
           }}
-          className={`flex-1 py-2 rounded-xl font-headline font-bold text-xs uppercase transition-all flex items-center justify-center gap-1.5 ${
+          className={`flex-1 py-2.5 min-h-[46px] rounded-xl font-headline font-bold text-xs uppercase transition-all duration-150 ease-out active:scale-[0.95] flex items-center justify-center gap-1.5 ${
             mobileCornerFilter === 'A'
-              ? 'bg-[#DC2626] text-white shadow-sm font-black'
+              ? 'bg-[#DC2626] text-white shadow-md font-black shadow-red-500/20'
               : 'text-[#DC2626] hover:bg-red-50 dark:hover:bg-red-950/30'
           }`}
         >
-          <span className="w-2 h-2 rounded-full bg-current"></span>
+          <span className="w-2.5 h-2.5 rounded-full bg-current"></span>
           <span>Roja ({currentMatch.scoreA})</span>
         </button>
         <button
+          id="mobile-corner-tab-cornerB"
+          type="button"
           onClick={() => {
             soundManager.playClick();
             setMobileCornerFilter('B');
           }}
-          className={`flex-1 py-2 rounded-xl font-headline font-bold text-xs uppercase transition-all flex items-center justify-center gap-1.5 ${
+          className={`flex-1 py-2.5 min-h-[46px] rounded-xl font-headline font-bold text-xs uppercase transition-all duration-150 ease-out active:scale-[0.95] flex items-center justify-center gap-1.5 ${
             mobileCornerFilter === 'B'
-              ? 'bg-[#0284C7] text-white shadow-sm font-black'
+              ? 'bg-[#0284C7] text-white shadow-md font-black shadow-sky-500/20'
               : 'text-[#0284C7] hover:bg-sky-50 dark:hover:bg-sky-950/30'
           }`}
         >
-          <span className="w-2 h-2 rounded-full bg-current"></span>
+          <span className="w-2.5 h-2.5 rounded-full bg-current"></span>
           <span>Azul ({currentMatch.scoreB})</span>
         </button>
       </div>
@@ -889,7 +949,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       {/* Main Battle Arena 12-Column Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-stretch">
         {/* RED CORNER (Blader A) */}
-        <div className={`lg:col-span-5 flex flex-col ${mobileCornerFilter === 'B' ? 'hidden lg:flex' : 'flex'}`}>
+        <div id="corner-a-column" className={`lg:col-span-5 flex flex-col ${mobileCornerFilter === 'B' ? 'hidden lg:flex' : 'flex'}`}>
           <div className="glass-panel p-4 sm:p-5 rounded-2xl relative overflow-hidden group border-l-4 border-l-[#DC2626] border-t border-r border-b border-slate-200 dark:border-white/10 shadow-sm flex flex-col justify-between h-full bg-white dark:bg-[#15151e]">
             {/* Tactical background glow */}
             <div className="absolute top-0 right-0 w-36 h-36 bg-red-500/5 dark:bg-red-500/10 rounded-full blur-3xl pointer-events-none -mr-10 -mt-10"></div>
@@ -960,7 +1020,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 id="btn-red-xtreme-finish"
                 disabled={isMatchFinished}
                 onClick={() => handlePointClick('A', 'xtreme', config.victoryConditions.xtremeDashPts)}
-                className={`w-full bg-[#DC2626] hover:bg-[#B91C1C] text-white py-3 px-4 rounded-xl flex items-center justify-between font-label-caps uppercase tracking-wider font-black shadow-md shadow-red-500/20 hover:scale-[1.01] active:scale-[0.98] transition-all border-b-4 border-red-900 ${
+                className={`w-full bg-[#DC2626] hover:bg-[#B91C1C] text-white py-3.5 px-4 min-h-[50px] rounded-xl flex items-center justify-between font-label-caps uppercase tracking-wider font-black shadow-md shadow-red-500/20 active:scale-[0.96] transition-transform duration-150 ease-out touch-manipulation select-none border-b-4 border-red-900 ${
                   isMatchFinished ? 'opacity-40 cursor-not-allowed filter grayscale' : ''
                 }`}
               >
@@ -979,7 +1039,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   id="btn-red-burst-finish"
                   disabled={isMatchFinished}
                   onClick={() => handlePointClick('A', 'burst', config.victoryConditions.burstFinishPts)}
-                  className={`bg-[#D97706] hover:bg-[#B45309] text-white py-2.5 px-3 rounded-xl flex flex-col items-center justify-center font-label-caps uppercase font-bold text-xs shadow-sm hover:scale-[1.01] active:scale-[0.98] transition-all border-b-4 border-amber-900 ${
+                  className={`bg-[#D97706] hover:bg-[#B45309] text-white py-3 px-3 min-h-[52px] rounded-xl flex flex-col items-center justify-center font-label-caps uppercase font-bold text-xs shadow-sm active:scale-[0.96] transition-transform duration-150 ease-out touch-manipulation select-none border-b-4 border-amber-900 ${
                     isMatchFinished ? 'opacity-40 cursor-not-allowed filter grayscale' : ''
                   }`}
                 >
@@ -993,7 +1053,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   id="btn-red-over-finish"
                   disabled={isMatchFinished}
                   onClick={() => handlePointClick('A', 'over', config.victoryConditions.overFinishPts)}
-                  className={`bg-[#16A34A] hover:bg-[#15803D] text-white py-2.5 px-3 rounded-xl flex flex-col items-center justify-center font-label-caps uppercase font-bold text-xs shadow-sm hover:scale-[1.01] active:scale-[0.98] transition-all border-b-4 border-green-900 ${
+                  className={`bg-[#16A34A] hover:bg-[#15803D] text-white py-3 px-3 min-h-[52px] rounded-xl flex flex-col items-center justify-center font-label-caps uppercase font-bold text-xs shadow-sm active:scale-[0.96] transition-transform duration-150 ease-out touch-manipulation select-none border-b-4 border-green-900 ${
                     isMatchFinished ? 'opacity-40 cursor-not-allowed filter grayscale' : ''
                   }`}
                 >
@@ -1010,7 +1070,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   id="btn-red-stadium-out"
                   disabled={isMatchFinished}
                   onClick={() => handlePointClick('A', 'stadium', config.victoryConditions.stadiumOutPts)}
-                  className={`bg-slate-600 hover:bg-slate-700 text-white py-2 px-3 rounded-xl flex flex-col items-center justify-center font-label-caps uppercase font-bold text-xs shadow-sm transition-all border-b-4 border-slate-900 ${
+                  className={`bg-slate-600 hover:bg-slate-700 text-white py-3 px-3 min-h-[52px] rounded-xl flex flex-col items-center justify-center font-label-caps uppercase font-bold text-xs shadow-sm active:scale-[0.96] transition-transform duration-150 ease-out touch-manipulation select-none border-b-4 border-slate-900 ${
                     isMatchFinished ? 'opacity-40 cursor-not-allowed filter grayscale' : ''
                   }`}
                 >
@@ -1024,7 +1084,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   id="btn-red-spin-finish"
                   disabled={isMatchFinished}
                   onClick={() => handlePointClick('A', 'spin', config.victoryConditions.spinFinishPts)}
-                  className={`bg-[#0284C7] hover:bg-[#0369A1] text-white py-2 px-3 rounded-xl flex flex-col items-center justify-center font-label-caps uppercase font-bold text-xs shadow-sm transition-all border-b-4 border-sky-900 ${
+                  className={`bg-[#0284C7] hover:bg-[#0369A1] text-white py-3 px-3 min-h-[52px] rounded-xl flex flex-col items-center justify-center font-label-caps uppercase font-bold text-xs shadow-sm active:scale-[0.96] transition-transform duration-150 ease-out touch-manipulation select-none border-b-4 border-sky-900 ${
                     isMatchFinished ? 'opacity-40 cursor-not-allowed filter grayscale' : ''
                   }`}
                 >
@@ -1096,7 +1156,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         </div>
 
         {/* BLUE CORNER (Blader B) */}
-        <div className={`lg:col-span-5 flex flex-col ${mobileCornerFilter === 'A' ? 'hidden lg:flex' : 'flex'}`}>
+        <div id="corner-b-column" className={`lg:col-span-5 flex flex-col ${mobileCornerFilter === 'A' ? 'hidden lg:flex' : 'flex'}`}>
           <div className="glass-panel p-4 sm:p-5 rounded-2xl relative overflow-hidden group border-r-4 border-r-[#0284C7] border-t border-l border-b border-slate-200 dark:border-white/10 shadow-sm flex flex-col justify-between h-full bg-white dark:bg-[#15151e]">
             {/* Tactical background glow */}
             <div className="absolute top-0 left-0 w-36 h-36 bg-sky-500/5 dark:bg-sky-500/10 rounded-full blur-3xl pointer-events-none -ml-10 -mt-10"></div>
@@ -1167,7 +1227,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 id="btn-blue-xtreme-finish"
                 disabled={isMatchFinished}
                 onClick={() => handlePointClick('B', 'xtreme', config.victoryConditions.xtremeDashPts)}
-                className={`w-full bg-[#0284C7] hover:bg-[#0369A1] text-white py-3 px-4 rounded-xl flex items-center justify-between font-label-caps uppercase tracking-wider font-black shadow-md shadow-sky-500/20 hover:scale-[1.01] active:scale-[0.98] transition-all border-b-4 border-sky-900 ${
+                className={`w-full bg-[#0284C7] hover:bg-[#0369A1] text-white py-3.5 px-4 min-h-[50px] rounded-xl flex items-center justify-between font-label-caps uppercase tracking-wider font-black shadow-md shadow-sky-500/20 active:scale-[0.96] transition-transform duration-150 ease-out touch-manipulation select-none border-b-4 border-sky-900 ${
                   isMatchFinished ? 'opacity-40 cursor-not-allowed filter grayscale' : ''
                 }`}
               >
@@ -1186,7 +1246,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   id="btn-blue-burst-finish"
                   disabled={isMatchFinished}
                   onClick={() => handlePointClick('B', 'burst', config.victoryConditions.burstFinishPts)}
-                  className={`bg-[#D97706] hover:bg-[#B45309] text-white py-2.5 px-3 rounded-xl flex flex-col items-center justify-center font-label-caps uppercase font-bold text-xs shadow-sm hover:scale-[1.01] active:scale-[0.98] transition-all border-b-4 border-amber-900 ${
+                  className={`bg-[#D97706] hover:bg-[#B45309] text-white py-3 px-3 min-h-[52px] rounded-xl flex flex-col items-center justify-center font-label-caps uppercase font-bold text-xs shadow-sm active:scale-[0.96] transition-transform duration-150 ease-out touch-manipulation select-none border-b-4 border-amber-900 ${
                     isMatchFinished ? 'opacity-40 cursor-not-allowed filter grayscale' : ''
                   }`}
                 >
@@ -1200,7 +1260,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   id="btn-blue-over-finish"
                   disabled={isMatchFinished}
                   onClick={() => handlePointClick('B', 'over', config.victoryConditions.overFinishPts)}
-                  className={`bg-[#16A34A] hover:bg-[#15803D] text-white py-2.5 px-3 rounded-xl flex flex-col items-center justify-center font-label-caps uppercase font-bold text-xs shadow-sm hover:scale-[1.01] active:scale-[0.98] transition-all border-b-4 border-green-900 ${
+                  className={`bg-[#16A34A] hover:bg-[#15803D] text-white py-3 px-3 min-h-[52px] rounded-xl flex flex-col items-center justify-center font-label-caps uppercase font-bold text-xs shadow-sm active:scale-[0.96] transition-transform duration-150 ease-out touch-manipulation select-none border-b-4 border-green-900 ${
                     isMatchFinished ? 'opacity-40 cursor-not-allowed filter grayscale' : ''
                   }`}
                 >
@@ -1217,7 +1277,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   id="btn-blue-stadium-out"
                   disabled={isMatchFinished}
                   onClick={() => handlePointClick('B', 'stadium', config.victoryConditions.stadiumOutPts)}
-                  className={`bg-slate-600 hover:bg-slate-700 text-white py-2 px-3 rounded-xl flex flex-col items-center justify-center font-label-caps uppercase font-bold text-xs shadow-sm transition-all border-b-4 border-slate-900 ${
+                  className={`bg-slate-600 hover:bg-slate-700 text-white py-3 px-3 min-h-[52px] rounded-xl flex flex-col items-center justify-center font-label-caps uppercase font-bold text-xs shadow-sm active:scale-[0.96] transition-transform duration-150 ease-out touch-manipulation select-none border-b-4 border-slate-900 ${
                     isMatchFinished ? 'opacity-40 cursor-not-allowed filter grayscale' : ''
                   }`}
                 >
@@ -1231,7 +1291,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   id="btn-blue-spin-finish"
                   disabled={isMatchFinished}
                   onClick={() => handlePointClick('B', 'spin', config.victoryConditions.spinFinishPts)}
-                  className={`bg-[#0284C7] hover:bg-[#0369A1] text-white py-2 px-3 rounded-xl flex flex-col items-center justify-center font-label-caps uppercase font-bold text-xs shadow-sm transition-all border-b-4 border-sky-900 ${
+                  className={`bg-[#0284C7] hover:bg-[#0369A1] text-white py-3 px-3 min-h-[52px] rounded-xl flex flex-col items-center justify-center font-label-caps uppercase font-bold text-xs shadow-sm active:scale-[0.96] transition-transform duration-150 ease-out touch-manipulation select-none border-b-4 border-sky-900 ${
                     isMatchFinished ? 'opacity-40 cursor-not-allowed filter grayscale' : ''
                   }`}
                 >

@@ -79,14 +79,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Mobile Close Button */}
       {onCloseMobile && (
         <button
+          id="btn-close-mobile-drawer"
           onClick={() => {
             soundManager.playClick();
             onCloseMobile();
           }}
-          className="md:hidden absolute top-4 right-4 w-8 h-8 rounded-xl bg-slate-100 dark:bg-white/10 flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm"
+          className="md:hidden absolute top-4 right-4 w-9 h-9 rounded-xl bg-slate-100 dark:bg-white/10 flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm active:scale-95 touch-manipulation"
           title="Cerrar Menú"
         >
-          <span className="material-symbols-outlined text-lg">close</span>
+          <span className="material-symbols-outlined text-xl">close</span>
         </button>
       )}
 

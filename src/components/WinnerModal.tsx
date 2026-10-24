@@ -82,24 +82,25 @@ export const WinnerModal: React.FC<WinnerModalProps> = ({
 
   return (
     <div
-      id="winner-celebration-modal"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
+      id="winner-modal"
+      data-testid="winner-celebration-modal"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
     >
-      <div className="bg-white dark:bg-[#13131a] border-2 border-[#FCEE21] rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative overflow-hidden text-center space-y-6">
+      <div className="bg-white dark:bg-[#13131a] border-2 border-[#FCEE21] rounded-3xl max-w-lg w-full max-h-[92vh] overflow-y-auto p-4 sm:p-8 shadow-2xl relative text-center space-y-4 sm:space-y-6">
         {/* Glow background */}
         <div className="absolute inset-0 bg-gradient-to-b from-[#FCEE21]/15 via-transparent to-transparent pointer-events-none"></div>
 
         {/* Trophy icon & Blader Avatar */}
-        <div className="relative inline-block mx-auto">
-          <BladerAvatar blader={winner} size="2xl" cornerColor="gold" />
-          <div className="absolute -bottom-2 -right-2 w-10 h-10 rounded-full bg-[#FCEE21] border-2 border-white flex items-center justify-center text-black font-black shadow-md text-lg">
+        <div className="relative inline-block mx-auto pt-1">
+          <BladerAvatar blader={winner} size="xl" cornerColor="gold" />
+          <div className="absolute -bottom-1 -right-1 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#FCEE21] border-2 border-white flex items-center justify-center text-black font-black shadow-md text-base sm:text-lg">
             {isTournamentFinal ? '👑' : '🏆'}
           </div>
         </div>
 
         {/* Victory Header */}
         <div>
-          <span className="font-label-caps text-xs text-amber-500 uppercase tracking-widest font-black block mb-1">
+          <span className="font-label-caps text-[11px] sm:text-xs text-amber-500 uppercase tracking-widest font-black block mb-1">
             {isTournamentFinal
               ? '👑 ¡CAMPEÓN DEL TORNEO CORONADO! • GRAN FINAL'
               : `¡VICTORIA CONFIRMADA! • ${match.roundName || 'Duelo Finalizado'}`}
@@ -107,13 +108,13 @@ export const WinnerModal: React.FC<WinnerModalProps> = ({
           <h2 className="font-headline font-black text-2xl sm:text-4xl text-[#1a1c1e] dark:text-white uppercase tracking-tight">
             {winner.name}
           </h2>
-          <p className="font-label-caps text-xs text-gray-500 uppercase mt-1">
+          <p className="font-label-caps text-xs text-gray-500 uppercase mt-0.5 truncate">
             {winner.team || 'Independiente'} {winner.combos?.[0]?.name ? `• ${winner.combos[0].name}` : ''}
           </p>
         </div>
 
         {/* Match Final Score Display */}
-        <div className="p-4 rounded-2xl bg-black/5 dark:bg-white/5 border border-[#bec7d3]/30 dark:border-white/10 flex items-center justify-around">
+        <div className="p-3 sm:p-4 rounded-2xl bg-black/5 dark:bg-white/5 border border-[#bec7d3]/30 dark:border-white/10 flex items-center justify-around">
           <div className="text-center min-w-0 flex-1">
             <span className="font-label-caps text-[10px] text-gray-500 uppercase block truncate">
               {match.bladerA?.name || 'Esquina Roja'}
@@ -123,8 +124,8 @@ export const WinnerModal: React.FC<WinnerModalProps> = ({
             </span>
           </div>
 
-          <div className="font-headline font-black text-sm sm:text-base text-amber-500 px-3 flex flex-col items-center">
-            <span className="material-symbols-outlined text-lg">military_tech</span>
+          <div className="font-headline font-black text-xs sm:text-base text-amber-500 px-2 sm:px-3 flex flex-col items-center">
+            <span className="material-symbols-outlined text-base sm:text-lg">military_tech</span>
             <span>FINAL</span>
           </div>
 
@@ -148,7 +149,7 @@ export const WinnerModal: React.FC<WinnerModalProps> = ({
                   soundManager.playClick();
                   setShowVideoInput(true);
                 }}
-                className="w-full py-2 px-3 rounded-xl border border-dashed border-slate-300 dark:border-white/20 hover:border-red-500 hover:text-red-500 dark:hover:border-red-400 text-slate-600 dark:text-slate-300 text-xs font-headline font-bold uppercase flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
+                className="w-full py-2.5 px-3 min-h-[44px] rounded-xl border border-dashed border-slate-300 dark:border-white/20 hover:border-red-500 hover:text-red-500 dark:hover:border-red-400 text-slate-600 dark:text-slate-300 text-xs font-headline font-bold uppercase flex items-center justify-center gap-1.5 transition-all active:scale-[0.96] touch-manipulation"
               >
                 <span className="material-symbols-outlined text-base text-red-500">video_camera_front</span>
                 <span>¿Deseas vincular el video de esta batalla?</span>
@@ -174,7 +175,7 @@ export const WinnerModal: React.FC<WinnerModalProps> = ({
                     value={videoUrlInput}
                     onChange={(e) => setVideoUrlInput(e.target.value)}
                     placeholder="https://youtu.be/... o drive.google.com/..."
-                    className="flex-1 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-black/30 text-slate-900 dark:text-white placeholder-slate-400 text-xs font-mono focus:outline-none focus:border-[#04A8FC]"
+                    className="flex-1 px-3 py-2 min-h-[44px] rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-black/30 text-slate-900 dark:text-white placeholder-slate-400 text-base md:text-xs font-mono focus:outline-none focus:border-[#04A8FC]"
                   />
                   <button
                     type="button"
@@ -184,7 +185,7 @@ export const WinnerModal: React.FC<WinnerModalProps> = ({
                       setSavedVideoMsg(true);
                       setTimeout(() => setSavedVideoMsg(false), 2500);
                     }}
-                    className="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-headline font-bold uppercase transition-all flex items-center gap-1 active:scale-[0.97]"
+                    className="px-3.5 py-2 min-h-[44px] rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-headline font-bold uppercase transition-all flex items-center gap-1 active:scale-[0.95] touch-manipulation"
                   >
                     <span className="material-symbols-outlined text-sm">save</span>
                     <span>Guardar</span>
@@ -199,7 +200,7 @@ export const WinnerModal: React.FC<WinnerModalProps> = ({
         {autoAdvanceEnabled && nextMatch && !isTournamentFinal && (
           <div
             id="winner-modal-auto-advance-banner"
-            className="p-3.5 rounded-2xl bg-gradient-to-r from-[#04A8FC]/15 via-emerald-500/15 to-[#04A8FC]/15 border border-[#04A8FC]/30 text-left space-y-2"
+            className="p-3 sm:p-3.5 rounded-2xl bg-gradient-to-r from-[#04A8FC]/15 via-emerald-500/15 to-[#04A8FC]/15 border border-[#04A8FC]/30 text-left space-y-2"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
@@ -222,8 +223,8 @@ export const WinnerModal: React.FC<WinnerModalProps> = ({
               />
             </div>
 
-            <div className="flex items-center justify-between text-[11px] font-label-caps pt-0.5 text-slate-600 dark:text-slate-300">
-              <span className="truncate mr-2">
+            <div className="flex items-center justify-between text-[11px] font-label-caps pt-0.5 text-slate-600 dark:text-slate-300 flex-wrap gap-2">
+              <span className="truncate mr-1 max-w-[190px]">
                 Próximo: <strong className="text-slate-900 dark:text-white">{nextMatch.bladerA?.name || 'Rojo'} vs {nextMatch.bladerB?.name || 'Azul'}</strong>
               </span>
               <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -234,7 +235,7 @@ export const WinnerModal: React.FC<WinnerModalProps> = ({
                     soundManager.playClick();
                     setIsPaused((p) => !p);
                   }}
-                  className="px-2 py-0.5 rounded-md border border-slate-300 dark:border-white/20 text-slate-700 dark:text-slate-200 hover:bg-black/5 dark:hover:bg-white/10 font-bold uppercase text-[10px]"
+                  className="px-2.5 py-1 min-h-[36px] rounded-lg border border-slate-300 dark:border-white/20 text-slate-700 dark:text-slate-200 hover:bg-black/5 dark:hover:bg-white/10 font-bold uppercase text-[10px] active:scale-[0.95] touch-manipulation"
                 >
                   {isPaused ? '▶ Reanudar' : '⏸ Pausar'}
                 </button>
@@ -245,7 +246,7 @@ export const WinnerModal: React.FC<WinnerModalProps> = ({
                     soundManager.playClick();
                     onNextMatch?.(nextMatch);
                   }}
-                  className="px-2 py-0.5 rounded-md bg-[#04A8FC] hover:bg-[#008fe0] text-white font-bold uppercase text-[10px] flex items-center gap-0.5 shadow-sm"
+                  className="px-2.5 py-1 min-h-[36px] rounded-lg bg-[#04A8FC] hover:bg-[#008fe0] text-white font-bold uppercase text-[10px] flex items-center gap-0.5 shadow-sm active:scale-[0.95] touch-manipulation"
                 >
                   <span>Cargar Ya</span>
                   <span className="material-symbols-outlined text-[12px]">bolt</span>
@@ -256,24 +257,26 @@ export const WinnerModal: React.FC<WinnerModalProps> = ({
         )}
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+        <div className="flex flex-col sm:flex-row items-center gap-2.5 sm:gap-3 pt-1">
           {isTournamentFinal ? (
             <>
               <button
+                type="button"
                 onClick={() => {
                   soundManager.playClick();
                   onClose();
                 }}
-                className="w-full sm:flex-1 py-3 px-4 rounded-xl border border-gray-400 dark:border-gray-600 font-headline font-bold text-xs uppercase text-gray-700 dark:text-gray-200 hover:bg-black/5 dark:hover:bg-white/5 transition-all"
+                className="w-full sm:flex-1 py-3 px-4 min-h-[48px] rounded-xl border border-gray-400 dark:border-gray-600 font-headline font-bold text-xs uppercase text-gray-700 dark:text-gray-200 hover:bg-black/5 dark:hover:bg-white/5 transition-all active:scale-[0.96] touch-manipulation"
               >
                 Cerrar y Revisar
               </button>
               <button
+                type="button"
                 onClick={() => {
                   soundManager.playClick();
                   onGoToBracket();
                 }}
-                className="w-full sm:flex-1 py-3 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-headline font-black text-xs uppercase shadow-lg shadow-amber-500/30 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-1.5"
+                className="w-full sm:flex-1 py-3 px-4 min-h-[48px] rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-headline font-black text-xs uppercase shadow-lg shadow-amber-500/30 transition-all active:scale-[0.96] touch-manipulation flex items-center justify-center gap-1.5"
               >
                 <span className="material-symbols-outlined text-base">emoji_events</span>
                 <span>Ver Podio en Bracket</span>
@@ -282,23 +285,25 @@ export const WinnerModal: React.FC<WinnerModalProps> = ({
           ) : (
             <>
               <button
+                type="button"
                 onClick={() => {
                   soundManager.playClick();
                   onGoToBracket();
                 }}
-                className="w-full sm:flex-1 py-3 px-4 rounded-xl border border-gray-400 dark:border-gray-600 font-headline font-bold text-xs uppercase text-gray-700 dark:text-gray-200 hover:bg-black/5 dark:hover:bg-white/5 transition-all"
+                className="w-full sm:flex-1 py-3 px-4 min-h-[48px] rounded-xl border border-gray-400 dark:border-gray-600 font-headline font-bold text-xs uppercase text-gray-700 dark:text-gray-200 hover:bg-black/5 dark:hover:bg-white/5 transition-all active:scale-[0.96] touch-manipulation"
               >
                 Ver en Bracket
               </button>
 
               {onNextMatch && nextMatch ? (
                 <button
-                  id="btn-modal-next-match"
+                  id="btn-next-match"
+                  type="button"
                   onClick={() => {
                     soundManager.playClick();
-                    onNextMatch();
+                    onNextMatch(nextMatch);
                   }}
-                  className="w-full sm:flex-1 py-3 px-4 rounded-xl bg-[#04A8FC] hover:bg-[#008fe0] text-white font-headline font-black text-xs uppercase shadow-lg shadow-[#04A8FC]/30 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-1.5"
+                  className="w-full sm:flex-1 py-3 px-4 min-h-[48px] rounded-xl bg-[#04A8FC] hover:bg-[#008fe0] text-white font-headline font-black text-xs uppercase shadow-lg shadow-[#04A8FC]/30 transition-all active:scale-[0.96] touch-manipulation flex items-center justify-center gap-1.5"
                 >
                   <span>
                     Siguiente Duelo {autoAdvanceEnabled && !isPaused && countdown > 0 ? `(${countdown}s)` : ''}
@@ -307,11 +312,13 @@ export const WinnerModal: React.FC<WinnerModalProps> = ({
                 </button>
               ) : (
                 <button
+                  id="btn-modal-continue"
+                  type="button"
                   onClick={() => {
                     soundManager.playClick();
                     onClose();
                   }}
-                  className="w-full sm:flex-1 py-3 px-4 rounded-xl bg-[#04A8FC] hover:bg-[#008fe0] text-white font-headline font-black text-xs uppercase shadow-lg shadow-[#04A8FC]/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  className="w-full sm:flex-1 py-3 px-4 min-h-[48px] rounded-xl bg-[#04A8FC] hover:bg-[#008fe0] text-white font-headline font-black text-xs uppercase shadow-lg shadow-[#04A8FC]/30 transition-all active:scale-[0.96] touch-manipulation"
                 >
                   Continuar
                 </button>
@@ -322,8 +329,10 @@ export const WinnerModal: React.FC<WinnerModalProps> = ({
 
         {/* Close button */}
         <button
+          type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-black dark:hover:text-white p-1"
+          className="absolute top-3 right-3 sm:top-4 sm:right-4 w-9 h-9 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-slate-700 dark:text-slate-300 flex items-center justify-center transition-all active:scale-[0.92] touch-manipulation"
+          title="Cerrar"
         >
           ✕
         </button>

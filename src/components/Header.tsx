@@ -189,7 +189,7 @@ export const Header: React.FC<HeaderProps> = ({
             soundManager.playClick();
             setActiveScreen('community_config');
           }}
-          className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all border border-slate-200/80 dark:border-white/5 ${
+          className={`hidden sm:flex w-9 h-9 rounded-xl items-center justify-center transition-all active:scale-[0.92] touch-manipulation border border-slate-200/80 dark:border-white/5 ${
             activeScreen === 'community_config' || activeScreen === 'configuration'
               ? 'bg-[#04A8FC] text-white shadow-sm'
               : 'bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-gray-300'
@@ -207,7 +207,7 @@ export const Header: React.FC<HeaderProps> = ({
               soundManager.playClick();
               onResetTournament();
             }}
-            className="w-9 h-9 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-[#DC2626] border border-red-500/20 flex items-center justify-center transition-all shadow-sm active:scale-95 flex-shrink-0"
+            className="hidden sm:flex w-9 h-9 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-[#DC2626] border border-red-500/20 items-center justify-center transition-all shadow-sm active:scale-[0.92] touch-manipulation flex-shrink-0"
           >
             <span className="material-symbols-outlined text-lg">restart_alt</span>
           </button>
