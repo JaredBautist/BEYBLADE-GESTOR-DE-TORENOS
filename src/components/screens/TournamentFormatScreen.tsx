@@ -747,17 +747,32 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
                   type="number"
                   min="2"
                   max="512"
-                  value={formData.maxParticipants >= 999 ? '' : formData.maxParticipants}
+                  value={formData.maxParticipants >= 999 ? '' : (formData.maxParticipants || '')}
                   onChange={(e) => {
                     const val = parseInt(e.target.value, 10);
                     if (!isNaN(val) && val > 0) {
                       const updated = { ...formData, maxParticipants: val };
                       setFormData(updated);
+                      onSaveConfig(updated);
+                    } else {
+                      setFormData({ ...formData, maxParticipants: 0 });
                     }
                   }}
-                  onBlur={() => {
-                    if (formData.maxParticipants) {
-                      triggerSave(formData, `Capacidad fijada en ${formData.maxParticipants} Bladers`);
+                  onBlur={(e) => {
+                    const val = parseInt(e.target.value, 10);
+                    if (!isNaN(val) && val > 0) {
+                      const updated = { ...formData, maxParticipants: val };
+                      triggerSave(updated, `Capacidad fijada en ${val} Bladers`);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      const val = parseInt((e.target as HTMLInputElement).value, 10);
+                      if (!isNaN(val) && val > 0) {
+                        const updated = { ...formData, maxParticipants: val };
+                        triggerSave(updated, `Capacidad fijada en ${val} Bladers`);
+                        (e.target as HTMLInputElement).blur();
+                      }
                     }
                   }}
                   placeholder="Ej. 10, 14, 20..."
@@ -859,17 +874,32 @@ export const TournamentFormatScreen: React.FC<TournamentFormatScreenProps> = ({
                       type="number"
                       min="2"
                       max="256"
-                      value={formData.maxParticipants >= 999 ? '' : formData.maxParticipants}
+                      value={formData.maxParticipants >= 999 ? '' : (formData.maxParticipants || '')}
                       onChange={(e) => {
                         const val = parseInt(e.target.value, 10);
                         if (!isNaN(val) && val > 0) {
                           const updated = { ...formData, maxParticipants: val };
                           setFormData(updated);
+                          onSaveConfig(updated);
+                        } else {
+                          setFormData({ ...formData, maxParticipants: 0 });
                         }
                       }}
-                      onBlur={() => {
-                        if (formData.maxParticipants) {
-                          triggerSave(formData, `Límite actualizado a ${formData.maxParticipants} Bladers`);
+                      onBlur={(e) => {
+                        const val = parseInt(e.target.value, 10);
+                        if (!isNaN(val) && val > 0) {
+                          const updated = { ...formData, maxParticipants: val };
+                          triggerSave(updated, `Límite actualizado a ${val} Bladers`);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          const val = parseInt((e.target as HTMLInputElement).value, 10);
+                          if (!isNaN(val) && val > 0) {
+                            const updated = { ...formData, maxParticipants: val };
+                            triggerSave(updated, `Límite actualizado a ${val} Bladers`);
+                            (e.target as HTMLInputElement).blur();
+                          }
                         }
                       }}
                       placeholder="Otro"
